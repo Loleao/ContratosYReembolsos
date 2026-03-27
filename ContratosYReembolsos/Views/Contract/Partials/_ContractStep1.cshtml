@@ -1,0 +1,71 @@
+﻿@model ContratosYReembolsos.Models.ServiceContract
+
+<div class="animate__animated animate__fadeIn">
+    <h4 class="text-primary fw-bold mb-4">
+        <i class="fa-solid fa-user-pen me-2"></i> Datos del Solicitante
+    </h4>
+
+    <div class="row g-4">
+        <div class="col-md-12">
+            <label class="form-label fw-bold text-muted small">RELACIÓN CON EL AFILIADO</label>
+            <select id="SolicitorType" class="form-select form-select-lg rounded-pill border-2" onchange="toggleSolicitorType()">
+                <option value="Titular">Titular (El mismo afiliado)</option>
+                <option value="Familiar">Familiar / Tercero</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small">DNI</label>
+            <div class="input-group">
+                <input type="text" id="SolicitorDni" class="form-control form-control-lg border-2 rounded-start-pill" placeholder="Buscar DNI..." readonly>
+                <button class="btn btn-primary px-4 rounded-end-pill" type="button" id="btnLupa" onclick="openSearchAffiliate('Solicitor')">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small">CIP</label>
+            <input type="text" id="SolicitorCip" class="form-control form-control-lg border-2 rounded-pill bg-light" placeholder="N° CIP" readonly>
+        </div>
+
+        <div class="col-md-12">
+            <label class="form-label fw-bold text-muted small">APELLIDOS Y NOMBRES</label>
+            <input type="text" id="SolicitorName" class="form-control form-control-lg border-2 rounded-pill bg-light" placeholder="Datos del solicitante" readonly>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-5">
+        <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 shadow"
+                onclick="nextStep(2, validateStep1)">
+            Siguiente <i class="fa-solid fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    function toggleSolicitorType() {
+        const type = document.getElementById('SolicitorType').value;
+        const isTitular = (type === "Titular");
+        const btnLupa = document.getElementById('btnLupa');
+        const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
+
+        // Si es Titular, activamos la lupa y bloqueamos escritura manual
+        // Si es Familiar, ocultamos lupa y permitimos escribir
+        btnLupa.style.display = isTitular ? 'block' : 'none';
+
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            el.readOnly = isTitular;
+            el.value = ""; // Limpiamos al cambiar
+
+            if (isTitular) {
+                el.classList.add('bg-light');
+                el.classList.remove('border-primary');
+            } else {
+                el.classList.remove('bg-light');
+                el.classList.add('border-primary');
+            }
+        });
+    }
+</script>

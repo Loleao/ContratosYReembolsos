@@ -1,0 +1,31 @@
+## [ESTÁNDAR .NET] ##
+
+# Carpetas de compilación (Imagen 3)
+[Bb]in/
+[Oo]bj/
+
+# Configuración de Visual Studio (Imagen 2)
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Archivos de publicación y temporales
+publish/
+*.pubxml
+*.log
+*.tmp
+
+# Herramientas de base de datos (si usas SQL Server local)
+*.mdf
+*.ldf
+*.sdef
+
+# Archivos de entorno (Seguridad)
+# Evita subir tus contraseñas de DB si las pones aquí
+appsettings.Development.json
+
+# Carpetas de paquetes de VS Code (por si alguien lo abre ahí)
+.vscode/
+.history/

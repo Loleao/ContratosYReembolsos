@@ -1,0 +1,327 @@
+﻿@{
+    ViewData["Title"] = "Registro de Contratos";
+}
+
+<style>
+    :root {
+        --pnp-blue: #004a99;
+        --pnp-bg: #003366;
+        --pnp-gray: #f1f4f8;
+    }
+
+    body {
+        background-color: var(--pnp-bg);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Contenedor Principal */
+    .stepper-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        max-width: 1000px;
+        margin: 50px auto;
+        min-height: 600px;
+    }
+
+    /* Stepper Header (Bolitas) */
+    .stepper-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        position: relative;
+    }
+
+    .step-item {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+        .step-item::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            top: 20px;
+            left: 50%;
+            z-index: -1;
+        }
+
+        .step-item:last-child::after {
+            display: none;
+        }
+
+    .step-dot {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-weight: bold;
+        color: #999;
+    }
+
+    .step-item.active .step-dot {
+        border-color: var(--pnp-blue);
+        color: var(--pnp-blue);
+        border-width: 3px;
+    }
+
+    .step-item.completed .step-dot {
+        background: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    /* Overlay Personalizado (Tu lógica de Legajos) */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(5px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 3000;
+    }
+
+    #ajaxTargetSearch {
+        width: 100%;
+        max-width: 850px;
+        padding: 20px;
+    }
+</style>
+
+<div class="container">
+    <div class="stepper-card">
+        <div class="stepper-header">
+            <div class="step-item active" id="nav-1"><div class="step-dot">1</div><div class="step-label">Solicitante</div></div>
+            <div class="step-item" id="nav-2"><div class="step-dot">2</div><div class="step-label">Difunto</div></div>
+            <div class="step-item" id="nav-3"><div class="step-dot">3</div><div class="step-label">Agencia</div></div>
+            <div class="step-item" id="nav-4"><div class="step-dot">4</div><div class="step-label">Servicios</div></div>
+            <div class="step-item" id="nav-5"><div class="step-dot">5</div><div class="step-label">Resumen</div></div>
+        </div>
+
+        <div id="dynamic-content">
+            <div class="text-center py-5">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x text-primary"></i>
+                <p>Cargando formulario...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalOverlaySearch" class="custom-modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="ajaxTargetSearch"></div>
+</div>
+
+@section Scripts {
+    <script>
+        // 1. Configuración Global
+        const urls = {
+            step1: '@Url.Action("GetStep1", "Contract")',
+            step2: '@Url.Action("GetStep2", "Contract")',
+            searchModal: '@Url.Action("GetSearchModal", "Contract")',
+            searchAction: '@Url.Action("SearchAffiliates", "Contract")'
+        };
+
+        // Variable para saber quién disparó la búsqueda (Solicitante o Difunto)
+        let searchTarget = 'Solicitor';
+
+        // 2. Navegación entre pasos
+        async function loadStep(n) {
+            const container = document.getElementById('dynamic-content');
+
+            // Animación de salida sutil
+            container.style.opacity = '0.5';
+
+            try {
+                const resp = await fetch(urls[`step${n}`]);
+                container.innerHTML = await resp.text();
+                container.style.opacity = '1';
+
+                // Actualizar UI del Stepper
+                document.querySelectorAll('.step-item').forEach((el, i) => {
+                    el.classList.toggle('active', (i + 1) === n);
+                    el.classList.toggle('completed', (i + 1) < n);
+                });
+            } catch (e) {
+                console.error("Error cargando paso:", e);
+                container.innerHTML = '<div class="alert alert-danger">Error al conectar con el servidor.</div>';
+            }
+        }
+
+        // 3. Lógica del Buscador (Modal Overlay)
+        function openSearchAffiliate(target) {
+            searchTarget = target; // Guardamos si es para 'Solicitor' o 'Deceased'
+
+            $.ajax({
+                url: urls.searchModal,
+                type: 'GET',
+                success: function (html) {
+                    $('#ajaxTargetSearch').html(html);
+                    $('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+                }
+            });
+        }
+
+        function closeSearchModal() {
+            $('#modalOverlaySearch').fadeOut(300);
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target.id === 'modalOverlaySearch') closeSearchModal();
+        }
+
+        // 4. Ejecutar búsqueda dentro del Modal
+        async function executeSearch() {
+            const filters = {
+                dni: $('#filterDni').val(),
+                cip: $('#filterCip').val(),
+                name: $('#filterName').val()
+            };
+
+            const $tbody = $('#resultsTableBody');
+            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
+
+            try {
+                const query = `dni=${filters.dni}&cip=${filters.cip}&name=${encodeURIComponent(filters.name)}`;
+                const response = await fetch(`${urls.searchAction}?${query}`);
+                const data = await response.json();
+
+                $tbody.empty();
+                if (data.length === 0) {
+                    $tbody.append('<tr><td colspan="4" class="text-center text-danger">No hay resultados.</td></tr>');
+                    return;
+                }
+
+                data.forEach(item => {
+                    const tr = $(`
+                        <tr style="cursor:pointer" class="align-middle">
+                            <td><b>${item.dni}</b></td>
+                            <td>${item.cip || '---'}</td>
+                            <td>${item.name}</td>
+                            <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill">Elegir</button></td>
+                        </tr>
+                    `);
+                    tr.click(() => selectAffiliate(item));
+                    $tbody.append(tr);
+                });
+            } catch (e) {
+                $tbody.html('<tr><td colspan="4" class="text-center text-danger">Error en la búsqueda.</td></tr>');
+            }
+        }
+
+        // 5. Inyectar datos al seleccionar
+        function selectAffiliate(item) {
+            if (searchTarget === 'Solicitor') {
+                $('#SolicitorDni').val(item.dni);
+                $('#SolicitorName').val(item.name);
+                $('#SolicitorCip').val(item.cip);
+            } else if (searchTarget === 'Deceased') {
+                $('#DeceasedDni').val(item.dni);
+                $('#DeceasedName').val(item.name);
+                $('#DeceasedCip').val(item.cip);
+            }
+            closeSearchModal();
+        }
+
+        function toggleSolicitorType() {
+            const type = document.getElementById('SolicitorType').value;
+            const isTitular = (type === "Titular");
+            const btnLupa = document.getElementById('btnLupa');
+
+            // IDs de los campos que queremos manipular
+            const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
+
+            // 1. Manejo de la Lupa: Solo se ve si es Titular
+            if (isTitular) {
+                $(btnLupa).fadeIn(200);
+            } else {
+                $(btnLupa).fadeOut(200);
+            }
+
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                // 2. Limpiar campos SIEMPRE que se cambie el tipo
+                el.value = "";
+
+                // 3. Lógica de habilitación
+                if (isTitular) {
+                    // Si es TITULAR: Bloqueamos (llenado por búsqueda)
+                    el.readOnly = true;
+                    el.classList.add('bg-light'); // Gris para indicar bloqueo
+                    el.placeholder = "Use la lupa para buscar...";
+                } else {
+                    // Si es FAMILIAR: Habilitamos (llenado manual)
+                    el.readOnly = false;
+                    el.classList.remove('bg-light'); // Blanco para indicar edición
+                    el.placeholder = "Ingrese datos manualmente...";
+
+                    // Opcional: El CIP suele ser opcional para familiares,
+                    // pero podrías dejarlo habilitado también.
+                }
+            });
+
+            // Foco automático al DNI si es familiar para agilizar
+            if (!isTitular) {
+                setTimeout(() => document.getElementById('SolicitorDni').focus(), 300);
+            }
+        }
+
+        function validateStep1() {
+            const type = $('#SolicitorType').val();
+            const dni = $('#SolicitorDni').val().trim();
+            const name = $('#SolicitorName').val().trim();
+
+            // Limpiar alertas previas si las hay
+            $('.is-invalid').removeClass('is-invalid');
+
+            if (dni === "" || dni.length < 8) {
+                alert("Por favor, ingrese un DNI válido (8 dígitos).");
+                $('#SolicitorDni').addClass('is-invalid').focus();
+                return false;
+            }
+
+            if (name === "") {
+                alert("El nombre completo es obligatorio.");
+                $('#SolicitorName').addClass('is-invalid').focus();
+                return false;
+            }
+
+            // Si todo está bien, permitimos avanzar
+            return true;
+        }
+
+        // Modificamos el loadStep para que acepte una validación opcional
+        async function nextStep(n, validationFn) {
+            if (validationFn && !validationFn()) {
+                return;
+            }
+            loadStep(n);
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => loadStep(1));
+    </script>
+}
