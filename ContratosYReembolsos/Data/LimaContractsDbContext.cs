@@ -13,5 +13,6 @@ namespace ContratosYReembolsos.Data
         public DbSet<Beneficiary> Beneficiarios { get; set; }
         public DbSet<Subsidiary> Filiales { get; set; }
         public DbSet<Ubigeo> Ubigeos { get; set; }
+        public DbSet<Wake> Velatorios { get; set; }
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260326135319_setup")]
-    partial class setup
+    [Migration("20260328155922_setupV2")]
+    partial class setupV2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,8 +27,11 @@ namespace ContratosYReembolsos.Migrations
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Agency", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -74,7 +77,7 @@ namespace ContratosYReembolsos.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CementerioProvincias");
+                    b.ToTable("Cementerios");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.ServiceContract", b =>
@@ -208,7 +211,7 @@ namespace ContratosYReembolsos.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("Contracts");
+                    b.ToTable("Contratos");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,6 +9,6 @@ namespace ContratosYReembolsos.Data
 
         public DbSet<Agency> Agencias { get; set; }
         public DbSet<Cemetery> Cementerios { get; set; }
-        public DbSet<ServiceContract> Contracts { get; set; }
+        public DbSet<ServiceContract> Contratos { get; set; }
     }
 }

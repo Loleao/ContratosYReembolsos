@@ -42,30 +42,3 @@
         </button>
     </div>
 </div>
-
-<script>
-    function toggleSolicitorType() {
-        const type = document.getElementById('SolicitorType').value;
-        const isTitular = (type === "Titular");
-        const btnLupa = document.getElementById('btnLupa');
-        const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
-
-        // Si es Titular, activamos la lupa y bloqueamos escritura manual
-        // Si es Familiar, ocultamos lupa y permitimos escribir
-        btnLupa.style.display = isTitular ? 'block' : 'none';
-
-        fields.forEach(id => {
-            const el = document.getElementById(id);
-            el.readOnly = isTitular;
-            el.value = ""; // Limpiamos al cambiar
-
-            if (isTitular) {
-                el.classList.add('bg-light');
-                el.classList.remove('border-primary');
-            } else {
-                el.classList.remove('bg-light');
-                el.classList.add('border-primary');
-            }
-        });
-    }
-</script>

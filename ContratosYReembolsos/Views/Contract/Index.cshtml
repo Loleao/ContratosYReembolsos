@@ -137,10 +137,38 @@
     <script>
         // 1. Configuración Global
         const urls = {
+            actualStep: 0,
             step1: '@Url.Action("GetStep1", "Contract")',
             step2: '@Url.Action("GetStep2", "Contract")',
             searchModal: '@Url.Action("GetSearchModal", "Contract")',
-            searchAction: '@Url.Action("SearchAffiliates", "Contract")'
+            searchAction: '@Url.Action("SearchAffiliates", "Contract")',
+			searchBeneficiariesModal: '@Url.Action("GetSearchBeneficiary", "Contract")',
+            searchBeneficiaries: '@Url.Action("GetBeneficiariesByAffiliate", "Contract")',
+			getRegions: '@Url.Action("GetRegions", "Contract")',
+			getProvinces: '@Url.Action("GetProvinces", "Contract")',
+			getDistricts: '@Url.Action("GetDistricts", "Contract")',
+            getWakes: '@Url.Action("GetWakes", "Contract")',
+            getCemeteryModal: '@Url.Action("GetSearchCemetery", "Contract")',
+            getCemeteriesAction: '@Url.Action("GetCemeteries", "Contract")',
+            getAgencyModal: '@Url.Action("GetSearchAgency", "Contract")',
+            getAgenciesAction: '@Url.Action("GetAgencies", "Contract")',
+        };
+
+        let contractData = {
+            solicitor: { id: '', dni: '', name: '', cip: '', type: '' },
+            deceased: {
+                id: '', dni: '', name: '', type: '',
+                deathDate: '', burialDate: '',
+                inei: '',
+                ubigeoFull: '', 
+                wakeId: '',
+                wakeName: '',
+                cemeteryId: '',
+                cemeteryName: '',
+            },
+            agency: { id: '', name: '', address: '' }, // Paso 3
+            services: [], // Paso 4 (Lista de servicios elegidos)
+            totalAmount: 0
         };
 
         // Variable para saber quién disparó la búsqueda (Solicitante o Difunto)
@@ -163,6 +191,20 @@
                     el.classList.toggle('active', (i + 1) === n);
                     el.classList.toggle('completed', (i + 1) < n);
                 });
+
+                setTimeout(() => {
+                    if (n === 1) {
+                        toggleSolicitorType();
+						actualStep = 1;
+                    }
+                    if (n === 2) {
+                        filterDeceasedOptions();
+                        loadRegions();
+                        loadWakes();
+						actualStep = 2;
+                    }
+                }, 100);
+
             } catch (e) {
                 console.error("Error cargando paso:", e);
                 container.innerHTML = '<div class="alert alert-danger">Error al conectar con el servidor.</div>';
@@ -191,52 +233,60 @@
             if (e.target.id === 'modalOverlaySearch') closeSearchModal();
         }
 
-        // 4. Ejecutar búsqueda dentro del Modal
         async function executeSearch() {
+            // 1. Obtenemos los filtros básicos
             const filters = {
                 dni: $('#filterDni').val(),
                 cip: $('#filterCip').val(),
-                name: $('#filterName').val()
+                name: $('#filterName').val(),
             };
 
             const $tbody = $('#resultsTableBody');
-            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
+            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Filtrando beneficiarios...</td></tr>');
 
             try {
-                const query = `dni=${filters.dni}&cip=${filters.cip}&name=${encodeURIComponent(filters.name)}`;
+                // 2. Construimos la URL con el nuevo parámetro parentDni
+                const query = `dni=${filters.dni}&cip=${filters.cip}&name=${encodeURIComponent(filters.name)}&parentDni=${filters.parentDni}`;
                 const response = await fetch(`${urls.searchAction}?${query}`);
                 const data = await response.json();
 
                 $tbody.empty();
+
                 if (data.length === 0) {
-                    $tbody.append('<tr><td colspan="4" class="text-center text-danger">No hay resultados.</td></tr>');
+                    $tbody.append('<tr><td colspan="4" class="text-center text-danger">No se encontraron beneficiarios asociados a este titular.</td></tr>');
                     return;
                 }
 
+                // 3. Renderizamos los resultados
                 data.forEach(item => {
                     const tr = $(`
                         <tr style="cursor:pointer" class="align-middle">
                             <td><b>${item.dni}</b></td>
-                            <td>${item.cip || '---'}</td>
-                            <td>${item.name}</td>
-                            <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill">Elegir</button></td>
+                            <td>${item.relationship || 'Familiar'}</td> <td>${item.name}</td>
+                            <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill">Seleccionar</button></td>
                         </tr>
                     `);
                     tr.click(() => selectAffiliate(item));
                     $tbody.append(tr);
                 });
             } catch (e) {
-                $tbody.html('<tr><td colspan="4" class="text-center text-danger">Error en la búsqueda.</td></tr>');
+                $tbody.html('<tr><td colspan="4" class="text-center text-danger">Error al conectar con la base de datos de beneficiarios.</td></tr>');
             }
         }
 
-        // 5. Inyectar datos al seleccionar
         function selectAffiliate(item) {
             if (searchTarget === 'Solicitor') {
+				contractData.solicitor.id = item.id;
+                contractData.solicitor.dni = item.dni;
+                contractData.solicitor.name = item.name;
+                contractData.solicitor.cip = item.cip;
+
+
                 $('#SolicitorDni').val(item.dni);
                 $('#SolicitorName').val(item.name);
                 $('#SolicitorCip').val(item.cip);
-            } else if (searchTarget === 'Deceased') {
+            }
+            else if (searchTarget === 'Deceased') {
                 $('#DeceasedDni').val(item.dni);
                 $('#DeceasedName').val(item.name);
                 $('#DeceasedCip').val(item.cip);
@@ -245,48 +295,32 @@
         }
 
         function toggleSolicitorType() {
-            const type = document.getElementById('SolicitorType').value;
+            const select = document.getElementById('SolicitorType');
+            if (!select) return;
+
+            const type = select.value;
+            contractData.solicitor.type = type; 
+
             const isTitular = (type === "Titular");
             const btnLupa = document.getElementById('btnLupa');
-
-            // IDs de los campos que queremos manipular
             const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
 
-            // 1. Manejo de la Lupa: Solo se ve si es Titular
-            if (isTitular) {
-                $(btnLupa).fadeIn(200);
-            } else {
-                $(btnLupa).fadeOut(200);
+            if (btnLupa) {
+                isTitular ? $(btnLupa).fadeIn(200) : $(btnLupa).fadeOut(200);
             }
 
             fields.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
 
-                // 2. Limpiar campos SIEMPRE que se cambie el tipo
-                el.value = "";
-
-                // 3. Lógica de habilitación
                 if (isTitular) {
-                    // Si es TITULAR: Bloqueamos (llenado por búsqueda)
                     el.readOnly = true;
-                    el.classList.add('bg-light'); // Gris para indicar bloqueo
-                    el.placeholder = "Use la lupa para buscar...";
+                    el.classList.add('bg-light');
                 } else {
-                    // Si es FAMILIAR: Habilitamos (llenado manual)
                     el.readOnly = false;
-                    el.classList.remove('bg-light'); // Blanco para indicar edición
-                    el.placeholder = "Ingrese datos manualmente...";
-
-                    // Opcional: El CIP suele ser opcional para familiares,
-                    // pero podrías dejarlo habilitado también.
+                    el.classList.remove('bg-light');
                 }
             });
-
-            // Foco automático al DNI si es familiar para agilizar
-            if (!isTitular) {
-                setTimeout(() => document.getElementById('SolicitorDni').focus(), 300);
-            }
         }
 
         function validateStep1() {
@@ -321,7 +355,404 @@
             loadStep(n);
         }
 
+        function filterDeceasedOptions() {
+            // Leemos directamente del objeto global, no del DOM
+            const solType = contractData.solicitor.type;
+            const $deceasedSelect = $('#DeceasedType');
+
+            if (!$deceasedSelect.length) return;
+
+            if (solType === "Titular") {
+                // Regla: Si el solicitante es Titular, el fallecido NO PUEDE ser Titular
+                $deceasedSelect.find('option[value="Titular"]').hide();
+                $deceasedSelect.val("Beneficiario"); // Forzamos selección
+
+                $('#alertRestriction').removeClass('d-none'); // Mostramos alerta azul
+                handleDeceasedTypeChange(); // Activamos la lupa
+            } else {
+                // Si el solicitante es familiar, el fallecido sí puede ser el Titular
+                $deceasedSelect.find('option[value="Titular"]').show();
+                $('#alertRestriction').addClass('d-none');
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => loadStep(1));
+
+        //PASO
+        //NUMERO
+        //2
+
+        function openSearchBeneficiaries() {
+            searchTarget = 'Deceased'; // Marcamos que el destino es el fallecido
+
+            $.ajax({
+                url: urls.searchBeneficiariesModal, // Tu nueva vista parcial
+                type: 'GET',
+                success: function (html) {
+                    // Inyectamos el HTML en el contenedor del modal
+                    $('#ajaxTargetSearch').html(html);
+
+                    // Mostramos el overlay con efecto
+                    $('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+
+                    // Cargamos los datos automáticamente al abrir
+                    executeBeneficiarySearch();
+                },
+                error: function() {
+                    alert("Error al cargar el buscador de beneficiarios.");
+                }
+            });
+        }
+
+        // B. Función para ejecutar la búsqueda filtrada por el ID del titular
+        async function executeBeneficiarySearch() {
+            const $tbody = $('#resultsBeneficiaryTableBody');
+
+
+            const titularId = contractData.solicitor.id; // El ID que capturamos en el Paso 1
+
+            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Buscando familiares...</td></tr>');
+
+            if (!titularId || titularId === 0) {
+                $tbody.html('<tr><td colspan="4" class="text-center text-danger">No se encontró el ID del titular. Regrese al paso 1.</td></tr>');
+                return;
+            }
+
+            try {
+                const query = `afiliadoId=${titularId}`;
+                const response = await fetch(`${urls.searchBeneficiaries}?${query}`);
+
+                const data = await response.json();
+                $tbody.empty();
+
+                if (data.length === 0) {
+                    $tbody.html('<tr><td colspan="4" class="text-center text-muted">No existen beneficiarios registrados para este titular.</td></tr>');
+                    return;
+                }
+
+                data.forEach(item => {
+                    const tr = $(`
+                        <tr style="cursor:pointer" class="align-middle">
+                            <td><b>${item.dni}</b></td>
+                            <td><span class="badge bg-info-subtle text-info border border-info-subtle px-3 rounded-pill">${item.relationship}</span></td>
+                            <td class="text-uppercase">${item.name}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-primary rounded-circle p-2">
+                                    <i class="fa-solid fa-check px-1"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                    // Al hacer click, ejecuta la selección
+                    tr.click(() => selectBeneficiary(item));
+                    $tbody.append(tr);
+                });
+            } catch (e) {
+                $tbody.html('<tr><td colspan="4" class="text-center text-danger">Error de conexión.</td></tr>');
+            }
+        }
+
+        // C. Función para pasar los datos del modal al formulario del Paso 2
+        function selectBeneficiary(item) {
+            // 1. Guardamos en el objeto de datos global
+            contractData.deceased.id = item.id;
+            contractData.deceased.dni = item.dni;
+            contractData.deceased.name = item.name;
+
+            // 2. Llenamos los campos visibles del Paso 2
+            $('#DeceasedDni').val(item.dni);
+            $('#DeceasedName').val(item.name);
+
+            // 3. Cerramos el modal
+            closeSearchModal();
+        }
+
+        function handleDeceasedTypeChange() {
+            const type = $('#DeceasedType').val();
+            const $btnLupa = $('#btnLupaDeceased');
+
+            if (type === "Titular") {
+                $btnLupa.hide();
+                // Sincronizar con datos del titular del Paso 1
+                $('#DeceasedDni').val(contractData.solicitor.dni);
+                $('#DeceasedName').val(contractData.solicitor.name);
+                contractData.deceased.id = contractData.solicitor.id;
+            }
+            else if (type === "Beneficiario") {
+                // Limpiar campos y mostrar la lupa para buscar familiares
+                $('#DeceasedDni').val('');
+                $('#DeceasedName').val('');
+                $btnLupa.fadeIn();
+            }
+        }
+
+        async function loadRegions() {
+            const resp = await fetch(`${urls.getRegions}`);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(region => {
+                options += `<option value="${region}">${region}</option>`;
+            });
+            $('#DeathDept').html(options);
+        }
+
+        async function loadProvinces() {
+            const region = $('#DeathDept').val();
+            const $prov = $('#DeathProv');
+            const $dist = $('#DeathDist');
+
+            if (!region) { $prov.prop('disabled', true).html('<option value="">Seleccione Dept...</option>'); return; }
+
+            const query = `region=${encodeURIComponent(region)}`;
+            const resp = await fetch(`${urls.getProvinces}?${query}`);
+            const data = await resp.json();
+
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(prov => {
+                options += `<option value="${prov}">${prov}</option>`;
+            });
+
+            $prov.html(options).prop('disabled', false);
+            $dist.prop('disabled', true).html('<option value="">Seleccione Prov...</option>');
+        }
+
+        async function loadDistricts() {
+            const region = $('#DeathDept').val();
+            const province = $('#DeathProv').val();
+            const $dist = $('#DeathDist');
+
+            if (!province) { $dist.prop('disabled', true).val(''); return; }
+
+            const query = `region=${encodeURIComponent(region)}&province=${encodeURIComponent(province)}`;
+            const resp = await fetch(`${urls.getDistricts}?${query}`);
+
+            const data = await resp.json();
+
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(d => {
+                // Guardamos el INEI como valor, pero mostramos el nombre del distrito
+                options += `<option value="${d.inei}">${d.distrito}</option>`;
+            });
+
+            $dist.html(options).prop('disabled', false);
+        }
+
+        async function loadWakes() {
+            const $wakeSelect = $('#WakePlace');
+            try {
+                const resp = await fetch(`${urls.getWakes}`);
+                const data = await resp.json();
+
+                let options = '<option value="">Seleccione el local...</option>';
+                data.forEach(w => {
+                    options += `<option value="${w.id}">${w.name}</option>`;
+                });
+                $wakeSelect.html(options);
+            } catch (e) {
+                $wakeSelect.html('<option value="">Error al cargar locales</option>');
+            }
+        }
+
+        function openSearchCemetery() {
+            $.ajax({
+                url: urls.getCemeteryModal,
+                type: 'GET',
+                success: function (html) {
+                    $('#ajaxTargetSearch').html(html);
+                    $('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+
+                    loadCemRegions();
+                }
+            });
+        }
+
+        // Funciones de Ubigeo exclusivas para el Modal de Cementerios
+        async function loadCemRegions() {
+            const resp = await fetch(urls.getRegions);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(r => options += `<option value="${r}">${r}</option>`);
+            $('#CemFilterRegion').html(options);
+        }
+
+        async function loadCemProvinces() {
+            const region = $('#CemFilterRegion').val();
+            if (!region) return;
+            const resp = await fetch(`${urls.getProvinces}?region=${encodeURIComponent(region)}`);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(p => options += `<option value="${p}">${p}</option>`);
+            $('#CemFilterProvince').html(options).prop('disabled', false);
+            $('#CemFilterDistrict').prop('disabled', true).html('<option value="">Seleccione...</option>');
+        }
+
+        async function loadCemDistricts() {
+            const region = $('#CemFilterRegion').val();
+            const province = $('#CemFilterProvince').val();
+            if (!province) return;
+            const resp = await fetch(`${urls.getDistricts}?region=${encodeURIComponent(region)}&province=${encodeURIComponent(province)}`);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(d => options += `<option value="${d.inei}">${d.distrito}</option>`);
+            $('#CemFilterDistrict').html(options).prop('disabled', false);
+        }
+
+        // Ejecutar búsqueda final
+        async function executeCemeterySearch() {
+            const inei = $('#CemFilterDistrict').val();
+            const $tbody = $('#resultsCemeteryTableBody');
+
+            if (!inei) { alert("Seleccione un distrito."); return; }
+
+            $tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
+
+            try {
+                const resp = await fetch(`${urls.getCemeteriesAction}?inei=${inei}`);
+                const data = await resp.json();
+                $tbody.empty();
+
+                if (data.length === 0) {
+                    $tbody.html('<tr><td colspan="3" class="text-center py-4">No hay cementerios registrados en este distrito.</td></tr>');
+                    return;
+                }
+
+                data.forEach(c => {
+                    const tr = $(`
+                        <tr style="cursor:pointer" class="align-middle">
+                            <td>${c.ruc}</td>
+                            <td class="fw-bold">${c.name}</td>
+                            <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button></td>
+                        </tr>
+                    `);
+                    tr.click(() => selectCemetery(c));
+                    $tbody.append(tr);
+                });
+            } catch (e) {
+                $tbody.html('<tr><td colspan="3" class="text-center text-danger">Error de comunicación.</td></tr>');
+            }
+        }
+
+        function selectCemetery(c) {
+            contractData.deceased.cemeteryId = c.id;
+            contractData.deceased.cemeteryName = c.name;
+
+            $('#CemeteryName').val(c.name);
+            closeSearchModal();
+        }
+
+        function validateStep2() {
+            // 1. Capturar valores de los selectores de Ubigeo y Velatorio
+            const inei = $('#DeathDist').val();
+            const distText = $('#DeathDist option:selected').text();
+            const provText = $('#DeathProv option:selected').text();
+            const regionText = $('#DeathDept').val();
+
+            const wakeId = $('#WakePlace').val();
+            const wakeName = $('#WakePlace option:selected').text();
+
+            // 2. Validaciones de Negocio
+            if (!contractData.deceased.id) {
+                alert("Debe seleccionar al fallecido usando la lupa.");
+                return false;
+            }
+            if (!$('#DeathDate').val()) {
+                alert("La fecha de fallecimiento es obligatoria.");
+                return false;
+            }
+            if (!inei) {
+                alert("Debe completar el Ubigeo (Departamento, Provincia, Distrito).");
+                return false;
+            }
+            if (!wakeId) {
+                alert("Debe seleccionar un lugar de velatorio.");
+                return false;
+            }
+            if (!contractData.deceased.cemeteryId) {
+                alert("Debe seleccionar un cementerio de destino.");
+                return false;
+            }
+
+            // 3. Persistencia: Guardar todo en el objeto global
+            contractData.deceased.deathDate = $('#DeathDate').val();
+            contractData.deceased.burialDate = $('#BurialDate').val();
+            contractData.deceased.inei = inei;
+            contractData.deceased.ubigeoFull = `${regionText} - ${provText} - ${distText}`;
+            contractData.deceased.wakeId = wakeId;
+            contractData.deceased.wakeName = wakeName;
+
+            console.log("Datos del Paso 2 guardados:", contractData.deceased);
+            return true; // Permite pasar al Paso 3
+        }
+
+        //PASO 3
+
+        function openSearchAgency() {
+            $.ajax({
+                url: urls.getAgencyModal,
+                type: 'GET',
+                success: function (html) {
+                    $('#ajaxTargetSearch').html(html);
+                    $('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+                    loadAgenciesList();
+                }
+            });
+        }
+
+        async function loadAgenciesList() {
+            const resp = await fetch(urls.getAgencies);
+            const data = await resp.json();
+            const $tbody = $('#agenciesTableBody');
+            $tbody.empty();
+
+            data.forEach(a => {
+                const tr = $(`
+                    <tr style="cursor:pointer">
+                        <td>${a.ruc}</td>
+                        <td class="fw-bold">${a.name}</td>
+                        <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button></td>
+                    </tr>
+                `);
+                tr.click(() => selectAgency(a));
+                $tbody.append(tr);
+            });
+        }
+
+        function selectAgency(a) {
+            // Guardar en objeto global
+            contractData.agency = {
+                id: a.id,
+                ruc: a.ruc,
+                name: a.name,
+                address: a.address,
+                phone: a.phone
+            };
+
+            // Actualizar UI
+            $('#AgencyRuc').val(a.ruc);
+            $('#AgencyName').val(a.name);
+            $('#AgencyAddress').val(a.address);
+            $('#AgencyPhone').val(a.phone);
+
+            $('#agencyInfoPanel').removeClass('d-none');
+            $('#noAgencySelected').addClass('d-none');
+
+            closeSearchModal();
+        }
+
+        // Filtro local para el modal
+        function filterAgencies() {
+            const val = $('#filterAgencyInput').val().toLowerCase();
+            $("#agenciesTableBody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1)
+            });
+        }
+
+        function validateStep3() {
+            if (!contractData.agency.id) {
+                alert("Debe seleccionar una agencia funeraria.");
+                return false;
+            }
+            return true;
+        }
     </script>
 }

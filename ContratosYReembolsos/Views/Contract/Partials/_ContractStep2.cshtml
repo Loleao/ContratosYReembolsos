@@ -1,8 +1,109 @@
-﻿<h5>Paso 2: Datos del Fallecido</h5>
-<div class="py-3">
-    <p>Contenido del Fallecido...</p>
-</div>
-<div class="d-flex justify-content-between">
-    <button type="button" class="btn btn-secondary" onclick="prevStep()">Anterior</button>
-    <button type="button" class="btn btn-primary" onclick="nextStep()">Siguiente</button>
+﻿<div class="animate__animated animate__fadeIn">
+    <h4 class="text-primary fw-bold mb-4">
+        <i class="fa-solid fa-file-invoice me-2"></i> Paso 2: Datos del Fallecido
+    </h4>
+
+    <div class="row g-4">
+        <div class="col-md-12">
+            <label class="form-label fw-bold text-muted small text-uppercase">Tipo de Fallecimiento</label>
+            <div class="animate__animated animate__fadeIn">
+                <select id="DeceasedType" class="form-select rounded-pill border-2" onchange="handleDeceasedTypeChange()">
+                    <option value="">Seleccione...</option>
+                    <option value="Titular">Titular (Policía)</option>
+                    <option value="Beneficiario">Beneficiario (Familiar)</option>
+                </select>
+            </div>
+            <div id="alertRestriction" class="alert alert-info mt-2 py-2 rounded-4 d-none" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                Como usted es el <b>Titular Solicitante</b>, el fallecido debe ser un familiar registrado.
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small text-uppercase">DNI del Difunto</label>
+            <div class="input-group">
+                <input type="text" id="DeceasedDni" class="form-control bg-light" readonly>
+                <button class="btn btn-primary px-4 border-2 border-start-0" type="button" id="btnLupaDeceased" onclick="openSearchBeneficiaries()">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <label class="form-label fw-bold text-muted small text-uppercase">Apellidos y Nombres</label>
+            <input type="text" id="DeceasedName" class="form-control form-control-lg border-2 rounded-pill bg-light" readonly>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold text-muted small text-uppercase">Fecha de Fallecimiento</label>
+            <input type="date" id="DeathDate" class="form-control form-control-lg border-2 rounded-pill">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold text-muted small text-uppercase">Fecha de Sepelio</label>
+            <input type="date" id="BurialDate" class="form-control form-control-lg border-2 rounded-pill">
+        </div>
+
+        <div class="col-md-12">
+            <hr class="text-muted opacity-25">
+            <label class="form-label fw-bold text-primary small mb-3">
+                <i class="fa-solid fa-location-dot me-1"></i> UBICACIÓN DEL FALLECIMIENTO
+            </label>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">DEPARTAMENTO</label>
+                    <select id="DeathDept" class="form-select rounded-pill border-2" onchange="loadProvinces()">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">PROVINCIA</label>
+                    <select id="DeathProv" class="form-select rounded-pill border-2" onchange="loadDistricts()" disabled>
+                        <option value="">Seleccione Dept...</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">DISTRITO</label>
+                    <select id="DeathDist" class="form-select rounded-pill border-2" disabled>
+                        <option value="">Seleccione Prov...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12 mt-4">
+            <label class="form-label fw-bold text-muted small text-uppercase">Lugar de Velatorio</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-2 border-end-0 rounded-start-pill text-primary">
+                    <i class="fa-solid fa-house-chimney-window"></i>
+                </span>
+                <select id="WakePlace" class="form-select form-select-lg border-2 border-start-0 rounded-end-pill">
+                    <option value="">Cargando locales...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-12 mt-4">
+            <label class="form-label fw-bold text-muted small text-uppercase">Cementerio de Destino</label>
+            <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                <span class="input-group-text bg-white border-2 border-end-0 text-primary">
+                    <i class="fa-solid fa-monument"></i>
+                </span>
+                <input type="text" id="CemeteryName" class="form-control border-2 border-start-0 bg-light" readonly placeholder="Seleccione un cementerio...">
+                <button class="btn btn-primary px-4 border-2 border-start-0" type="button" onclick="openSearchCemetery()">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="d-flex justify-content-between mt-5">
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-5" onclick="loadStep(1)">
+            <i class="fa-solid fa-arrow-left me-2"></i> Atrás
+        </button>
+        <button type="button" class="btn btn-primary rounded-pill px-5 shadow" onclick="nextStep(3, validateStep2)">
+            Siguiente <i class="fa-solid fa-arrow-right ms-2"></i>
+        </button>
+    </div>
 </div>

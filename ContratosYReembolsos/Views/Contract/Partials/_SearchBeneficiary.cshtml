@@ -1,0 +1,45 @@
+﻿<div class="modal-content border-0 shadow-lg animate__animated animate__fadeInUp">
+    <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title fw-bold">
+            <i class="fa-solid fa-users-viewfinder me-2"></i> Familiares del Titular
+        </h5>
+        <button type="button" class="btn-close btn-close-white" onclick="closeSearchModal()"></button>
+    </div>
+
+    <div class="modal-body p-4">
+        <div class="mb-4">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-2 border-end-0 rounded-start-pill">
+                    <i class="fa-solid fa-filter text-primary"></i>
+                </span>
+                <input type="text" id="filterBeneficiaryLocal" class="form-control border-2 border-start-0 rounded-end-pill"
+                       placeholder="Filtrar por nombre o parentesco..." onkeyup="filterBeneficiariesTable()">
+            </div>
+            <div class="form-text ms-3">Solo se muestran derechohabientes registrados para este titular.</div>
+        </div>
+
+        <div class="table-responsive rounded-4 border shadow-sm">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-0 px-3">DNI</th>
+                        <th class="border-0">Parentesco</th>
+                        <th class="border-0">Nombres y Apellidos</th>
+                        <th class="border-0 text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBeneficiaryTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterBeneficiariesTable() {
+        const value = $('#filterBeneficiaryLocal').val().toLowerCase();
+        $("#resultsBeneficiaryTableBody tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    }
+</script>

@@ -15,7 +15,8 @@ namespace ContratosYReembolsos.Migrations
                 name: "Agencias",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -28,17 +29,17 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CementerioProvincias",
+                name: "Cementerios",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UbigeoId = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CementerioProvincias", x => x.Id);
+                    table.PrimaryKey("PK_Cementerios", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -87,7 +88,7 @@ namespace ContratosYReembolsos.Migrations
                 name: "Agencias");
 
             migrationBuilder.DropTable(
-                name: "CementerioProvincias");
+                name: "Cementerios");
 
             migrationBuilder.DropTable(
                 name: "Contracts");

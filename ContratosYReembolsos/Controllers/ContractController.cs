@@ -9,10 +9,12 @@ namespace ContratosYReembolsos.Controllers
 {
     public class ContractController : Controller
     {
+        private readonly ApplicationDbContext _context;
         private readonly LimaContractsDbContext _limaContext;
 
-        public ContractController(LimaContractsDbContext limaContext)
+        public ContractController(ApplicationDbContext context, LimaContractsDbContext limaContext)
         {
+            _context = context;
             _limaContext = limaContext;
         }
 
@@ -142,6 +144,142 @@ namespace ContratosYReembolsos.Controllers
                     details = mensajeCompleto
                 });
             }
+        }
+
+        [HttpGet]
+        public IActionResult GetSearchBeneficiary()
+         {
+            try
+            {
+                return PartialView("Partials/_SearchBeneficiary");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al cargar el componente visual: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBeneficiariesByAffiliate(string afiliadoId)
+        {
+            var beneficiarios = await _limaContext.Beneficiarios
+                .Where(b => b.idfaf == afiliadoId)
+                .Select(b => new {
+                    id = b.codBenef,
+                    dni = "999999999",
+                    name = b.Name,
+                    relationship = b.codParent
+                })
+                .ToListAsync();
+
+            return Json(beneficiarios);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRegions()
+        {
+            var depts = await _limaContext.Ubigeos
+                .Select(u => u.Region)
+                .Distinct()
+                .Where(r => r != null)
+                .OrderBy(r => r)
+                .ToListAsync();
+            return Json(depts);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProvinces(string region)
+        {
+            var provs = await _limaContext.Ubigeos
+                .Where(u => u.Region == region)
+                .Select(u => u.Province)
+                .Distinct()
+                .Where(p => p != null)
+                .OrderBy(p => p)
+                .ToListAsync();
+            return Json(provs);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDistricts(string region, string province)
+        {
+            var dists = await _limaContext.Ubigeos
+                .Where(u => u.Region == region && u.Province == province)
+                .Select(u => new {
+                    inei = u.INEI,
+                    distrito = u.District
+                })
+                .OrderBy(d => d.distrito)
+                .ToListAsync();
+            return Json(dists);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetWakes()
+        {
+            var wakes = await _limaContext.Velatorios
+                .Select(w => new { id = w.Id, name = w.Name })
+                .OrderBy(w => w.name)
+                .ToListAsync();
+            return Json(wakes);
+        }
+
+        [HttpGet]
+        public IActionResult GetSearchCemetery()
+        {
+            try
+            {
+                return PartialView("Partials/_SearchCemetery");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al cargar el componente visual: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCemeteries(string inei)
+        {
+            var cemeteries = await _context.Cementerios
+                .Where(c => c.UbigeoId == inei)
+                .Select(c => new {
+                    id = c.Id,
+                    name = c.Name,
+                    ruc = c.RUC
+                })
+                .OrderBy(c => c.name)
+                .ToListAsync();
+
+            return Json(cemeteries);
+        }
+
+        [HttpGet]
+        public IActionResult GetSearchAgency()
+        {
+            try
+            {
+                return PartialView("Partials/_SearchAgency");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al cargar el componente visual: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAgencies()
+        {
+            var agencies = await _context.Agencias
+                .Select(a => new {
+                    id = a.Id,
+                    ruc = a.RUC,
+                    name = a.Name,
+                    address = a.Address,
+                    phone = a.Phone
+                })
+                .OrderBy(a => a.name)
+                .ToListAsync();
+            return Json(agencies);
         }
     }
 }

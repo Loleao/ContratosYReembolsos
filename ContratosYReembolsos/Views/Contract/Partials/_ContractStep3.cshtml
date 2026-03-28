@@ -1,8 +1,50 @@
-﻿<h5>Paso 3: Datos de la agencia</h5>
-<div class="py-3">
-    <p>Contenido de la agencia...</p>
-</div>
-<div class="d-flex justify-content-between">
-    <button type="button" class="btn btn-secondary" onclick="prevStep()">Anterior</button>
-    <button type="button" class="btn btn-primary" onclick="nextStep()">Siguiente</button>
+﻿<div class="animate__animated animate__fadeIn">
+    <h4 class="text-primary fw-bold mb-4">
+        <i class="fa-solid fa-building-shield me-2"></i> Paso 3: Agencia Funeraria
+    </h4>
+
+    <div class="card border-0 shadow-sm rounded-4 bg-light mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="fw-bold mb-1">Selección de Empresa de Servicios</h5>
+                    <p class="text-muted small">Elija la agencia autorizada que brindará el servicio funerario.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="openSearchAgency()">
+                        <i class="fa-solid fa-magnifying-glass me-2"></i> Buscar Agencia
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="agencyInfoPanel" class="row g-3 d-none animate__animated animate__fadeIn">
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small">RUC</label>
+            <input type="text" id="AgencyRuc" class="form-control border-2 rounded-pill bg-white" readonly>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label fw-bold text-muted small">RAZÓN SOCIAL</label>
+            <input type="text" id="AgencyName" class="form-control border-2 rounded-pill bg-white" readonly>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label fw-bold text-muted small">DIRECCIÓN FISCAL / LOCAL</label>
+            <input type="text" id="AgencyAddress" class="form-control border-2 rounded-pill bg-white" readonly>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small">TELÉFONO DE CONTACTO</label>
+            <input type="text" id="AgencyPhone" class="form-control border-2 rounded-pill bg-white" readonly>
+        </div>
+    </div>
+
+    <div id="noAgencySelected" class="text-center py-5 border border-dashed rounded-4">
+        <i class="fa-solid fa-store-slash fa-2x text-muted mb-2"></i>
+        <p class="text-muted">No se ha seleccionado ninguna agencia aún.</p>
+    </div>
+
+    <div class="d-flex justify-content-between mt-5">
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-5" onclick="loadStep(2)">Atrás</button>
+        <button type="button" class="btn btn-primary rounded-pill px-5 shadow" onclick="nextStep(4, validateStep3)">Siguiente</button>
+    </div>
 </div>
