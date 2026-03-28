@@ -267,9 +267,18 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAgencies()
+        public async Task<IActionResult> GetAgencies(string ruc, string name)
         {
-            var agencies = await _context.Agencias
+            var query = _context.Agencias.AsQueryable();
+
+            if (!string.IsNullOrEmpty(ruc))
+                query = query.Where(a => a.RUC.Contains(ruc));
+
+            if (!string.IsNullOrEmpty(name))
+                query = query.Where(a => a.Name.Contains(name));
+
+            var data = await query
+                .OrderBy(a => a.Name)
                 .Select(a => new {
                     id = a.Id,
                     ruc = a.RUC,
@@ -277,9 +286,10 @@ namespace ContratosYReembolsos.Controllers
                     address = a.Address,
                     phone = a.Phone
                 })
-                .OrderBy(a => a.name)
+                .Take(20) // Limitamos para mejorar rendimiento
                 .ToListAsync();
-            return Json(agencies);
+
+            return Json(data);
         }
     }
 }

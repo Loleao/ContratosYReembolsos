@@ -1,27 +1,43 @@
-﻿<div class="modal-content border-0 shadow-lg">
-    <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title fw-bold"><i class="fa-solid fa-search me-2"></i> Catálogo de Agencias</h5>
+﻿<div class="modal-content border-0 shadow-lg animate__animated animate__fadeInUp">
+    <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title fw-bold">
+            <i class="fa-solid fa-building-magnifying-glass me-2"></i> Catálogo de Agencias
+        </h5>
         <button type="button" class="btn-close btn-close-white" onclick="closeSearchModal()"></button>
     </div>
+
     <div class="modal-body p-4">
-        <div class="input-group mb-3">
-            <span class="input-group-text bg-light border-2 border-end-0 rounded-start-pill">
-                <i class="fa-solid fa-filter"></i>
-            </span>
-            <input type="text" id="filterAgencyInput" class="form-control border-2 border-start-0 rounded-end-pill"
-                   placeholder="Filtrar por nombre o RUC..." onkeyup="filterAgencies()">
+        <div class="row g-2 mb-4">
+            <div class="col-md-4">
+                <label class="small fw-bold text-muted">RUC</label>
+                <input type="text" id="filterAgencyRuc" class="form-control rounded-pill border-2" placeholder="Ej: 20...">
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold text-muted">NOMBRE DE LA AGENCIA</label>
+                <input type="text" id="filterAgencyName" class="form-control rounded-pill border-2" placeholder="Ej: Finisterre...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100 rounded-pill shadow-sm" onclick="executeAgencySearch()">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
         </div>
 
-        <div class="table-responsive rounded-4 border" style="max-height: 400px;">
+        <div class="table-responsive rounded-4 border shadow-sm" style="max-height: 350px;">
             <table class="table table-hover mb-0">
                 <thead class="bg-light sticky-top">
                     <tr>
-                        <th>RUC</th>
-                        <th>Agencia</th>
-                        <th class="text-end">Acción</th>
+                        <th class="border-0 px-3">RUC</th>
+                        <th class="border-0">Nombre de la Agencia</th>
+                        <th class="border-0 text-end">Acción</th>
                     </tr>
                 </thead>
                 <tbody id="agenciesTableBody">
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">
+                            Ingrese filtros para buscar una agencia.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

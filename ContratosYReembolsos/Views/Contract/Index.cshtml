@@ -140,6 +140,9 @@
             actualStep: 0,
             step1: '@Url.Action("GetStep1", "Contract")',
             step2: '@Url.Action("GetStep2", "Contract")',
+            step3: '@Url.Action("GetStep3", "Contract")',
+            step4: '@Url.Action("GetStep4", "Contract")',
+            step5: '@Url.Action("GetStep5", "Contract")',
             searchModal: '@Url.Action("GetSearchModal", "Contract")',
             searchAction: '@Url.Action("SearchAffiliates", "Contract")',
 			searchBeneficiariesModal: '@Url.Action("GetSearchBeneficiary", "Contract")',
@@ -698,36 +701,57 @@
             });
         }
 
-        async function loadAgenciesList() {
-            const resp = await fetch(urls.getAgencies);
-            const data = await resp.json();
+        async function executeAgencySearch() {
+            const ruc = $('#filterAgencyRuc').val().trim();
+            const name = $('#filterAgencyName').val().trim();
             const $tbody = $('#agenciesTableBody');
-            $tbody.empty();
 
-            data.forEach(a => {
-                const tr = $(`
-                    <tr style="cursor:pointer">
-                        <td>${a.ruc}</td>
-                        <td class="fw-bold">${a.name}</td>
-                        <td class="text-end"><button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button></td>
-                    </tr>
-                `);
-                tr.click(() => selectAgency(a));
-                $tbody.append(tr);
-            });
+            // Validación mínima
+            if (!ruc && !name) {
+                alert("Ingrese al menos un criterio de búsqueda.");
+                return;
+            }
+
+            $tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Buscando...</td></tr>');
+
+            try {
+                const queryParams = `ruc=${ruc}&name=${encodeURIComponent(name)}`;
+                const resp = await fetch(`${urls.getAgenciesAction}?${queryParams}`);
+                const data = await resp.json();
+
+                $tbody.empty();
+
+                if (data.length === 0) {
+                    $tbody.html('<tr><td colspan="3" class="text-center py-4 text-danger">No se encontraron agencias con esos criterios.</td></tr>');
+                    return;
+                }
+
+                data.forEach(a => {
+                    const tr = $(`
+                        <tr style="cursor:pointer" class="align-middle">
+                            <td class="px-3"><b>${a.ruc}</b></td>
+                            <td class="text-uppercase">${a.name}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-primary rounded-circle p-2">
+                                    <i class="fa-solid fa-check px-1"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                    tr.click(() => selectAgency(a));
+                    $tbody.append(tr);
+                });
+            } catch (e) {
+                console.error(e);
+                $tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al consultar agencias.</td></tr>');
+            }
         }
 
+        // Esta función es la que pones en el onclick del tr
         function selectAgency(a) {
-            // Guardar en objeto global
-            contractData.agency = {
-                id: a.id,
-                ruc: a.ruc,
-                name: a.name,
-                address: a.address,
-                phone: a.phone
-            };
+            contractData.agency = { ...a }; // Guardamos todo el objeto (id, ruc, name, address, phone)
 
-            // Actualizar UI
+            // Llenamos el panel visual del Paso 3
             $('#AgencyRuc').val(a.ruc);
             $('#AgencyName').val(a.name);
             $('#AgencyAddress').val(a.address);
@@ -737,14 +761,6 @@
             $('#noAgencySelected').addClass('d-none');
 
             closeSearchModal();
-        }
-
-        // Filtro local para el modal
-        function filterAgencies() {
-            const val = $('#filterAgencyInput').val().toLowerCase();
-            $("#agenciesTableBody tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1)
-            });
         }
 
         function validateStep3() {
