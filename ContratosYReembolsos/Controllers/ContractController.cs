@@ -291,5 +291,10 @@ namespace ContratosYReembolsos.Controllers
 
             return Json(data);
         }
+
+        public IActionResult GetNicheSelector()
+        {
+            return PartialView("Partials/_NicheSelector");
+        }
     }
 }

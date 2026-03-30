@@ -17,11 +17,10 @@ namespace ContratosYReembolsos.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    codfilial = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -43,7 +42,7 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Contracts",
+                name: "Contratos",
                 columns: table => new
                 {
                     id = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
@@ -77,8 +76,54 @@ namespace ContratosYReembolsos.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Contracts", x => x.id);
+                    table.PrimaryKey("PK_Contratos", x => x.id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Pabellones",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CemeteryId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Pabellones", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Nichos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PavilionId = table.Column<int>(type: "int", nullable: false),
+                    Row = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Column = table.Column<int>(type: "int", nullable: false),
+                    IsOccupied = table.Column<bool>(type: "bit", nullable: false),
+                    CemeteryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsBeingReserved = table.Column<bool>(type: "bit", nullable: false),
+                    ReservationExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReservedByToken = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Nichos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Nichos_Pabellones_PavilionId",
+                        column: x => x.PavilionId,
+                        principalTable: "Pabellones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Nichos_PavilionId",
+                table: "Nichos",
+                column: "PavilionId");
         }
 
         /// <inheritdoc />
@@ -91,7 +136,13 @@ namespace ContratosYReembolsos.Migrations
                 name: "Cementerios");
 
             migrationBuilder.DropTable(
-                name: "Contracts");
+                name: "Contratos");
+
+            migrationBuilder.DropTable(
+                name: "Nichos");
+
+            migrationBuilder.DropTable(
+                name: "Pabellones");
         }
     }
 }

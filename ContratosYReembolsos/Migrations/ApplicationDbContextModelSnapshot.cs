@@ -46,10 +46,6 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("codfilial")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Agencias");
@@ -75,6 +71,72 @@ namespace ContratosYReembolsos.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Cementerios");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Niche", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CemeteryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Column")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsBeingReserved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PavilionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReservationExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReservedByToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Row")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PavilionId");
+
+                    b.ToTable("Nichos");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Pavilion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CemeteryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Pabellones");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.ServiceContract", b =>
@@ -209,6 +271,17 @@ namespace ContratosYReembolsos.Migrations
                     b.HasKey("id");
 
                     b.ToTable("Contratos");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Niche", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Pavilion", "Pavilion")
+                        .WithMany()
+                        .HasForeignKey("PavilionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pavilion");
                 });
 #pragma warning restore 612, 618
         }

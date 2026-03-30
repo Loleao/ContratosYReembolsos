@@ -88,6 +88,63 @@
         text-transform: uppercase;
     }
 
+    /* --- ESTILO PARA NICHOS Y COLUMBARIOS (CONCRETO) --- */
+    .niche-item-pabellon {
+        width: 100%;
+        height: 40px;
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .niche-item-pabellon:hover {
+        background-color: #e9ecef;
+        border-color: var(--pnp-blue);
+    }
+
+    /* --- ESTILO PARA TUMBAS (TIERRA/CÉSPED) --- */
+    .niche-item-tumba {
+        width: 100%;
+        height: 60px; /* Más alto */
+        background-color: #9ccc65;
+        border: 2px solid #689f38;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .niche-item-tumba:hover {
+            background-color: #8bc34a;
+            transform: translateY(-2px);
+        }
+
+    /* --- ESTADOS UNIVERSALES (ESTO SÍ SE COMPARTE) --- */
+    .bg-ocupado {
+        background-color: #ffc7ce !important;
+        border-color: #f1aeb5 !important;
+        color: #a41c1c !important;
+        cursor: not-allowed;
+    }
+
+    .bg-proceso {
+        background-color: #cfe2ff !important;
+        border-color: #9ec5fe !important;
+        color: #084298 !important;
+        cursor: wait;
+    }
+
     /* Overlay Personalizado (Tu lógica de Legajos) */
     .custom-modal-overlay {
         position: fixed;
@@ -108,6 +165,8 @@
         max-width: 850px;
         padding: 20px;
     }
+
+
 </style>
 
 <div class="container">
@@ -155,6 +214,10 @@
             getCemeteriesAction: '@Url.Action("GetCemeteries", "Contract")',
             getAgencyModal: '@Url.Action("GetSearchAgency", "Contract")',
             getAgenciesAction: '@Url.Action("GetAgencies", "Contract")',
+            getNicheSelectorModal: '@Url.Action("GetNicheSelector", "Contract")',
+            getNicheMap: '@Url.Action("GetMap", "Niche")',
+            getPavilions: '@Url.Action("GetPavilions", "Niche")',
+            reserveNiche: '@Url.Action("Reserve", "Niche")'
         };
 
         let contractData = {
@@ -168,20 +231,19 @@
                 wakeName: '',
                 cemeteryId: '',
                 cemeteryName: '',
+                burialType: '',
+                burialDetail: ''
             },
-            agency: { id: '', name: '', address: '' }, // Paso 3
-            services: [], // Paso 4 (Lista de servicios elegidos)
+            agency: { id: '', name: '', address: '' },
+            services: [],
             totalAmount: 0
         };
 
-        // Variable para saber quién disparó la búsqueda (Solicitante o Difunto)
         let searchTarget = 'Solicitor';
 
-        // 2. Navegación entre pasos
         async function loadStep(n) {
             const container = document.getElementById('dynamic-content');
 
-            // Animación de salida sutil
             container.style.opacity = '0.5';
 
             try {
@@ -189,7 +251,6 @@
                 container.innerHTML = await resp.text();
                 container.style.opacity = '1';
 
-                // Actualizar UI del Stepper
                 document.querySelectorAll('.step-item').forEach((el, i) => {
                     el.classList.toggle('active', (i + 1) === n);
                     el.classList.toggle('completed', (i + 1) < n);
@@ -214,7 +275,6 @@
             }
         }
 
-        // 3. Lógica del Buscador (Modal Overlay)
         function openSearchAffiliate(target) {
             searchTarget = target; // Guardamos si es para 'Solicitor' o 'Deceased'
 
@@ -350,7 +410,6 @@
             return true;
         }
 
-        // Modificamos el loadStep para que acepte una validación opcional
         async function nextStep(n, validationFn) {
             if (validationFn && !validationFn()) {
                 return;
@@ -407,7 +466,6 @@
             });
         }
 
-        // B. Función para ejecutar la búsqueda filtrada por el ID del titular
         async function executeBeneficiarySearch() {
             const $tbody = $('#resultsBeneficiaryTableBody');
 
@@ -455,7 +513,6 @@
             }
         }
 
-        // C. Función para pasar los datos del modal al formulario del Paso 2
         function selectBeneficiary(item) {
             // 1. Guardamos en el objeto de datos global
             contractData.deceased.id = item.id;
@@ -488,6 +545,37 @@
                 $btnLupa.fadeIn();
             }
         }
+
+        function validateDatesInline() {
+            const deathVal = $('#DeathDate').val(); // Formato "YYYY-MM-DD"
+            const burialVal = $('#BurialDate').val();
+            const $errorDiv = $('#dateErrorMessage');
+            const $errorText = $('#dateErrorText');
+
+            // Obtenemos la fecha de hoy en formato local YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
+
+            $errorDiv.addClass('d-none');
+
+            // 1. Validar que fallecimiento no sea futuro
+            if (deathVal && deathVal > today) {
+                $errorText.text("La fecha de fallecimiento no puede ser mayor a hoy.");
+                $errorDiv.removeClass('d-none');
+                return false;
+            }
+
+            // 2. Validar que sepelio no sea antes que fallecimiento
+            if (deathVal && burialVal) {
+                if (burialVal < deathVal) {
+                    $errorText.text("La fecha de sepelio no puede ser anterior a la de fallecimiento.");
+                    $errorDiv.removeClass('d-none');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
 
         async function loadRegions() {
             const resp = await fetch(`${urls.getRegions}`);
@@ -569,7 +657,6 @@
             });
         }
 
-        // Funciones de Ubigeo exclusivas para el Modal de Cementerios
         async function loadCemRegions() {
             const resp = await fetch(urls.getRegions);
             const data = await resp.json();
@@ -600,7 +687,6 @@
             $('#CemFilterDistrict').html(options).prop('disabled', false);
         }
 
-        // Ejecutar búsqueda final
         async function executeCemeterySearch() {
             const inei = $('#CemFilterDistrict').val();
             const $tbody = $('#resultsCemeteryTableBody');
@@ -640,52 +726,265 @@
             contractData.deceased.cemeteryName = c.name;
 
             $('#CemeteryName').val(c.name);
+
+            // LÓGICA CONDICIONAL PARA CEM120101
+            const $specificSection = $('#sectionSpecificLocation');
+
+            if (c.id === "CEM120101") {
+                $specificSection.removeClass('d-none');
+            } else {
+                $specificSection.addClass('d-none');
+                $('#BurialType').val('');
+                $('#BurialDetail').val('');
+                contractData.deceased.burialType = '';
+                contractData.deceased.burialDetail = '';
+            }
+
+            closeSearchModal();
+        }
+
+        async function openNicheSelector() {
+            const cemId = contractData.deceased.cemeteryId;
+            const type = $('input[name="BurialType"]:checked').val();
+
+            $.get(urls.getNicheSelectorModal, async function(html) {
+                $('#ajaxTargetSearch').html(html);
+
+                const title = (type === 'Columbario') ? 'Selector de Columbario (Cenizas)' : 'Selector de Pabellón (Nichos)';
+                $('.modal-title').html(`<i class="fa-solid fa-map me-2"></i> ${title}`);
+
+                $('#modalOverlaySearch').fadeIn(300).css('display', 'flex');
+
+                try {
+                    const resp = await fetch(`${urls.getPavilions}?cemeteryId=${cemId}&type=${type}`);
+                    const pabellones = await resp.json();
+
+                    let options = `<option value="">-- Seleccione ${type} --</option>`;
+                    pabellones.forEach(p => {
+                        options += `<option value="${p.id}">${p.name}</option>`;
+                    });
+                    $('#cboPavilion').html(options);
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        }
+
+        function resetNicheSelection() {
+            contractData.deceased.burialNicheId = null;
+            contractData.deceased.burialDetail = '';
+            $('#selectedNicheDisplay').addClass('d-none');
+            $('#txtNicheSelected').text('');
+        }
+
+        async function changePavilion() {
+            const cemId = contractData.deceased.cemeteryId;
+            const pavId = $('#cboPavilion').val();
+            const selectedType = $('input[name="BurialType"]:checked').val();
+
+            if (!pavId) {
+                $('#nicheMapsContainer').addClass('d-none');
+                return;
+            }
+
+            $('#nicheLoader').removeClass('d-none');
+            $('#nicheMapsContainer').addClass('d-none');
+
+            try {
+                const resp = await fetch(`${urls.getNicheMap}?cemeteryId=${cemId}&pavilionId=${pavId}`);
+                const niches = await resp.json();
+
+                const rows = ['A', 'B', 'C', 'D', 'E', 'F']; // Puedes ampliar las filas si es necesario
+
+                if (selectedType === "Tumba") {
+                    // OCULTAMOS la Cara 2 y expandimos la Cara 1 para que ocupe todo el ancho
+                    $('#gridCara2').parent().parent().addClass('d-none');
+                    $('#gridCara1').parent().parent().removeClass('col-md-6').addClass('col-md-12');
+                    renderGrid('gridCara1', rows, [1,2,3,4,5,6,7,8,9,10], niches, "Tumba");
+
+                    // Renderizamos del 1 al 10 en un solo bloque
+                    renderGrid('gridCara1', rows, [1,2,3,4,5,6,7,8,9,10], niches, "Tumba");
+                } else {
+                    // Volvemos a la vista normal de Nichos (2 caras)
+                    $('#gridCara2').parent().parent().removeClass('d-none');
+                    $('#gridCara1').parent().parent().removeClass('col-md-12').addClass('col-md-6');
+
+                    renderGrid('gridCara1', rows, [1,2,3,4,5], niches, selectedType);
+                    renderGrid('gridCara2', rows, [6,7,8,9,10], niches, selectedType);
+                }
+
+                $('#nicheLoader').addClass('d-none');
+                $('#nicheMapsContainer').removeClass('d-none');
+            } catch (e) {
+                alert("Error al cargar el mapa.");
+            }
+        }
+
+        async function loadNicheData(cemId) {
+            try {
+                const resp = await fetch(`${urls.getNicheMap}/${cemId}`);
+                const niches = await resp.json();
+
+                console.log("Nichos cargados:", niches);
+
+                if (!niches || niches.length === 0) {
+                    console.warn("No hay nichos para este cementerio.");
+                    return;
+                }
+
+                const rows = ['A', 'B', 'C', 'D', 'E'];
+
+                // Cara 1: Renderiza columnas del 1 al 5
+                renderGrid('gridCara1', rows, [1, 2, 3, 4, 5], niches);
+
+                // Cara 2: Renderiza columnas del 6 al 10
+                renderGrid('gridCara2', rows, [6, 7, 8, 9, 10], niches);
+
+            } catch (error) {
+                console.error("Error al cargar mapa de nichos:", error);
+            }
+        }
+
+        function renderGrid(containerId, rows, cols, allNiches, type) {
+            const $container = $('#' + containerId);
+            if (!$container.length) return;
+            $container.empty();
+
+            const isTumba = (type === "Tumba");
+
+            // CONFIGURACIÓN DINÁMICA
+            const itemClass = isTumba ? "niche-item-tumba" : "niche-item-pabellon";
+            const rowHeight = isTumba ? "60px" : "40px";
+            const numCols = cols.length;
+
+            // Ajustamos la grilla del contenedor para que coincida con el número de columnas enviado
+            // Esto evita que "Pabellón" intente usar 10 columnas si solo le mandamos 5
+            $container.css({
+                'display': 'grid',
+                'grid-template-columns': `40px repeat(${numCols}, 1fr)`,
+                'gap': '8px'
+            });
+
+            // 1. Cabecera (Números)
+            $container.append('<div></div>');
+            cols.forEach(c => {
+                $container.append(`<div class="text-center fw-bold text-muted small pb-2">${c}</div>`);
+            });
+
+            // 2. Filas
+            rows.forEach(r => {
+                // Letra de la fila
+                $container.append(`<div class="fw-bold text-muted d-flex align-items-center justify-content-center" style="height: ${rowHeight}">${r}</div>`);
+
+                // Columnas
+                cols.forEach(c => {
+                    const niche = allNiches.find(n =>
+                        n.row.toString().trim().toUpperCase() === r.toUpperCase() &&
+                        parseInt(n.column) === parseInt(c)
+                    );
+
+                    if (niche) {
+                        const isOccupied = niche.isOccupied ?? niche.IsOccupied;
+                        const isReserved = niche.isBeingReserved ?? niche.IsBeingReserved;
+
+                        let statusClass = "";
+                        if (isOccupied) statusClass = "bg-ocupado";
+                        else if (isReserved) statusClass = "bg-proceso";
+
+                        $container.append(`
+                            <div class="${itemClass} ${statusClass}"
+                                 onclick="${isOccupied ? '' : `confirmNicheSelection(${niche.id}, '', '${r}', ${c})`}"
+                                 title="${type} ${r}-${c}">
+                                 ${isTumba ? '<i class="fa-solid fa-seedling opacity-50"></i>' : c}
+                            </div>`);
+                    } else {
+                        // Espacio vacío para mantener la forma irregular si no existe en BD
+                        $container.append(`<div style="height: ${rowHeight}; width: 100%;"></div>`);
+                    }
+                });
+            });
+        }
+
+        function confirmNicheSelection(id, dummy, row, col) {
+            const pavilionName = $('#cboPavilion option:selected').text(); // Tomamos el nombre del combo
+            contractData.deceased.burialNicheId = id;
+
+            const cara = (col <= 5) ? "Cara 1" : "Cara 2";
+            const detailText = `${pavilionName} (${cara}) - Fila ${row} - Nro ${col}`;
+
+            contractData.deceased.burialDetail = detailText;
+
+            // Actualizar UI del Paso 2
+            $('#txtNicheSelected').text(detailText);
+            $('#selectedNicheDisplay').removeClass('d-none');
+
             closeSearchModal();
         }
 
         function validateStep2() {
-            // 1. Capturar valores de los selectores de Ubigeo y Velatorio
+            const deceasedDni = $('#DeceasedDni').val().trim();
+            const deathDate = $('#DeathDate').val();
+            const burialDate = $('#BurialDate').val();
+            const today = new Date().toISOString().split('T')[0];
             const inei = $('#DeathDist').val();
-            const distText = $('#DeathDist option:selected').text();
-            const provText = $('#DeathProv option:selected').text();
-            const regionText = $('#DeathDept').val();
-
             const wakeId = $('#WakePlace').val();
-            const wakeName = $('#WakePlace option:selected').text();
+            const cemeteryId = contractData.deceased.cemeteryId;
 
-            // 2. Validaciones de Negocio
-            if (!contractData.deceased.id) {
-                alert("Debe seleccionar al fallecido usando la lupa.");
+            if (!contractData.deceased.id || deceasedDni === "") {
+                alert("Debe seleccionar al fallecido usando la lupa de búsqueda.");
                 return false;
             }
-            if (!$('#DeathDate').val()) {
+
+            if (!deathDate) {
                 alert("La fecha de fallecimiento es obligatoria.");
+                $('#DeathDate').focus();
                 return false;
             }
+
+            if (deathDate > today) {
+                alert("La fecha de fallecimiento no puede ser una fecha futura.");
+                return false;
+            }
+
+            if (burialDate && burialDate < deathDate) {
+                alert("La fecha de sepelio no puede ser anterior a la fecha de fallecimiento.");
+                return false;
+            }
+
             if (!inei) {
-                alert("Debe completar el Ubigeo (Departamento, Provincia, Distrito).");
+                alert("Debe completar la ubicación del fallecimiento (Departamento, Provincia, Distrito).");
                 return false;
             }
+
             if (!wakeId) {
-                alert("Debe seleccionar un lugar de velatorio.");
+                alert("Debe seleccionar el lugar del velatorio.");
+                $('#WakePlace').focus();
                 return false;
             }
-            if (!contractData.deceased.cemeteryId) {
+
+            if (!cemeteryId) {
                 alert("Debe seleccionar un cementerio de destino.");
                 return false;
             }
 
-            // 3. Persistencia: Guardar todo en el objeto global
-            contractData.deceased.deathDate = $('#DeathDate').val();
-            contractData.deceased.burialDate = $('#BurialDate').val();
-            contractData.deceased.inei = inei;
-            contractData.deceased.ubigeoFull = `${regionText} - ${provText} - ${distText}`;
-            contractData.deceased.wakeId = wakeId;
-            contractData.deceased.wakeName = wakeName;
+            if (cemeteryId === "CEM120101") {
+                if (!contractData.deceased.burialNicheId) {
+                    alert("Para el Cementerio General, es obligatorio elegir un Pabellón y un Nicho en el mapa.");
+                    return false;
+                }
+            }
 
-            console.log("Datos del Paso 2 guardados:", contractData.deceased);
-            return true; // Permite pasar al Paso 3
+            contractData.deceased.deathDate = deathDate;
+            contractData.deceased.burialDate = burialDate;
+            contractData.deceased.inei = inei;
+            contractData.deceased.ubigeoFull = `${$('#DeathDept').val()} - ${$('#DeathProv option:selected').text()} - ${$('#DeathDist option:selected').text()}`;
+            contractData.deceased.wakeId = wakeId;
+            contractData.deceased.wakeName = $('#WakePlace option:selected').text();
+
+            console.log("Paso 2 Validado con éxito:", contractData.deceased);
+            return true;
         }
+
 
         //PASO 3
 
@@ -747,11 +1046,9 @@
             }
         }
 
-        // Esta función es la que pones en el onclick del tr
         function selectAgency(a) {
             contractData.agency = { ...a }; // Guardamos todo el objeto (id, ruc, name, address, phone)
 
-            // Llenamos el panel visual del Paso 3
             $('#AgencyRuc').val(a.ruc);
             $('#AgencyName').val(a.name);
             $('#AgencyAddress').val(a.address);
