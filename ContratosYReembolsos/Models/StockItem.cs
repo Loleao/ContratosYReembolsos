@@ -6,8 +6,11 @@ namespace ContratosYReembolsos.Models
     {
         [Key]
         public int Id { get; set; }
-        public string Name { get; set; }
-        public int Quantity { get; set; }
-        public string SubsidiaryId { get; set; }
+
+        public int ServiceId { get; set; }
+        public virtual Service Service { get; set; }
+
+        public string SerialNumber { get; set; } // El código único del ataúd
+        public string Status { get; set; } // "Disponible", "Vendido", "Reservado"
     }
 }

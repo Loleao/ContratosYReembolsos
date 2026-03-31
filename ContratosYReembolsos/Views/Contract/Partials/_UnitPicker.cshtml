@@ -1,0 +1,29 @@
+﻿<div class="p-4">
+    <div class="text-center mb-4">
+        <h5 class="fw-bold"><i class="fa-solid fa-car-side me-2 text-primary"></i> Unidades Disponibles</h5>
+        <p class="text-muted small">Programación para el <span class="fw-bold" id="lblDateInfo"></span></p>
+    </div>
+
+    <div class="row g-3" id="unitSelectionGrid">
+    </div>
+</div>
+
+<style>
+    .unit-card-option {
+        border: 2px solid #f1f4f8;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .unit-card-option:hover:not(.disabled) {
+            border-color: #004a99;
+            background: #f0f7ff;
+        }
+
+        .unit-card-option.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #fdf2f2;
+            border-color: #fbd5d5;
+        }
+</style>

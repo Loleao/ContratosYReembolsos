@@ -1,0 +1,35 @@
+﻿<div class="p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="fw-bold text-primary mb-0"><i class="fa-solid fa-calendar-week me-2"></i>Validación de Capacidad</h5>
+            <div class="mt-2 d-flex align-items-center gap-2">
+                <label class="small fw-bold text-muted">Cambiar semana:</label>
+                <input type="date" id="pickerFilterDate" class="form-control form-control-sm"
+                       onchange="reloadWeeklyData()" style="width: 160px;">
+            </div>
+        </div>
+        <div class="d-flex gap-3 small">
+            <span class="badge bg-success px-3 py-2">Disponible</span>
+            <span class="badge bg-danger px-3 py-2">Ocupado</span>
+        </div>
+    </div>
+
+    <div class="table-responsive rounded-3 border shadow-sm">
+        <table class="table table-bordered mb-0 text-center align-middle agenda-table">
+            <thead>
+                <tr class="bg-light">
+                    <th style="width: 100px;">Hora</th>
+                    <th id="col-0">Lun</th>
+                    <th id="col-1">Mar</th>
+                    <th id="col-2">Mié</th>
+                    <th id="col-3">Jue</th>
+                    <th id="col-4">Vie</th>
+                    <th id="col-5">Sáb</th>
+                    <th id="col-6">Dom</th>
+                </tr>
+            </thead>
+            <tbody id="weeklyGridBody"></tbody>
+        </table>
+    </div>
+    <p class="text-muted x-small mt-2">* El recuadro con borde azul indica la hora referencial solicitada en el paso anterior.</p>
+</div>
