@@ -14,7 +14,16 @@
 
 </head>
 <body>
-    <header>
+    @* <div class="d-flex">
+        <aside class="sidebar" id="mainSidebar">
+            @Html.Partial("_SideBar")
+        </aside>
+    <div class="flex-grow-1">
+    <header class="bg-white border-bottom p-3 d-flex justify-content-between">
+        <button class="btn btn-sm" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="text-muted small">FONAFUN - Sistema de Gestión</div>
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -22,7 +31,20 @@
         </main>
     </div>
     <footer>
-    </footer>
+    </footer> *@
+
+    <div class="main-wrapper d-flex">
+
+        @await Html.PartialAsync("_Sidebar")
+
+        <main role="main" class="content-area flex-grow-1">
+            <div class="container-fluid p-4">
+                @RenderBody()
+            </div>
+        </main>
+
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

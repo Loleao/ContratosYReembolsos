@@ -1,0 +1,138 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Coffin>
+
+<style>
+    .coffin-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+        .coffin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+    .stock-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        z-index: 10;
+        /* Forzamos el fondo negro y letra blanca */
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        /* Un borde sutil para indicar el estado */
+        border-width: 2px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .border-danger {
+        border-color: #ff4757 !important;
+        box-shadow: 0 0 8px rgba(255, 71, 87, 0.3);
+    }
+
+    .border-success {
+        border-color: #2ed573 !important;
+    }
+
+    .img-container {
+        height: 180px;
+        background-color: #f1f3f5;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+</style>
+
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Inventario de Ataúdes</h4>
+            <p class="text-muted small">Gestión de stock y modelos disponibles en FONAFUN.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary rounded-pill px-4">
+            <i class="fa-solid fa-plus me-2"></i> Nuevo Modelo
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" id="searchInput" class="form-control border-light bg-light" placeholder="Buscar por modelo...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @if (!Model.Any())
+        {
+            <div class="col-12 text-center py-5">
+                <i class="fa-solid fa-box-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay ataúdes registrados en el sistema.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                <div class="col-md-4 col-lg-3">
+                    <div class="card coffin-card h-100">
+                        @{
+                            var statusBorder = item.CurrentStock <= item.MinimumStock ? "border-danger" : "border-success";
+                        }
+                        <span class="stock-badge bg-dark text-white border @statusBorder">
+                            Stock: @item.CurrentStock
+                        </span>
+
+                        <div class="p-3">
+                            <div class="img-container">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.ModelName">
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-box-open fa-3x text-light"></i>
+                                }
+                            </div>
+
+                            <div class="mt-3">
+                                <h6 class="fw-bold mb-1 text-truncate">@item.ModelName</h6>
+                                <p class="text-muted small mb-2">@item.Material - @item.Size</p>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-primary fs-5">S/ @item.UnitPrice.ToString("N2")</span>
+                                    <div class="btn-group">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light text-primary">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('¿Seguro de eliminar este modelo?')">
+                                            <button type="submit" class="btn btn-sm btn-light text-danger">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

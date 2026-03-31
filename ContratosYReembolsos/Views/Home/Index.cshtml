@@ -1,8 +1,233 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard - FONAFUN";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    /* VARIABLES Y RESET */
+    :root {
+        --sidebar-bg: #ffffff;
+        --main-bg: #f8f9fa;
+        --primary-blue: #008dff;
+        --text-dark: #2d3436;
+        --text-muted: #636e72;
+    }
+
+    /* CONTENEDOR DE CARDS */
+    .dashboard-container {
+        padding: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .icon-shape {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    /* ESTILOS DE TABLA */
+    .table-container {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .table thead th {
+        background-color: #fdfdfd;
+        border-bottom: 1px solid #eee;
+        color: var(--text-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 15px;
+    }
+
+    .table tbody td {
+        padding: 15px;
+        border-bottom: 1px solid #f8f9fa;
+        font-size: 14px;
+        color: var(--text-dark);
+    }
+
+    /* BOTONES ACCESOS RÁPIDOS */
+    .btn-quick-access {
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary-blue);
+        border: none;
+        color: white;
+    }
+
+        .btn-primary-custom:hover {
+            background-color: #0076d6;
+            box-shadow: 0 4px 15px rgba(0, 141, 255, 0.3);
+        }
+
+    .alert-banner {
+        background-color: #fff9db;
+        border: 1px dashed #fcc419;
+        border-radius: 12px;
+        padding: 15px;
+    }
+</style>
+
+<div class="dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Panel de Control</h4>
+            <p class="text-muted small">Bienvenido al sistema de gestión de FONAFUN Perú.</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-white text-dark border p-2 rounded-pill px-3">
+                <i class="fa-regular fa-calendar-check me-1 text-primary"></i> @DateTime.Now.ToString("dd MMM, yyyy")
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card p-3 d-flex align-items-center">
+                <div class="icon-shape bg-primary bg-opacity-10 text-primary">
+                    <i class="fa-solid fa-file-invoice-dollar fs-5"></i>
+                </div>
+                <div class="ms-3">
+                    <p class="text-muted small mb-0">Contratos (Marzo)</p>
+                    <h4 class="fw-bold mb-0">128</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card p-3 d-flex align-items-center">
+                <div class="icon-shape bg-success bg-opacity-10 text-success">
+                    <i class="fa-solid fa-monument fs-5"></i>
+                </div>
+                <div class="ms-3">
+                    <p class="text-muted small mb-0">Nichos Libres</p>
+                    <h4 class="fw-bold mb-0">42</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card p-3 d-flex align-items-center">
+                <div class="icon-shape bg-info bg-opacity-10 text-info">
+                    <i class="fa-solid fa-car-side fs-5"></i>
+                </div>
+                <div class="ms-3">
+                    <p class="text-muted small mb-0">Movilidad Hoy</p>
+                    <h4 class="fw-bold mb-0">05</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card p-3 d-flex align-items-center">
+                <div class="icon-shape bg-danger bg-opacity-10 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+                </div>
+                <div class="ms-3">
+                    <p class="text-muted small mb-0">Pendientes</p>
+                    <h4 class="fw-bold mb-0">03</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Contratos Recientes</h5>
+                    <a href="@Url.Action("Index", "Contract")" class="btn btn-sm btn-light rounded-pill px-3">Ver todos</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>CÓDIGO</th>
+                                <th>SOLICITANTE</th>
+                                <th>FECHA</th>
+                                <th>ESTADO</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-primary">JUN202600001</td>
+                                <td>Juan Pérez Soto</td>
+                                <td>Hace 2h</td>
+                                <td><span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Finalizado</span></td>
+                                <td class="fw-bold">S/ 3,450.00</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary">LIM202600014</td>
+                                <td>Maria Elena Castro</td>
+                                <td>Hace 5h</td>
+                                <td><span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Finalizado</span></td>
+                                <td class="fw-bold">S/ 2,800.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="table-container h-100">
+                <h5 class="fw-bold mb-4">Acciones Rápidas</h5>
+
+                <div class="d-grid gap-3 mb-4">
+                    <a href="@Url.Action("Create", "Contract")" class="btn btn-quick-access btn-primary-custom text-decoration-none">
+                        <i class="fa-solid fa-circle-plus"></i> Registrar Contrato
+                    </a>
+                    <a href="/Spaces/Pabellones" class="btn btn-quick-access btn-light border text-decoration-none">
+                        <i class="fa-solid fa-map-location-dot text-primary"></i> Gestionar Sepulturas
+                    </a>
+                </div>
+
+                <div class="alert-banner">
+                    <div class="d-flex">
+                        <i class="fa-solid fa-lightbulb text-warning me-2 mt-1"></i>
+                        <div>
+                            <p class="mb-0 fw-bold small">Tip del día</p>
+                            <p class="mb-0 text-muted" style="font-size: 12px;">
+                                El Pabellón "San José" está llegando al 90% de ocupación. Revise la disponibilidad de niveles.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 rounded-4 bg-light">
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span class="text-muted">Servidor:</span>
+                        <span class="fw-bold text-success">En línea <i class="fa-solid fa-circle ms-1" style="font-size: 8px;"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

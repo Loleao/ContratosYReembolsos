@@ -1,0 +1,93 @@
+﻿@{
+    // Pequeños helpers para limpiar el código de las clases active
+    string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+}
+
+<aside class="sidebar" id="mainSidebar">
+    <div class="sidebar-header mb-4">
+        <div class="logo-box">
+            <i class="fa-solid fa-shield-halved text-primary"></i>
+        </div>
+        <div class="sidebar-text ms-2">
+            <h6 class="fw-bold mb-0">FONAFUN</h6>
+            <small class="text-muted" style="font-size: 10px;">Gestión de Servicios</small>
+        </div>
+    </div>
+
+    <nav class="nav flex-column flex-grow-1">
+
+        <a href="@Url.Action("Index", "Home")"
+           class="nav-link @(currentController == "Home" ? "active" : "")">
+            <i class="fa-solid fa-house-chimney"></i>
+            <span class="sidebar-text ms-2">Dashboard</span>
+        </a>
+
+        <a href="@Url.Action("Index", "Contract")"
+           class="nav-link @(currentController == "Contract" ? "active" : "")">
+            <i class="fa-solid fa-file-contract"></i>
+            <span class="sidebar-text ms-2">Contratos</span>
+        </a>
+
+        <a href="@Url.Action("Index", "Coffin")"
+           class="nav-link @(currentController == "Coffin" ? "active" : "")">
+            <i class="fa-solid fa-box"></i>
+            <span class="sidebar-text ms-2">Ataúdes</span>
+        </a>
+
+        <a href="/Vehicles"
+           class="nav-link @(currentController == "Vehicle" ? "active" : "")">
+            <i class="fa-solid fa-car-side"></i>
+            <span class="sidebar-text ms-2">Movilidad</span>
+        </a>
+
+        <div class="nav-item">
+            <a class="nav-link d-flex justify-content-between align-items-center @(currentController == "Space" ? "active" : "")"
+               data-bs-toggle="collapse" href="#collapseSepulturas"
+               aria-expanded="@(currentController == "Space" ? "true" : "false")">
+                <span>
+                    <i class="fa-solid fa-monument"></i>
+                    <span class="sidebar-text ms-2">Sepulturas</span>
+                </span>
+                <i class="fa-solid fa-chevron-down small sidebar-text" style="font-size: 8px;"></i>
+            </a>
+
+            <div class="collapse @(currentController == "Space" ? "show" : "")" id="collapseSepulturas">
+                <ul class="sub-menu list-unstyled">
+                    <li>
+                        <a href="/Spaces/Pabellones" class="sub-link @(currentAction == "Pabellones" ? "fw-bold text-primary" : "")">
+                            • Pabellones
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Spaces/Columbarios" class="sub-link @(currentAction == "Columbarios" ? "fw-bold text-primary" : "")">
+                            • Columbarios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Spaces/Tumbas" class="sub-link @(currentAction == "Tumbas" ? "fw-bold text-primary" : "")">
+                            • Tumbas (Suelo)
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="user-profile border-top pt-3 mt-auto">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="avatar bg-light text-primary rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="sidebar-text">
+                    <p class="mb-0 fw-bold small">Paolo Software</p>
+                    <small class="text-muted" style="font-size: 10px;">Administrador</small>
+                </div>
+            </div>
+            <a href="/Account/Logout" class="text-muted sidebar-text" title="Cerrar Sesión">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </div>
+</aside>

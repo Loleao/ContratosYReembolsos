@@ -293,7 +293,8 @@
             getUnitPickerModal: '@Url.Action("GetUnitPicker", "Service")',
             getDailyAvailability: '@Url.Action("GetDailyAvailability", "Service")',
             getWeeklyAvailability: '@Url.Action("GetWeeklyAvailability", "Service")',
-            saveContract: '@Url.Action("Create", "Contract")'
+            saveContract: '@Url.Action("Create", "Contract")',
+            downloadContract: '@Url.Action("DescargarContratoPDF", "Contract")',
         };
 
         let contractData = {
@@ -355,6 +356,11 @@
 						initStep4().then(() => {
                             updateSelectionList();
                         })
+                    }
+                    if (n === 5) {  
+                        setTimeout(async () => {
+                            await renderStep5();
+                        }, 200);
                     }
                 }, 100);
 
@@ -1824,6 +1830,195 @@
 
             console.log("Paso 4 validado. Datos listos para resumen:", contractData);
             return true; // Permite el avance automático a loadStep(5)
+        }
+
+        //PASO 5
+
+        async function renderStep5() {
+            console.log("Cargando resumen final...");
+
+            // 1. Obtener Prefijo dinámico desde el Controller
+            let previewPrefix = "GEN";
+            const ubigeo = contractData.deceased.ubigeoFull || "";
+
+            if (ubigeo.includes('-')) {
+                const regionText = ubigeo.split('-')[0].trim();
+                try {
+                    // Llamamos a la función GetPrefix que agregaste al Controller
+                    const resp = await fetch(`/Contract/GetPrefix?region=${encodeURIComponent(regionText)}`);
+                    const data = await resp.json();
+                    previewPrefix = data.prefix;
+                } catch (e) {
+                    console.error("Error al obtener prefijo:", e);
+                }
+            }
+
+            const year = new Date().getFullYear();
+            // Actualizamos el preview del código (asegúrate de tener este ID en tu HTML)
+            $('#resContractPreview').text(`${previewPrefix}${year}XXXXX`);
+
+            // 2. Llenar datos de Personas
+            $('#resSolicitorName').text(contractData.solicitor.name || "---");
+            $('#resSolicitorDni').text(`DNI: ${contractData.solicitor.dni || "---"}`);
+
+            $('#resDeceasedName').text(contractData.deceased.name || "---");
+            $('#resDeceasedDni').text(`DNI: ${contractData.deceased.dni || "---"}`);
+
+            // 3. Llenar Logística
+            $('#resBurialDateTime').text(`${contractData.deceased.burialDate || "---"} ${contractData.deceased.burialTime || ""}`);
+            $('#resWakePlace').text(contractData.deceased.wakeName || "---");
+            $('#resCemetery').text(contractData.deceased.cemeteryName || "---");
+
+            // Mostrar/Ocultar detalle de nicho
+            if (contractData.deceased.burialDetail) {
+                $('#resNicheRow').show();
+                $('#resNicheDetail').text(contractData.deceased.burialDetail);
+            } else {
+                $('#resNicheRow').hide();
+            }
+
+            // 4. Llenar Tabla de Servicios (Sincronizado con tu div resServicesTable)
+            const $container = $('#resServicesTable');
+            $container.empty();
+
+            if (contractData.services.length === 0) {
+                $container.append('<div class="text-center text-muted py-3 small">No hay servicios seleccionados.</div>');
+            } else {
+                contractData.services.forEach(s => {
+                    let infoExtra = "";
+                    if (s.logicType === 'MOVILIDAD' && s.extraData?.scheduledTime) {
+                        infoExtra = `<small class="text-primary d-block">Hora: ${s.extraData.scheduledTime}</small>`;
+                    } else if (s.logicType === 'ATAUD' && s.extraData?.serialNumber) {
+                        infoExtra = `<small class="text-muted d-block">Serie: ${s.extraData.serialNumber}</small>`;
+                    }
+
+                    $container.append(`
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div>
+                                <span class="fw-bold d-block small">${s.name}</span>
+                                ${infoExtra}
+                            </div>
+                            <span class="fw-bold text-dark">S/ ${(s.price || 0).toFixed(2)}</span>
+                        </div>
+                    `);
+                });
+            }
+
+            // 5. Total Final
+            $('#resTotalAmount').text(`S/ ${(contractData.totalAmount || 0).toFixed(2)}`);
+        }
+
+        // async function saveFinalContract() {
+        //     const result = await Swal.fire({
+        //         title: '¿Confirmar Registro?',
+        //         text: "Se generará el código oficial y se registrarán los servicios.",
+        //         icon: 'question',
+        //         showCancelButton: true,
+        //         confirmButtonColor: '#004a99',
+        //         confirmButtonText: 'Sí, registrar contrato'
+        //     });
+
+        //     if (!result.isConfirmed) return;
+
+        //     Swal.fire({
+        //         title: 'Guardando...',
+        //         didOpen: () => { Swal.showLoading(); }
+        //     });
+
+        //     try {
+        //         const response = await fetch(urls.saveContract, {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify(contractData) // contractData ya tiene la estructura del ViewModel
+        //         });
+
+        //         const data = await response.json();
+
+        //         if (data.success) {
+        //             Swal.fire({
+        //                 title: '¡Contrato Exitoso!',
+        //                 html: `Código generado: <b class="text-primary">${data.contractNumber}</b>`,
+        //                 icon: 'success'
+        //             }).then(() => {
+        //                 // Redirigir a la lista o descargar PDF
+        //                 window.location.href = '/Contract/List';
+        //             });
+        //         } else {
+        //             Swal.fire('Error', data.message, 'error');
+        //         }
+        //     } catch (e) {
+        //         Swal.fire('Error crítico', 'No se pudo conectar con el servidor.', 'error');
+        //     }
+        // }
+
+        async function saveFinalContract() {
+            // 1. Validación de seguridad: ¿Hay servicios?
+            if (contractData.services.length === 0) {
+                Swal.fire('Atención', 'No puedes registrar un contrato sin servicios.', 'warning');
+                return;
+            }
+
+            // 2. Confirmación con el usuario
+            const result = await Swal.fire({
+                title: '¿Confirmar Registro?',
+                html: `Se generará un nuevo contrato oficial.<br><small class="text-muted">Esta acción descontará stock y agendará movilidades.</small>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#004a99',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, registrar ahora',
+                cancelButtonText: 'Revisar datos'
+            });
+
+            if (!result.isConfirmed) return;
+
+            // 3. UI de carga (Bloquea la pantalla para evitar dobles clics)
+            Swal.fire({
+                title: 'Procesando registro...',
+                text: 'Por favor, no cierre la ventana.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                // 4. EL ENVÍO (Asegúrate que la URL sea correcta según tu Route)
+                const response = await fetch(`${urls.saveContract}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // Si usas Anti-Forgery Tokens en .NET, añade aquí el header:
+                        // 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(contractData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 5. ÉXITO: Mostramos el código real generado por el Controller (Ej: JUN202600001)
+                    await Swal.fire({
+                        title: '¡Contrato Registrado!',
+                        html: `El código oficial es: <b class="fs-4 text-primary">${data.contractNumber}</b>`,
+                        icon: 'success',
+                        confirmButtonText: 'Ir al Listado'
+                    }).then((result) => {
+                        window.open(`${urls.downloadContract}?id=${data.id}`, '_blank');
+                        if (!result.isConfirmed) {
+                            window.location.href = '/Contract/Index';
+                        }
+                    });
+
+                    // Redirección al listado de contratos o ver detalle
+                    window.location.href = '/Contract/Index';
+                } else {
+                    // ERROR DE NEGOCIO (Ej: No hay stock, error de base de datos)
+                    Swal.fire('Error al guardar', data.message || 'Ocurrió un error inesperado.', 'error');
+                }
+            } catch (error) {
+                // ERROR DE RED O SERVIDOR CAÍDO
+                console.error("Error en Fetch:", error);
+                Swal.fire('Error de Conexión', 'No se pudo comunicar con el servidor. Intente nuevamente.', 'error');
+            }
         }
 
     </script>

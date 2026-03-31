@@ -1,8 +1,94 @@
-﻿<h5>Paso 5: Resumen</h5>
-<div class="py-3">
-    <p>Resumen del contrato...</p>
-</div>
-<div class="d-flex justify-content-between">
-    <button type="button" class="btn btn-secondary" onclick="prevStep()">Anterior</button>
-    <button type="button" class="btn btn-primary" onclick="nextStep()">Siguiente</button>
+﻿<div class="animate__animated animate__fadeIn">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold text-primary mb-0"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Resumen Final</h5>
+            <p class="text-muted small mb-0">Verifique la información antes de confirmar.</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-light text-primary border border-primary px-3 py-2 fs-6" id="resContractPreview">
+                Cargando...
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-users me-2 text-primary"></i> Partes Interesadas</h6>
+                    <div class="row">
+                        <div class="col-md-6 border-end">
+                            <label class="text-muted small d-block">Solicitante (Titular/Familiar)</label>
+                            <span class="fw-bold" id="resSolicitorName">---</span>
+                            <small class="d-block text-muted" id="resSolicitorDni">DNI: ---</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">Fallecido / Beneficiario</label>
+                            <span class="fw-bold" id="resDeceasedName">---</span>
+                            <small class="d-block text-muted" id="resDeceasedDni">DNI: ---</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body">
+                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i> Logística de Sepelio</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block">Fecha y Hora</label>
+                            <span class="fw-bold" id="resBurialDateTime">---</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block">Lugar de Velatorio</label>
+                            <span class="fw-bold" id="resWakePlace">---</span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block">Cementerio</label>
+                            <span class="fw-bold" id="resCemetery">---</span>
+                        </div>
+                        <div class="col-12" id="resNicheRow">
+                            <div class="p-2 bg-light rounded-3 border-start border-4 border-primary">
+                                <label class="text-muted small d-block">Ubicación Específica (Pabellón/Nicho):</label>
+                                <span class="fw-bold" id="resNicheDetail">---</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-list-check me-2 text-primary"></i> Detalle de Servicios Seleccionados</h6>
+                    <div id="resServicesTable">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-lg rounded-4 bg-primary text-white sticky-top" style="top: 20px;">
+                <div class="card-body p-4 text-center">
+                    <i class="fa-solid fa-hand-holding-dollar fa-3x mb-3 opacity-50"></i>
+                    <h4 class="fw-light">Total a Pagar</h4>
+                    <h2 class="fw-bold mb-4" id="resTotalAmount">S/ 0.00</h2>
+
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-light btn-lg rounded-pill fw-bold" onclick="saveFinalContract()">
+                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> REGISTRAR CONTRATO
+                        </button>
+                        <button class="btn btn-outline-light rounded-pill btn-sm" onclick="loadStep(4)">
+                            <i class="fa-solid fa-pen-to-square me-2"></i> Modificar Servicios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 bg-white rounded-4 border shadow-sm">
+                <p class="small text-muted mb-0 text-center">
+                    <i class="fa-solid fa-circle-info me-1"></i> Al registrar, se generará el documento correlativo y se descontará el stock correspondiente.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>

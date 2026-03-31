@@ -17,5 +17,6 @@ namespace ContratosYReembolsos.Data
         public DbSet<ServiceCategory> CategoriasServicios { get; set; }
         public DbSet<StockItem> StockItems { get; set; }
         public DbSet<PhysicalUnit> UnidadesFisicas { get; set; }
+        public DbSet<Coffin> Ataudes { get; set; }
     }
 }

@@ -1,37 +1,60 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-public class Contract
+namespace ContratosYReembolsos.Models
 {
-    public int Id { get; set; }
+    public class Contract
+    {
+        [Key]
+        public int Id { get; set; }
 
-    public string ContractNumber { get; set; } // Ejemplo: CON-2026-0001
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-    public string Status { get; set; } // "Pendiente", "Finalizado", "Cancelado"
+        // Código generado: JUN202600001
+        [Required, StringLength(20)]
+        public string ContractNumber { get; set; }
 
-    // --- PASO 1: SOLICITANTE ---
-    public string SolicitorDni { get; set; }
-    public string SolicitorName { get; set; }
-    public string SolicitorCip { get; set; }
-    public string SolicitorType { get; set; } // "Titular" o "Familiar"
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string Status { get; set; } = "Finalizado";
 
-    // --- PASO 2: FALLECIDO ---
-    public string DeceasedDni { get; set; }
-    public string DeceasedName { get; set; }
-    public DateTime DeathDate { get; set; }
+        // --- PASO 1: SOLICITANTE ---
+        public string SolicitorDni { get; set; }
+        public string SolicitorName { get; set; }
+        public string SolicitorCip { get; set; }
+        public string SolicitorType { get; set; } // "Titular" o "Familiar"
 
-    // --- LOGÍSTICA DE SEPULCRO ---
-    public DateTime BurialDate { get; set; } // Solo fecha
-    public TimeSpan BurialTime { get; set; } // Solo hora (importante para validación de movilidad)
+        // --- PASO 2: FALLECIDO ---
+        public string DeceasedDni { get; set; }
+        public string DeceasedName { get; set; }
+        public DateTime DeathDate { get; set; }
 
-    public string CemeteryId { get; set; } // Ejemplo: CEM120101
-    public string BurialType { get; set; } // "Pabellon", "Tumba", "Columbario"
-    public string BurialDetail { get; set; } // Texto del mapa: "Pabellón San Juan (Cara 1) - Fila A - Nro 5"
-    public int? NicheId { get; set; } // FK opcional al registro real de nicho si lo tienes en DB
+        // --- LOGÍSTICA DE SEPULCRO ---
+        public DateTime BurialDate { get; set; }
+        public TimeSpan BurialTime { get; set; }
 
-    // --- PASO 3: AGENCIA ---
-    public int AgencyId { get; set; }
-    public string AgencyName { get; set; } // Denormalizado para historial rápido
+        // Ubicación del Fallecimiento (Ubigeo)
+        public string IneiCode { get; set; } // El ID del distrito seleccionado
+        public string UbigeoFull { get; set; } // Texto: "JUNIN - HUANCAYO - EL TAMBO"
 
-    // --- RELACIÓN CON SERVICIOS ---
-    public virtual ICollection<ContractDetail> Details { get; set; }
+        // Velatorio
+        public int? WakeId { get; set; }
+        public string WakeName { get; set; } // Denormalizado para histórico
+
+        // Cementerio
+        public string CemeteryId { get; set; }
+        public string CemeteryName { get; set; } // Denormalizado para histórico
+
+        public string BurialType { get; set; } // "Pabellon", "Tumba", "Columbario"
+        public string BurialDetail { get; set; } // "Pabellón San Juan - Fila A - Nro 5"
+
+        // --- PASO 3: AGENCIA ---
+        public int AgencyId { get; set; }
+        public string AgencyName { get; set; }
+        public string AgencyAddress { get; set; }
+
+        // --- FINANZAS ---
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAmount { get; set; }
+
+        // --- RELACIONES ---
+        public virtual ICollection<ContractDetail> Details { get; set; } = new List<ContractDetail>();
+    }
 }

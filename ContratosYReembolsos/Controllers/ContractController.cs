@@ -4,6 +4,9 @@ using ContratosYReembolsos.Data;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ContratosYReembolsos.ViewModels;
+using ContratosYReembolsos.Models;
+using Rotativa.AspNetCore;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -296,5 +299,178 @@ namespace ContratosYReembolsos.Controllers
         {
             return PartialView("Partials/_NicheSelector");
         }
+
+        private string GetRegionPrefix(string regionName)
+        {
+            if (string.IsNullOrEmpty(regionName)) return "GEN";
+
+            var prefixes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Amazonas", "AMA" }, 
+                { "Ancash", "ANC" }, 
+                { "Apurimac", "APU" },
+                { "Arequipa", "ARE" }, 
+                { "Ayacucho", "AYA" }, 
+                { "Cajamarca", "CAJ" },
+                { "Callao", "CAL" }, 
+                { "Cusco", "CUS" }, 
+                { "Huancavelica", "HUV" },
+                { "Huanuco", "HUA" }, 
+                { "Ica", "ICA" }, 
+                { "Junin", "JUN" },
+                { "La Libertad", "LIB" }, 
+                { "Lambayeque", "LAM" }, 
+                { "Lima", "LIM" },
+                { "Loreto", "LOR" }, 
+                { "Madre de Dios", "MDD" }, 
+                { "Moquegua", "MOQ" },
+                { "Pasco", "PAS" }, 
+                { "Piura", "PIU" }, 
+                { "Puno", "PUN" },
+                { "San Martin", "SAM" }, 
+                { "Tacna", "TAC" }, 
+                { "Tumbes", "TUM" },
+                { "Ucayali", "UCA" }
+            };
+
+            // Buscamos el nombre de la región. Si no existe, devolvemos los 3 primeros caracteres en mayúsculas.
+            if (prefixes.TryGetValue(regionName, out string prefix))
+            {
+                return prefix;
+            }
+
+            return regionName.Length >= 3 ? regionName.Substring(0, 3).ToUpper() : "GEN";
+        }
+
+        [HttpGet]
+        public IActionResult GetPrefix(string region)
+        {
+            if (string.IsNullOrEmpty(region)) return Json(new { prefix = "GEN" });
+
+            string prefix = GetRegionPrefix(region);
+            return Json(new { prefix });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] ContractUploadViewModel model)
+        {
+            if (model == null) return BadRequest(new { message = "Datos no recibidos correctamente." });
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Obtener Prefijo Regional con validación
+                string regionName = "LIMA";
+                if (!string.IsNullOrEmpty(model.Deceased.UbigeoFull) && model.Deceased.UbigeoFull.Contains("-"))
+                {
+                    regionName = model.Deceased.UbigeoFull.Split('-')[0].Trim();
+                }
+
+                string prefix = GetRegionPrefix(regionName);
+                int currentYear = DateTime.Now.Year;
+
+                // 2. Calcular Correlativo Regional
+                int regionCount = await _context.Contratos
+                    .CountAsync(c => c.ContractNumber.StartsWith(prefix) && c.CreatedAt.Year == currentYear);
+                string contractCode = $"{prefix}{currentYear}{(regionCount + 1).ToString("D5")}";
+
+                // 3. Mapear Cabecera
+                var contract = new Contract
+                {
+                    ContractNumber = contractCode,
+                    CreatedAt = DateTime.Now,
+                    Status = "Finalizado",
+                    SolicitorDni = model.Solicitor.Dni,
+                    SolicitorName = model.Solicitor.Name,
+                    SolicitorCip = model.Solicitor.Cip,
+                    SolicitorType = model.Solicitor.Type,
+                    DeceasedDni = model.Deceased.Dni,
+                    DeceasedName = model.Deceased.Name,
+                    DeathDate = model.Deceased.DeathDate,
+                    BurialDate = model.Deceased.BurialDate,
+
+                    // Usamos TryParse para que no explote si la hora viene mal
+                    BurialTime = TimeSpan.TryParse(model.Deceased.BurialTime, out var bt) ? bt : TimeSpan.Zero,
+
+                    IneiCode = model.Deceased.Inei,
+                    UbigeoFull = model.Deceased.UbigeoFull,
+                    WakeId = model.Deceased.WakeId,
+                    WakeName = model.Deceased.WakeName,
+                    CemeteryId = model.Deceased.CemeteryId,
+                    CemeteryName = model.Deceased.CemeteryName,
+                    BurialType = model.Deceased.BurialType,
+                    BurialDetail = model.Deceased.BurialDetail,
+                    AgencyId = model.Agency.Id,
+                    AgencyName = model.Agency.Name,
+                    AgencyAddress = model.Agency.Address,
+                    TotalAmount = model.TotalAmount
+                };
+
+                _context.Contratos.Add(contract);
+                await _context.SaveChangesAsync(); // Genera el ID
+
+                // 4. Mapear Detalles
+                foreach (var s in model.Services)
+                {
+                    var detail = new ContractDetail
+                    {
+                        ContractId = contract.Id,
+                        ServiceId = s.ServiceId,
+                        Observations = $"Lógica: {s.LogicType}",
+                        ScheduledDate = (s.LogicType == "MOVILIDAD" && !string.IsNullOrEmpty(s.ExtraData?.ScheduledDate))
+                                        ? DateTime.Parse(s.ExtraData.ScheduledDate) : (DateTime?)null,
+                        ScheduledTime = (s.LogicType == "MOVILIDAD" && !string.IsNullOrEmpty(s.ExtraData?.ScheduledTime))
+                                        ? TimeSpan.Parse(s.ExtraData.ScheduledTime) : (TimeSpan?)null,
+                        StockItemId = s.ExtraData?.StockItemId
+                    };
+
+                    if (s.LogicType == "ATAUD" && s.ExtraData?.StockItemId != null)
+                    {
+                        var stock = await _context.StockItems.FindAsync(s.ExtraData.StockItemId);
+                        if (stock != null) stock.Status = "Vendido";
+                    }
+
+                    _context.DetallesContrato.Add(detail);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // --- EL CAMBIO ESTÁ AQUÍ: Agregamos "id = contract.Id" ---
+                return Ok(new
+                {
+                    success = true,
+                    id = contract.Id,
+                    contractNumber = contract.ContractNumber
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DescargarContratoPDF(int id)
+        {
+            // Buscamos el contrato con sus detalles y el nombre de los servicios
+            var contrato = await _context.Contratos
+                .Include(c => c.Details)
+                    .ThenInclude(d => d.Service)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contrato == null) return NotFound();
+
+            return new ViewAsPdf("ContractPrint", contrato)
+            {
+                FileName = $"Contrato_{contrato.ContractNumber}.pdf",
+                PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                PageMargins = new Rotativa.AspNetCore.Options.Margins(10, 10, 10, 10),
+                CustomSwitches = "--print-media-type --no-outline"
+            };
+        }
+
+
     }
 }

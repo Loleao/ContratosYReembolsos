@@ -1,0 +1,153 @@
+﻿@model ContratosYReembolsos.Models.Contract
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+        }
+
+        .border-section {
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .title-label {
+            font-weight: bold;
+            color: #004a99;
+            border-bottom: 1px solid #004a99;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .val {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .header-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <table class="header-table">
+        <tr>
+            <td style="width: 70%">
+                <h2 class="fw-bold mb-0 text-primary">FONAFUN PERÚ</h2>
+                <p class="mb-0 text-muted small">FONDO DE APOYO FUNERARIO - POLICÍA NACIONAL DEL PERÚ</p>
+                <p class="small">Agencia: <span class="val">@Model.AgencyName</span> - @Model.AgencyAddress</p>
+            </td>
+            <td style="width: 30%; text-align: right;">
+                <div class="p-3 border border-primary rounded text-center">
+                    <h5 class="mb-0 fw-bold text-danger">CONTRATO N°</h5>
+                    <h3 class="mb-0 fw-bold">@Model.ContractNumber</h3>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="row">
+        <div class="col-6">
+            <div class="border-section">
+                <div class="title-label">Datos del Solicitante</div>
+                <div>Nombre: <span class="val">@Model.SolicitorName</span></div>
+                <div>DNI: <span class="val">@Model.SolicitorDni</span> | CIP: <span class="val">@Model.SolicitorCip</span></div>
+                <div>Parentesco/Tipo: <span class="val">@Model.SolicitorType</span></div>
+            </div>
+        </div>
+
+        <div class="col-6">
+            <div class="border-section">
+                <div class="title-label">Datos del Fallecido</div>
+                <div>Nombre: <span class="val">@Model.DeceasedName</span></div>
+                <div>DNI: <span class="val">@Model.DeceasedDni</span></div>
+                <div>Fecha Fallecimiento: <span class="val">@Model.DeathDate.ToShortDateString()</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-section">
+        <div class="title-label">Logística de Sepelio y Ubicación</div>
+        <div class="row">
+            <div class="col-4">Fecha Sepelio: <span class="val">@Model.BurialDate.ToShortDateString()</span></div>
+            <div class="col-4">Hora Sepelio: <span class="val">@Model.BurialTime</span></div>
+            <div class="col-4">Ubigeo: <span class="val">@Model.UbigeoFull</span></div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-6">Velatorio: <span class="val">@Model.WakeName</span></div>
+            <div class="col-6">Cementerio: <span class="val">@Model.CemeteryName (@Model.BurialType)</span></div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.BurialDetail))
+        {
+            <div class="mt-2 small italic">Detalle de ubicación: <span class="val">@Model.BurialDetail</span></div>
+        }
+    </div>
+
+    <div class="border-section">
+        <div class="title-label">Detalle de Servicios Contratados</div>
+        <table class="table table-sm table-bordered mt-2">
+            <thead class="table-light">
+                <tr>
+                    <th>Servicio / Producto</th>
+                    <th>Observaciones / Programación</th>
+                    <th class="text-end">Precio (S/)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detail in Model.Details)
+                {
+                    <tr>
+                        <td><span class="val">@detail.Service?.Name</span></td>
+                        <td>
+                            @detail.Observations
+                            @if (detail.ScheduledDate.HasValue)
+                            {
+                                <span>(@detail.ScheduledDate.Value.ToShortDateString() @detail.ScheduledTime)</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="table-primary">
+                    <th colspan="2" class="text-end">MONTO TOTAL DEL CONTRATO:</th>
+                    <th class="text-end">S/ @Model.TotalAmount.ToString("N2")</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div style="margin-top: 60px;">
+        <table style="width: 100%; text-align: center;">
+            <tr>
+                <td style="width: 40%">
+                    <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto;"></div>
+                    <p class="mb-0">Firma del Solicitante</p>
+                    <small>DNI: @Model.SolicitorDni</small>
+                </td>
+                <td style="width: 20%"></td>
+                <td style="width: 40%">
+                    <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto;"></div>
+                    <p class="mb-0">Firma Autorizada FONAFUN</p>
+                    <small>@Model.AgencyName</small>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="mt-5 text-center text-muted" style="font-size: 8px;">
+        Este documento es una representación impresa del contrato digital generado en el sistema de FONAFUN PERÚ.
+    </div>
+</body>
+</html>

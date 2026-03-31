@@ -1,41 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ContratosYReembolsos.ViewModels
+﻿public class ContractUploadViewModel
 {
-    public class ContractViewModel
+    public SolicitorData Solicitor { get; set; }
+    public DeceasedData Deceased { get; set; }
+    public AgencyData Agency { get; set; }
+    public List<ServiceSelection> Services { get; set; }
+    public decimal TotalAmount { get; set; }
+
+    public class SolicitorData
     {
-        // --- PASO 1: SOLICITANTE ---
-        public int SolicitorId { get; set; } // ID en base de datos si existe
-        public string SolicitorDni { get; set; }
-        public string SolicitorName { get; set; }
-        public string SolicitorCip { get; set; }
-        public string SolicitorType { get; set; } // "Titular" o "Familiar"
+        public string Dni { get; set; }
+        public string Name { get; set; }
+        public string Cip { get; set; }
+        public string Type { get; set; }
+    }
 
-        // --- PASO 2: DIFUNTO ---
-        public int DeceasedId { get; set; }
-        public string DeceasedDni { get; set; }
-        public string DeceasedName { get; set; }
+    public class DeceasedData
+    {
+        public string Dni { get; set; }
+        public string Name { get; set; }
         public DateTime DeathDate { get; set; }
-
-        // UBICACIÓN Y LOGÍSTICA DE SEPULCRO
         public DateTime BurialDate { get; set; }
-        public string BurialTime { get; set; } // Lo recibimos como string "15:30" desde el input type="time"
-        public string CemeteryId { get; set; }
-        public string BurialType { get; set; } // "Pabellon", "Tumba", "Columbario"
-        public string BurialDetail { get; set; } // El texto del mapa (Fila, Nro, etc)
-        public int? NicheId { get; set; } // ID del nicho si se seleccionó del mapa
-
-        // UBICACIÓN DE FALLECIMIENTO (UBIGEO)
+        public string BurialTime { get; set; }
         public string Inei { get; set; }
         public string UbigeoFull { get; set; }
-        public int WakeId { get; set; } // ID del local de velatorio
+        public int? WakeId { get; set; }
+        public string WakeName { get; set; }
+        public string CemeteryId { get; set; }
+        public string CemeteryName { get; set; }
+        public string BurialType { get; set; }
+        public string BurialDetail { get; set; }
+    }
 
-        // --- PASO 3: AGENCIA ---
-        public int AgencyId { get; set; }
+    public class AgencyData
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Address { get; set; }
+    }
 
-        // --- PASO 4: LISTA DE SERVICIOS SELECCIONADOS ---
-        // Aquí es donde enviamos la lista de lo que el usuario marcó en las cards
-        public List<ServiceSelectionViewModel> SelectedServices { get; set; } = new List<ServiceSelectionViewModel>();
+    public class ServiceSelection
+    {
+        public int ServiceId { get; set; }
+        public decimal Price { get; set; }
+        public string LogicType { get; set; }
+        public ExtraData ExtraData { get; set; }
+    }
+
+    public class ExtraData
+    {
+        public string ScheduledDate { get; set; }
+        public string ScheduledTime { get; set; }
+        public int? StockItemId { get; set; }
     }
 }
