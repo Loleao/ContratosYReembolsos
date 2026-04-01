@@ -1,0 +1,104 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.ViewModels.InventoryViewModel>
+
+<div class="animate__animated animate__fadeIn">
+    @* Buscador Interno Instantáneo *@
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-2">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-0">
+                    <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                </span>
+                <input type="text" id="localSearch" class="form-control border-0 bg-transparent py-2"
+                       placeholder="Filtrar por modelo, color o material en esta sede..."
+                       onkeyup="filterInventory()">
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4" id="inventoryGrid">
+        @if (!Model.Any())
+        {
+            <div class="col-12 text-center py-5">
+                <div class="mb-3 text-muted opacity-50">
+                    <i class="fa-solid fa-box-open fa-4x"></i>
+                </div>
+                <h5 class="text-muted">Sin stock registrado</h5>
+                <p class="small text-muted">No se han encontrado variantes de ataúdes en esta filial.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                // Lógica de colores de borde según stock vs mínimo
+                string statusBorder = item.CurrentStock == 0 ? "border-danger" :
+                (item.CurrentStock <= item.MinimumStock ? "border-warning" : "border-success");
+
+                <div class="col-md-4 col-lg-3 coffin-item"
+                     data-search="@item.ModelName.ToLower() @item.Color.ToLower() @item.Material.ToLower()">
+
+                    <div class="card coffin-card h-100 border-top border-4 @statusBorder">
+
+                        <span class="stock-badge border shadow-sm">
+                            Stock: @item.CurrentStock
+                        </span>
+
+                        <div class="p-3 d-flex flex-column h-100">
+                            <div class="img-container mb-3">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.ModelName">
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-image fa-3x text-light opacity-50"></i>
+                                }
+                            </div>
+
+                            <div class="mb-3 flex-grow-1">
+                                <div class="variant-color-tag fw-bold">@item.Color</div>
+                                <h6 class="fw-bold mb-1 text-truncate" title="@item.ModelName">@item.ModelName</h6>
+                                <p class="text-muted small mb-2">@item.Material • @item.Size</p>
+
+                                @if (item.CurrentStock <= item.MinimumStock && item.CurrentStock > 0)
+                                {
+                                    <div class="badge bg-warning-subtle text-warning border border-warning x-small rounded-pill">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Stock Crítico
+                                    </div>
+                                }
+                                @if (item.CurrentStock == 0)
+                                {
+                                    <div class="badge bg-danger-subtle text-danger border border-danger x-small rounded-pill">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i> Agotado
+                                    </div>
+                                }
+                            </div>
+
+                            <button class="btn btn-dark w-100 rounded-pill py-2 fw-bold shadow-sm mt-auto"
+                                    onclick="openEntryModal(@item.VariantId)">
+                                <i class="fa-solid fa-plus-circle me-1"></i> Ingresar Stock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    // Buscador local dentro de la parcial
+    function filterInventory() {
+        const filter = document.getElementById('localSearch').value.toLowerCase();
+        const items = document.querySelectorAll('.coffin-item');
+
+        items.forEach(item => {
+            const text = item.getAttribute('data-search');
+            if (text.includes(filter)) {
+                item.style.display = "";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+</script>

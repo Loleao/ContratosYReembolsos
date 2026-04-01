@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ContratosYReembolsos.Data;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using ContratosYReembolsos.ViewModels;
 using ContratosYReembolsos.Models;
 using Rotativa.AspNetCore;
 

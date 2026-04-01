@@ -1,0 +1,51 @@
+﻿@using ContratosYReembolsos.Models.External
+@model IEnumerable<Subsidiary>
+
+<div class="container-fluid p-0">
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">Gestión de Almacenes por Filial</h4>
+        <p class="text-muted small">Seleccione una sede para gestionar su inventario de ataúdes.</p>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var filial in Model)
+        {
+            <div class="col-md-4 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 h-100 transition-hover">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                                <i class="fa-solid fa-building-shield fa-xl"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">@filial.Name</h6>
+                                <small class="text-muted">Cód: @filial.Id</small>
+                            </div>
+                        </div>
+
+                        <p class="text-muted small mb-4">
+                            <i class="fa-solid fa-location-dot me-1"></i> @filial.Address
+                        </p>
+
+                        <a href="@Url.Action("Inventory", "Subsidiary", new { id = filial.Id })"
+                           class="btn btn-outline-primary w-100 rounded-pill fw-bold">
+                            Ver Inventario <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+        .transition-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        }
+</style>

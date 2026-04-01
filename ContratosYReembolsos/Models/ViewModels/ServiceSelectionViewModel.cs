@@ -1,4 +1,4 @@
-﻿namespace ContratosYReembolsos.ViewModels
+﻿namespace ContratosYReembolsos.Models.ViewModels
 {
     public class ServiceSelectionViewModel
     {

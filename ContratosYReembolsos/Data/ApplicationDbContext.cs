@@ -18,5 +18,10 @@ namespace ContratosYReembolsos.Data
         public DbSet<StockItem> StockItems { get; set; }
         public DbSet<PhysicalUnit> UnidadesFisicas { get; set; }
         public DbSet<Coffin> Ataudes { get; set; }
+        public DbSet<CoffinMovement> MovimientosAtaudes { get; set; }
+        public DbSet<BranchStock> StockFilial { get; set; }
+        public DbSet<CoffinVariant> AtaudVariantes { get; set; }
+        public DbSet<CoffinTransfer> AtaudTransferencias { get; set; }
+
     }
 }

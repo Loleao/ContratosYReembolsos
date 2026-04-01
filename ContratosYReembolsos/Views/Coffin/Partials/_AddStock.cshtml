@@ -1,0 +1,48 @@
+﻿<div class="modal fade" id="entryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-file-circle-plus me-2"></i>Ingreso Local de Stock
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="modalVariantId" value="@ViewBag.VariantId" />
+
+                <div class="mb-4">
+                    <label class="form-label x-small fw-bold text-muted text-uppercase">Ubicación</label>
+                    <p class="fw-bold mb-0 text-primary">@ViewBag.SubsidiaryName (@ViewBag.SubsidiaryId)</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label x-small fw-bold text-muted text-uppercase">Producto seleccionado</label>
+                    <p class="fw-bold mb-0">@ViewBag.ModelName</p>
+                </div>
+
+                <hr class="opacity-10">
+
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold small">Cantidad</label>
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('entryQuantity').stepDown()">-</button>
+                            <input type="number" id="entryQuantity" class="form-control text-center fw-bold border-2" value="1" min="1">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('entryQuantity').stepUp()">+</button>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold small">Documento Ref. (Guía/Factura)</label>
+                        <input type="text" id="entryReference" class="form-control border-2" placeholder="Ej: F001-000123">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="saveEntry()">
+                    Confirmar Ingreso <i class="fa-solid fa-save ms-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

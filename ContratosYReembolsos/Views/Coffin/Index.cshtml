@@ -1,138 +1,146 @@
-﻿@model IEnumerable<ContratosYReembolsos.Models.Coffin>
+﻿@{
+    ViewData["Title"] = "Logística Nacional";
+}
 
-<style>
-    .coffin-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-        .coffin-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-
-    .stock-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.8rem;
-        z-index: 10;
-        /* Forzamos el fondo negro y letra blanca */
-        background-color: #000000 !important;
-        color: #ffffff !important;
-        /* Un borde sutil para indicar el estado */
-        border-width: 2px !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .border-danger {
-        border-color: #ff4757 !important;
-        box-shadow: 0 0 8px rgba(255, 71, 87, 0.3);
-    }
-
-    .border-success {
-        border-color: #2ed573 !important;
-    }
-
-    .img-container {
-        height: 180px;
-        background-color: #f1f3f5;
-        border-radius: 12px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-</style>
-
-<div class="container-fluid p-0">
+<div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-1">Inventario de Ataúdes</h4>
-            <p class="text-muted small">Gestión de stock y modelos disponibles en FONAFUN.</p>
+            <h4 class="fw-bold mb-1"><i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Logística FONAFUN</h4>
+            <p class="text-muted small mb-0">Control central de inventarios y movimientos nacionales.</p>
         </div>
-        <a asp-action="Create" class="btn btn-primary rounded-pill px-4">
-            <i class="fa-solid fa-plus me-2"></i> Nuevo Modelo
-        </a>
+
+        <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
+            <button id="btnFiliales" class="btn btn-primary rounded-pill px-4 fw-bold active" onclick="switchView('filiales')">
+                <i class="fa-solid fa-building-shield me-2"></i>Sedes
+            </button>
+            <button id="btnTransfers" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchView('transferencias')">
+                <i class="fa-solid fa-truck-fast me-2"></i>Traslados
+            </button>
+        </div>
+
+        <button class="btn btn-dark rounded-pill px-4 shadow-sm" onclick="openTransferModal()">
+            <i class="fa-solid fa-plus me-2"></i>Nueva Transferencia
+        </button>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-3">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" id="searchInput" class="form-control border-light bg-light" placeholder="Buscar por modelo...">
-                </div>
-            </div>
+    <div id="mainViewContainer" class="position-relative" style="min-height: 400px;">
+        <div class="text-center py-5 mt-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Cargando módulos...</p>
         </div>
-    </div>
-
-    <div class="row g-4">
-        @if (!Model.Any())
-        {
-            <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-box-open fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No hay ataúdes registrados en el sistema.</p>
-            </div>
-        }
-        else
-        {
-            @foreach (var item in Model)
-            {
-                <div class="col-md-4 col-lg-3">
-                    <div class="card coffin-card h-100">
-                        @{
-                            var statusBorder = item.CurrentStock <= item.MinimumStock ? "border-danger" : "border-success";
-                        }
-                        <span class="stock-badge bg-dark text-white border @statusBorder">
-                            Stock: @item.CurrentStock
-                        </span>
-
-                        <div class="p-3">
-                            <div class="img-container">
-                                @if (!string.IsNullOrEmpty(item.ImageUrl))
-                                {
-                                    <img src="@item.ImageUrl" alt="@item.ModelName">
-                                }
-                                else
-                                {
-                                    <i class="fa-solid fa-box-open fa-3x text-light"></i>
-                                }
-                            </div>
-
-                            <div class="mt-3">
-                                <h6 class="fw-bold mb-1 text-truncate">@item.ModelName</h6>
-                                <p class="text-muted small mb-2">@item.Material - @item.Size</p>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold text-primary fs-5">S/ @item.UnitPrice.ToString("N2")</span>
-                                    <div class="btn-group">
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light text-primary">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </a>
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('¿Seguro de eliminar este modelo?')">
-                                            <button type="submit" class="btn btn-sm btn-light text-danger">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
     </div>
 </div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        // URLs dinámicas
+        const urls = {
+            getSubsidiaryStockModal: '@Url.Action("GetFilialesGrid", "Coffin")',
+            getTransfersModal: '@Url.Action("GetTransfersGrid", "Coffin")',
+            getCreateTransferStockModal: '@Url.Action("GetCreateTransferStock", "Coffin")',
+            executeTransfer: '@Url.Action("TransferFromGeneral", "Coffin")'
+        };
+
+        document.addEventListener("DOMContentLoaded", () => switchView('filiales'));
+
+        // Función de Filtrado (Ahora global para evitar errores de definición)
+        function applyFilters() {
+            const code = document.getElementById('filterCode')?.value || '';
+            const name = document.getElementById('filterName')?.value || '';
+            switchView('filiales', code, name, 1);
+        }
+
+        async function switchView(viewName, code = '', name = '', page = 1) {
+            const container = document.getElementById('mainViewContainer');
+            const btnF = document.getElementById('btnFiliales');
+            const btnT = document.getElementById('btnTransfers');
+
+            // Toggle de clases para los botones
+            if(viewName === 'filiales') {
+                btnF.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
+                btnT.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            } else {
+                btnT.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
+                btnF.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            }
+
+            try {
+                // USANDO TUS URLS EXACTAS
+                const url = viewName === 'filiales'
+                    ? `${urls.getSubsidiaryStockModal}?searchCode=${encodeURIComponent(code)}&searchName=${encodeURIComponent(name)}&page=${page}`
+                    : urls.getTransfersModal;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Status: " + response.status);
+
+                const html = await response.text();
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar datos. Revisa la consola (F12).</div>';
+            }
+        }
+
+        // Abrir Modal de Nueva Transferencia
+        async function openTransferModal() {
+            try {
+                const response = await fetch(urls.getCreateTransferStockModal);
+                const html = await response.text();
+                const container = document.getElementById('modalContainer');
+                container.innerHTML = html;
+                new bootstrap.Modal(container.querySelector('.modal')).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+            }
+        }
+
+        async function executeTransfer() {
+            // Capturamos los datos del modal
+            const variantId = document.getElementById('transferVariantId').value;
+            const targetId = document.getElementById('targetSubsidiaryId').value;
+            const qty = document.getElementById('transferQuantity').value;
+            const ref = document.getElementById('transferReference').value;
+
+            // Validación de frontend
+            if (!variantId || !targetId || !qty || !ref) {
+                Swal.fire('Atención', 'Complete todos los campos obligatorios.', 'warning');
+                return;
+            }
+
+            // Validación de stock local en el cliente
+            const selectedOpt = document.querySelector('#transferVariantId option:checked');
+            const max = parseInt(selectedOpt.dataset.max);
+            if (parseInt(qty) > max) {
+                Swal.fire('Error', `Solo hay ${max} unidades disponibles.`, 'error');
+                return;
+            }
+
+            try {
+                const url = `${urls.executeTransfer}?variantId=${variantId}&targetSubsidiaryId=${targetId}&quantity=${qty}&reference=${ref}`;
+                const response = await fetch(url, { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Despachado!', result.message, 'success').then(() => {
+                        // Cerramos modal y refrescamos la pestaña de Traslados
+                        bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
+                        switchView('transferencias');
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo de conexión.', 'error');
+            }
+        }
+
+        function applyFilters() {
+            const code = document.getElementById('filterCode')?.value || '';
+            const name = document.getElementById('filterName')?.value || '';
+            // Reiniciamos a la página 1 al filtrar
+            switchView('filiales', code, name, 1);
+        }
+    </script>
+}

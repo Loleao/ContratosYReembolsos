@@ -89,6 +89,37 @@ namespace ContratosYReembolsos.Migrations
                     b.ToTable("Agencias");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.BranchStock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CoffinVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastUpdate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MinimumStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SubsidiaryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoffinVariantId");
+
+                    b.ToTable("StockFilial");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.Cemetery", b =>
                 {
                     b.Property<string>("Id")
@@ -119,28 +150,145 @@ namespace ContratosYReembolsos.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CurrentStock")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Material")
+                    b.Property<string>("ModelName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MinimumStock")
+                    b.HasKey("Id");
+
+                    b.ToTable("Ataudes");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("ModelName")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BalanceAfter")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CoffinVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Observations")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reference")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RegisteredBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SubsidiaryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoffinVariantId");
+
+                    b.ToTable("MovimientosAtaudes");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinTransfer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ArrivalMovementId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CoffinVariantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DateReceived")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartureMovementId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GuiaRemision")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginSubsidiaryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReceptionObservations")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SentBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetSubsidiaryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArrivalMovementId");
+
+                    b.HasIndex("CoffinVariantId");
+
+                    b.HasIndex("DepartureMovementId");
+
+                    b.ToTable("AtaudTransferencias");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CoffinModelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Material")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -148,12 +296,11 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Ataudes");
+                    b.HasIndex("CoffinModelId");
+
+                    b.ToTable("AtaudVariantes");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Contract", b =>
@@ -458,6 +605,62 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("StockItem");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.BranchStock", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
+                        .WithMany("Stocks")
+                        .HasForeignKey("CoffinVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CoffinVariant");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinMovement", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
+                        .WithMany()
+                        .HasForeignKey("CoffinVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CoffinVariant");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinTransfer", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.CoffinMovement", "ArrivalMovement")
+                        .WithMany()
+                        .HasForeignKey("ArrivalMovementId");
+
+                    b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
+                        .WithMany()
+                        .HasForeignKey("CoffinVariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ContratosYReembolsos.Models.CoffinMovement", "DepartureMovement")
+                        .WithMany()
+                        .HasForeignKey("DepartureMovementId");
+
+                    b.Navigation("ArrivalMovement");
+
+                    b.Navigation("CoffinVariant");
+
+                    b.Navigation("DepartureMovement");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinVariant", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Coffin", "Coffin")
+                        .WithMany("Variants")
+                        .HasForeignKey("CoffinModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Coffin");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.Niche", b =>
                 {
                     b.HasOne("ContratosYReembolsos.Models.Pavilion", "Pavilion")
@@ -489,6 +692,16 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired();
 
                     b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Coffin", b =>
+                {
+                    b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.CoffinVariant", b =>
+                {
+                    b.Navigation("Stocks");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Contract", b =>

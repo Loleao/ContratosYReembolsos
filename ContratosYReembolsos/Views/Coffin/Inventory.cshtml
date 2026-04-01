@@ -1,0 +1,199 @@
+﻿@{
+    ViewData["Title"] = "Gestión de Sede - " + ViewBag.SubsidiaryName;
+}
+
+<style>
+    .coffin-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+        .coffin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+    .stock-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        z-index: 10;
+        background-color: #000 !important;
+        color: #fff !important;
+    }
+
+    .img-container {
+        height: 160px;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .variant-color-tag {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+    }
+
+    .x-small {
+        font-size: 0.7rem;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index")">Sedes</a></li>
+                    <li class="breadcrumb-item active">@ViewBag.SubsidiaryName</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2 text-primary"></i>@ViewBag.SubsidiaryName</h4>
+        </div>
+
+        <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
+            <button id="btnStock" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="switchFilialView('stock')">
+                <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Actual
+            </button>
+            <button id="btnPending" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchFilialView('pendientes')">
+                <i class="fa-solid fa-truck-ramp-box me-2"></i>Por Recibir
+            </button>
+        </div>
+    </div>
+
+    <div id="filialViewContainer" class="position-relative" style="min-height: 400px;">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const filialId = '@ViewBag.SubsidiaryId';
+        const filialUrls = {
+            stock: '@Url.Action("GetFilialStock", "Coffin")',
+            pendientes: '@Url.Action("GetFilialPendingTransfers", "Coffin")',
+            getAddStockModal: '@Url.Action("GetAddStock", "Coffin")',
+            registerEntry: '@Url.Action("RegisterEntry", "Coffin")',
+            confirmReceipt: '@Url.Action("ConfirmReceipt", "Coffin")'
+        };
+
+        document.addEventListener("DOMContentLoaded", () => switchFilialView('stock'));
+
+        async function switchFilialView(view) {
+            const container = document.getElementById('filialViewContainer');
+            const btnS = document.getElementById('btnStock');
+            const btnP = document.getElementById('btnPending');
+
+            if(view === 'stock') {
+                btnS.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
+                btnP.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            } else {
+                btnP.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
+                btnS.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            }
+
+            try {
+                const url = view === 'stock' ? `${filialUrls.stock}?id=${filialId}` : `${filialUrls.pendientes}?id=${filialId}`;
+                const response = await fetch(url);
+                container.innerHTML = await response.text();
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar la vista.</div>';
+            }
+        }
+
+        async function openEntryModal(variantId) {
+            const url = `${filialUrls.getAddStockModal}?variantId=${variantId}&subsidiaryId=${filialId}`;
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+                const container = document.getElementById('modalContainer');
+                container.innerHTML = html;
+                new bootstrap.Modal(container.querySelector('.modal')).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+            }
+        }
+
+        async function saveEntry() {
+            const variantId = document.getElementById('modalVariantId').value;
+            const qty = document.getElementById('entryQuantity').value;
+            const ref = document.getElementById('entryReference').value;
+
+            if (!ref) {
+                Swal.fire('Atención', 'Ingrese una referencia (Guía/Factura).', 'warning');
+                return;
+            }
+
+            const finalUrl = `${filialUrls.registerEntry}?variantId=${variantId}&subsidiaryId=${filialId}&quantity=${qty}&reference=${ref}`;
+
+            try {
+                const response = await fetch(finalUrl, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('¡Éxito!', 'Stock actualizado.', 'success').then(() => {
+                        // Cerramos el modal y recargamos la vista de stock
+                        bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+                        switchFilialView('stock');
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo de comunicación.', 'error');
+            }
+        }
+
+        async function confirmReceipt(transferId) {
+            const { value: obs } = await Swal.fire({
+                title: '¿Confirmar Recepción?',
+                text: "El stock se sumará a esta filial tras confirmar.",
+                icon: 'question',
+                input: 'text',
+                inputLabel: 'Observaciones (Opcional)',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, recibir',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (obs !== undefined) {
+                try {
+                    const response = await fetch(`${filialUrls.confirmReceipt}?transferId=${transferId}&observations=${obs}`, {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        Swal.fire('¡Recibido!', 'El inventario ha sido actualizado.', 'success')
+                            .then(() => switchFilialView('pendientes'));
+                    } else {
+                        Swal.fire('Error', result.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Error de red.', 'error');
+                }
+            }
+        }
+    </script>
+}

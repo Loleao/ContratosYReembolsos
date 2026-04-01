@@ -1,0 +1,86 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.CoffinTransfer>
+
+<div class="animate__animated animate__fadeIn">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <h6 class="fw-bold mb-0 text-dark">Historial de Movimientos Nacionales</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="x-small text-muted text-uppercase" style="font-size: 11px; letter-spacing: 0.5px;">
+                        <th class="ps-4">Transferencia</th>
+                        <th>Ataúd (Modelo y Color)</th>
+                        <th>Ruta Logística</th>
+                        <th>Estado</th>
+                        <th>Referencia</th>
+                        <th class="pe-4 text-end">Trazabilidad (Kardex)</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">#TRF-@t.Id.ToString("D5")</div>
+                                <div class="text-muted" style="font-size: 11px;">@t.DateSent.ToString("dd/MM/yy HH:mm")</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@t.CoffinVariant.Coffin.ModelName</div>
+                                <div class="text-muted">Color: @t.CoffinVariant.Color</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-light text-dark border">Lima</span>
+                                    <i class="fa-solid fa-arrow-right-long mx-2 text-primary"></i>
+                                    <span class="badge bg-primary">@t.TargetSubsidiaryId</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (t.Status == "EN_CAMINO")
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill">
+                                        <i class="fa-solid fa-truck-fast me-1"></i> En Tránsito
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success rounded-pill">
+                                        <i class="fa-solid fa-box-open me-1"></i> Recibido
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <span class="text-muted"><i class="fa-solid fa-file-invoice me-1"></i> @t.GuiaRemision</span>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="btn-group btn-group-sm border rounded-pill overflow-hidden shadow-sm">
+                                    @* Tu idea de los 2 IDs brilla aquí: Salida vs Entrada *@
+                                    <span class="btn btn-light border-end small" title="Movimiento de Salida">
+                                        <i class="fa-solid fa-minus text-danger"></i> #@t.DepartureMovementId
+                                    </span>
+                                    <span class="btn btn-light small" title="Movimiento de Entrada">
+                                        @if (t.ArrivalMovementId.HasValue)
+                                        {
+                                            <i class="fa-solid fa-plus text-success"></i> <span class="text-success">#@t.ArrivalMovementId</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-ellipsis text-muted"></i>
+                                        }
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No hay transferencias registradas en el sistema.</p>
+            </div>
+        }
+    </div>
+</div>

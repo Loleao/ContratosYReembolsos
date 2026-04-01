@@ -28,6 +28,21 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Ataudes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ModelName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Ataudes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CategoriasServicios",
                 columns: table => new
                 {
@@ -124,6 +139,29 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AtaudVariantes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinModelId = table.Column<int>(type: "int", nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Material = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Size = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AtaudVariantes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AtaudVariantes_Ataudes_CoffinModelId",
+                        column: x => x.CoffinModelId,
+                        principalTable: "Ataudes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Servicios",
                 columns: table => new
                 {
@@ -173,6 +211,56 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MovimientosAtaudes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RegisteredBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BalanceAfter = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovimientosAtaudes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MovimientosAtaudes_AtaudVariantes_CoffinVariantId",
+                        column: x => x.CoffinVariantId,
+                        principalTable: "AtaudVariantes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockFilial",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    MinimumStock = table.Column<int>(type: "int", nullable: false),
+                    LastUpdate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockFilial", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StockFilial_AtaudVariantes_CoffinVariantId",
+                        column: x => x.CoffinVariantId,
+                        principalTable: "AtaudVariantes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StockItems",
                 columns: table => new
                 {
@@ -191,6 +279,47 @@ namespace ContratosYReembolsos.Migrations
                         principalTable: "Servicios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AtaudTransferencias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    OriginSubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TargetSubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DepartureMovementId = table.Column<int>(type: "int", nullable: true),
+                    ArrivalMovementId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GuiaRemision = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateSent = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SentBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateReceived = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReceivedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReceptionObservations = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AtaudTransferencias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_AtaudVariantes_CoffinVariantId",
+                        column: x => x.CoffinVariantId,
+                        principalTable: "AtaudVariantes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_MovimientosAtaudes_ArrivalMovementId",
+                        column: x => x.ArrivalMovementId,
+                        principalTable: "MovimientosAtaudes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_MovimientosAtaudes_DepartureMovementId",
+                        column: x => x.DepartureMovementId,
+                        principalTable: "MovimientosAtaudes",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -229,6 +358,26 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AtaudTransferencias_ArrivalMovementId",
+                table: "AtaudTransferencias",
+                column: "ArrivalMovementId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AtaudTransferencias_CoffinVariantId",
+                table: "AtaudTransferencias",
+                column: "CoffinVariantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AtaudTransferencias_DepartureMovementId",
+                table: "AtaudTransferencias",
+                column: "DepartureMovementId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AtaudVariantes_CoffinModelId",
+                table: "AtaudVariantes",
+                column: "CoffinModelId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DetallesContrato_ContractId",
                 table: "DetallesContrato",
                 column: "ContractId");
@@ -244,6 +393,11 @@ namespace ContratosYReembolsos.Migrations
                 column: "StockItemId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MovimientosAtaudes_CoffinVariantId",
+                table: "MovimientosAtaudes",
+                column: "CoffinVariantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Nichos_PavilionId",
                 table: "Nichos",
                 column: "PavilionId");
@@ -252,6 +406,11 @@ namespace ContratosYReembolsos.Migrations
                 name: "IX_Servicios_ServiceCategoryId",
                 table: "Servicios",
                 column: "ServiceCategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StockFilial_CoffinVariantId",
+                table: "StockFilial",
+                column: "CoffinVariantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StockItems_ServiceId",
@@ -266,6 +425,9 @@ namespace ContratosYReembolsos.Migrations
                 name: "Agencias");
 
             migrationBuilder.DropTable(
+                name: "AtaudTransferencias");
+
+            migrationBuilder.DropTable(
                 name: "Cementerios");
 
             migrationBuilder.DropTable(
@@ -275,7 +437,13 @@ namespace ContratosYReembolsos.Migrations
                 name: "Nichos");
 
             migrationBuilder.DropTable(
+                name: "StockFilial");
+
+            migrationBuilder.DropTable(
                 name: "UnidadesFisicas");
+
+            migrationBuilder.DropTable(
+                name: "MovimientosAtaudes");
 
             migrationBuilder.DropTable(
                 name: "Contratos");
@@ -287,7 +455,13 @@ namespace ContratosYReembolsos.Migrations
                 name: "Pabellones");
 
             migrationBuilder.DropTable(
+                name: "AtaudVariantes");
+
+            migrationBuilder.DropTable(
                 name: "Servicios");
+
+            migrationBuilder.DropTable(
+                name: "Ataudes");
 
             migrationBuilder.DropTable(
                 name: "CategoriasServicios");
