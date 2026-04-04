@@ -1,0 +1,248 @@
+﻿<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">Gestión Operativa de Movilidad</h4>
+            <p class="text-muted small">Despacho de servicios y control de recursos.</p>
+        </div>
+
+        @* El Switch de 3 posiciones *@
+        <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
+            <button id="btnContracts" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="switchTransportView('getPendingContractsModal')">
+                <i class="fa-solid fa-file-signature me-2"></i>Contratos <span class="badge bg-white text-primary ms-1">@ViewBag.PendingCount</span>
+            </button>
+            <button id="btnHistory" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchTransportView('getHistoryModal')">
+                <i class="fa-solid fa-id-card me-2"></i>Historial
+            </button>
+            <button id="btnVehicles" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchTransportView('getVehiclesModal')">
+                <i class="fa-solid fa-car-rear me-2"></i>Vehículos
+            </button>
+            <button id="btnDrivers" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchTransportView('getDriversModal')">
+                <i class="fa-solid fa-id-card me-2"></i>Conductores
+            </button>
+        </div>
+    </div>
+
+    <div id="transportViewContainer" class="position-relative" style="min-height: 500px;">
+    </div>
+
+    <div id="modalContainer"></div>
+</div>
+
+@section Scripts {
+    <script>
+        const transportUrls = {
+            getPendingContractsModal: '@Url.Action("GetPendingContracts")',
+            getVehiclesModal: '@Url.Action("GetVehicles")',
+            getDriversModal: '@Url.Action("GetDrivers")',
+            getHistoryModal: '@Url.Action("GetHistory")'
+        };
+
+        document.addEventListener("DOMContentLoaded", () => switchTransportView('getPendingContractsModal'));
+
+        async function switchTransportView(view) {
+            const container = document.getElementById('transportViewContainer');
+            const url = transportUrls[view];
+
+            if (!url) {
+                console.error("URL no encontrada para la vista:", view);
+                return;
+            }
+
+            // Feedback visual de carga
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+                container.innerHTML = html;
+
+                // Actualizar los estilos de los botones
+                updateButtonStyles(view);
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar la información.</div>';
+            }
+        }
+
+        function updateButtonStyles(activeView) {
+            const buttons = {
+                'contracts': document.getElementById('btnContracts'),
+                'vehicles': document.getElementById('btnVehicles'),
+                'drivers': document.getElementById('btnDrivers')
+            };
+
+            Object.keys(buttons).forEach(key => {
+                const btn = buttons[key];
+                if (key === activeView) {
+                    btn.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
+                } else {
+                    btn.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+                }
+            });
+        }
+
+        async function openDispatchModal(contractId) {
+            const url = `@Url.Action("GetDispatchVehicle", "Transport")?contractId=${contractId}`;
+
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+
+                // Crear un contenedor temporal para el modal si no existe
+                let modalContainer = document.getElementById('modalContainer');
+                if (!modalContainer) {
+                    modalContainer = document.createElement('div');
+                    modalContainer.id = 'modalContainer';
+                    document.body.appendChild(modalContainer);
+                }
+
+                modalContainer.innerHTML = html;
+                const myModal = new bootstrap.Modal(document.getElementById('dispatchModal'));
+                myModal.show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario de despacho.', 'error');
+            }
+        }
+
+        // Función para ejecutar el inicio del viaje
+        async function executeDispatch() {
+            const contractId = document.querySelector('input[name="contractId"]').value;
+            const vehicleId = document.getElementById('modalVehicleId').value;
+            const driverId = document.getElementById('modalDriverId').value;
+            const observations = document.getElementById('modalObservations').value;
+
+            if (!vehicleId || !driverId) {
+                Swal.fire('Atención', 'Debe seleccionar un vehículo y un conductor.', 'warning');
+                return;
+            }
+
+            // Usamos FormData para enviar como POST
+            const formData = new FormData();
+            formData.append('contractId', contractId);
+            formData.append('vehicleId', vehicleId);
+            formData.append('driverId', driverId);
+            formData.append('observations', observations);
+
+            try {
+                const response = await fetch('@Url.Action("StartTrip", "Transport")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Cerrar modal
+                    const modalElement = document.getElementById('dispatchModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    modalInstance.hide();
+
+                    Swal.fire({
+                        title: '¡Buen Viaje!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recargar la vista de contratos para que desaparezca el que acabamos de asignar
+                        switchTransportView('contracts');
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Error crítico en el servidor.', 'error');
+            }
+        }
+
+        async function prepareReturn(vehicleId) {
+            const { value: observations } = await Swal.fire({
+                title: '¿Confirmar Retorno de Unidad?',
+                text: "El vehículo y el chofer volverán a estar disponibles para otros contratos.",
+                input: 'text',
+                inputPlaceholder: 'Observaciones del viaje (ej: Tanque medio lleno)',
+                showCancelButton: true,
+                confirmButtonText: 'Registrar Entrada',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#198754',
+                inputAttributes: {
+                    'aria-label': 'Observaciones'
+                }
+            });
+
+            // Si el usuario no canceló el SweetAlert
+            if (observations !== undefined) {
+                try {
+                    const formData = new FormData();
+                    formData.append('vehicleId', vehicleId);
+                    formData.append('observations', observations || "Sin observaciones");
+
+                    const response = await fetch('@Url.Action("EndTrip", "Transport")', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        Swal.fire({
+                            title: '¡Servicio Finalizado!',
+                            text: result.message,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Refrescamos la vista actual (ya sea Seguimiento o Vehículos)
+                            // Esta es la clave para que pase de "En Curso" a "Finalizado"
+                            if (document.getElementById('en-ruta-tab')) {
+                                switchTransportView('history');
+                            } else {
+                                switchTransportView('vehicles');
+                            }
+                        });
+                    } else {
+                        Swal.fire('Error', result.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+                }
+            }
+        }
+
+        async function openCreateVehicle() {
+            const response = await fetch('@Url.Action("GetCreateVehicle", "Transport")');
+            document.getElementById('modalContainer').innerHTML = await response.text();
+            new bootstrap.Modal(document.getElementById('createVehicleModal')).show();
+
+            // Evento para guardar
+            document.getElementById('formVehicle').onsubmit = async (e) => {
+                e.preventDefault();
+                await saveResource('@Url.Action("CreateVehicle", "Transport")', new FormData(e.target), 'vehicles');
+            };
+        }
+
+        async function openCreateDriver() {
+            const response = await fetch('@Url.Action("GetCreateDriver", "Transport")');
+            document.getElementById('modalContainer').innerHTML = await response.text();
+            new bootstrap.Modal(document.getElementById('createDriverModal')).show();
+
+            // Evento para guardar
+            document.getElementById('formDriver').onsubmit = async (e) => {
+                e.preventDefault();
+                await saveResource('@Url.Action("CreateDriver", "Transport")', new FormData(e.target), 'drivers');
+            };
+        }
+
+        // Función genérica para guardar y refrescar la vista actual
+        async function saveResource(url, formData, viewToRefresh) {
+            const response = await fetch(url, { method: 'POST', body: formData });
+            const result = await response.json();
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.querySelector('.modal')).hide();
+                Swal.fire('¡Éxito!', result.message, 'success');
+                switchTransportView(viewToRefresh); // Refresca la parcial correspondiente
+            } else {
+                Swal.fire('Error', result.message, 'error');
+            }
+        }
+    </script>
+}

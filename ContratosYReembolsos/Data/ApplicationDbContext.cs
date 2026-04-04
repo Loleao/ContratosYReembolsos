@@ -22,6 +22,10 @@ namespace ContratosYReembolsos.Data
         public DbSet<BranchStock> StockFilial { get; set; }
         public DbSet<CoffinVariant> AtaudVariantes { get; set; }
         public DbSet<CoffinTransfer> AtaudTransferencias { get; set; }
+        public DbSet<Driver> Conductores { get; set; }
+        public DbSet<Vehicle> Vehiculos { get; set; }
+        public DbSet<VehicleService> VehiculosServicios { get; set; }
+
 
     }
 }

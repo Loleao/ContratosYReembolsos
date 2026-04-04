@@ -1,0 +1,40 @@
+﻿<div class="modal fade" id="createVehicleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title small fw-bold text-uppercase">Nuevo Vehículo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formVehicle">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Placa</label>
+                            <input type="text" name="Plate" class="form-control border-2" placeholder="ABC-123" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Año</label>
+                            <input type="number" name="Year" class="form-control border-2" value="2024">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Marca</label>
+                            <input type="text" name="Brand" class="form-control border-2" placeholder="Ej: Mercedes">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Modelo</label>
+                            <input type="text" name="Model" class="form-control border-2" placeholder="Ej: Sprinter">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Sede (SubsidiaryId)</label>
+                            <input type="text" name="SubsidiaryId" class="form-control border-2" value="100502">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow">Guardar Vehículo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

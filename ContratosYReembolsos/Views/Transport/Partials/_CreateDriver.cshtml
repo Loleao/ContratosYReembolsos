@@ -1,0 +1,41 @@
+﻿<div class="modal fade" id="createDriverModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title small fw-bold text-uppercase">Registrar Conductor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formDriver">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre Completo</label>
+                        <input type="text" name="FullName" class="form-control border-2" required>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">N° Licencia</label>
+                            <input type="text" name="LicenseNumber" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Categoría</label>
+                            <select name="Category" class="form-select border-2">
+                                <option value="A-IIa">A-IIa</option>
+                                <option value="A-IIb">A-IIb</option>
+                                <option value="A-IIIb">A-IIIb</option>
+                                <option value="A-IIIc">A-IIIc</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Sede Asignada</label>
+                            <input type="text" name="SubsidiaryId" class="form-control border-2" value="100502">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow">Registrar Chofer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

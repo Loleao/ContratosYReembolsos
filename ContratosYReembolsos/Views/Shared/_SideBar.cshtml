@@ -35,8 +35,8 @@
             <span class="sidebar-text ms-2">Ataúdes</span>
         </a>
 
-        <a href="/Vehicles"
-           class="nav-link @(currentController == "Vehicle" ? "active" : "")">
+        <a href="@Url.Action("Index", "Transport")"
+           class="nav-link @(currentController == "Transport" ? "active" : "")">
             <i class="fa-solid fa-car-side"></i>
             <span class="sidebar-text ms-2">Movilidad</span>
         </a>

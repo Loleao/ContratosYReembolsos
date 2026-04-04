@@ -72,6 +72,24 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Conductores",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LicenseNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conductores", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Contratos",
                 columns: table => new
                 {
@@ -136,6 +154,25 @@ namespace ContratosYReembolsos.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UnidadesFisicas", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Vehiculos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Plate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Year = table.Column<int>(type: "int", nullable: false),
+                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CurrentStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vehiculos", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -206,6 +243,43 @@ namespace ContratosYReembolsos.Migrations
                         name: "FK_Nichos_Pabellones_PavilionId",
                         column: x => x.PavilionId,
                         principalTable: "Pabellones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VehiculosServicios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    VehicleId = table.Column<int>(type: "int", nullable: false),
+                    DriverId = table.Column<int>(type: "int", nullable: false),
+                    ContractId = table.Column<int>(type: "int", nullable: false),
+                    DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TripStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehiculosServicios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Conductores_DriverId",
+                        column: x => x.DriverId,
+                        principalTable: "Conductores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Contratos_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contratos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Vehiculos_VehicleId",
+                        column: x => x.VehicleId,
+                        principalTable: "Vehiculos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -416,6 +490,21 @@ namespace ContratosYReembolsos.Migrations
                 name: "IX_StockItems_ServiceId",
                 table: "StockItems",
                 column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehiculosServicios_ContractId",
+                table: "VehiculosServicios",
+                column: "ContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehiculosServicios_DriverId",
+                table: "VehiculosServicios",
+                column: "DriverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VehiculosServicios_VehicleId",
+                table: "VehiculosServicios",
+                column: "VehicleId");
         }
 
         /// <inheritdoc />
@@ -443,16 +532,25 @@ namespace ContratosYReembolsos.Migrations
                 name: "UnidadesFisicas");
 
             migrationBuilder.DropTable(
-                name: "MovimientosAtaudes");
+                name: "VehiculosServicios");
 
             migrationBuilder.DropTable(
-                name: "Contratos");
+                name: "MovimientosAtaudes");
 
             migrationBuilder.DropTable(
                 name: "StockItems");
 
             migrationBuilder.DropTable(
                 name: "Pabellones");
+
+            migrationBuilder.DropTable(
+                name: "Conductores");
+
+            migrationBuilder.DropTable(
+                name: "Contratos");
+
+            migrationBuilder.DropTable(
+                name: "Vehiculos");
 
             migrationBuilder.DropTable(
                 name: "AtaudVariantes");

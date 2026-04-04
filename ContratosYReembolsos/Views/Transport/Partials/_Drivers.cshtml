@@ -1,0 +1,59 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Driver>
+
+<div class="animate__animated animate__fadeIn">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="x-small fw-bold text-muted">
+                        <th class="ps-4 py-3">CONDUCTOR</th>
+                        <th>LICENCIA (BREVETE)</th>
+                        <th>CATEGORÍA</th>
+                        <th>ESTADO</th>
+                        <th class="text-center">GESTIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold me-3" style="width: 35px; height: 35px;">
+                                        @d.FullName.Substring(0, 1)
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">@d.FullName</div>
+                                        <div class="x-small text-muted">Sede: @ViewBag.SubsidiaryName</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code class="fw-bold">@d.LicenseNumber</code></td>
+                            <td><span class="badge bg-dark rounded-pill px-3">@d.Category</span></td>
+                            <td>
+                                @if (d.IsAvailable)
+                                {
+                                    <span class="text-success small fw-bold"><i class="fa-solid fa-check-circle me-1"></i>Disponible</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger small fw-bold"><i class="fa-solid fa-truck-fast me-1"></i>En Ruta</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1" onclick="editDriver(@d.Id)"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-light btn-sm rounded-circle shadow-sm text-danger" onclick="deleteDriver(@d.Id)"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4 text-end">
+        <button class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateDriver()">
+            <i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Chofer
+        </button>
+    </div>
+</div>
