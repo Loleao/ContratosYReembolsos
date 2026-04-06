@@ -1,0 +1,120 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.IntermentStructureTemplate>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">Modelos de Estructura</h4>
+            <p class="text-muted small">Defina las dimensiones técnicas para la generación masiva de nichos.</p>
+        </div>
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold"
+                onclick="openCreateTemplateModal()">
+            <i class="fa-solid fa-plus-circle me-2"></i> Nuevo Modelo Técnico
+        </button>
+    </div>
+
+    <div class="row g-3">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 border-top border-4 border-dark">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-dark text-white px-3 py-2 rounded-pill small">
+                                <i class="fa-solid fa-microchip me-1"></i> @item.Type
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                    <li><a class="dropdown-item small" href="#"><i class="fa-solid fa-pen-to-square me-2"></i>Editar</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item small text-danger" href="#"><i class="fa-solid fa-trash me-2"></i>Eliminar</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mb-1">@item.Name</h5>
+                        <p class="text-muted x-small text-uppercase mb-3">Plantilla de Generación #@item.Id</p>
+
+                        <div class="bg-light rounded-4 p-3 mb-3 border border-2 border-white shadow-sm">
+                            <div class="row text-center g-0">
+                                <div class="col-4 border-end">
+                                    <div class="text-muted mb-1" style="font-size: 9px; font-weight: 800;">FILAS</div>
+                                    <div class="h5 fw-bold mb-0 text-primary">@item.RowsCount</div>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <div class="text-muted mb-1" style="font-size: 9px; font-weight: 800;">PISOS</div>
+                                    <div class="h5 fw-bold mb-0 text-primary">@item.TotalFloors</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-muted mb-1" style="font-size: 9px; font-weight: 800;">CARA</div>
+                                    <div class="h5 fw-bold mb-0 text-primary">@(item.IsDoubleFace ? "2" : "1")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center px-2">
+                            <div class="small text-muted">
+                                <i class="fa-solid fa-layer-group me-1"></i>
+                                <strong>@(item.IsDoubleFace ? item.ColsPerFace * 2 : item.ColsPerFace)</strong> Cols.
+                            </div>
+                            <div class="fw-bold text-success">
+                                <small>S/</small> @item.DefaultPrice.ToString("N2")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const urlGetCreateTemplate = '@Url.Action("GetCreateTemplate", "Cemetery")';
+
+        async function openCreateTemplateModal() {
+            try {
+                const response = await fetch(urlGetCreateTemplate);
+                const html = await response.text();
+                const container = document.getElementById('modalContainer');
+                container.innerHTML = html;
+
+                const modalElement = container.querySelector('.modal');
+                new bootstrap.Modal(modalElement).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario técnico.', 'error');
+            }
+        }
+
+        async function submitTemplateForm(formId, modalId) {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById(modalId)).hide();
+                    Swal.fire({
+                        title: '¡Modelo Guardado!',
+                        text: result.message,
+                        icon: 'success',
+                        confirmButtonColor: '#0d6efd'
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Ocurrió un fallo en el servidor.', 'error');
+            }
+        }
+    </script>
+}

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ContratosYReembolsos.Models
 {
@@ -16,8 +17,9 @@ namespace ContratosYReembolsos.Models
 
         // Ubicación
         public int CemeteryId { get; set; } // FK a tu tabla de Sedes/Cementerios
+        [ForeignKey("CemeteryId")]
+        public virtual Cemetery Cemetery { get; set; }
 
-        // Relación con el Molde (opcional, para saber de dónde vino)
         public int? TemplateId { get; set; }
         public virtual IntermentStructureTemplate Template { get; set; }
 

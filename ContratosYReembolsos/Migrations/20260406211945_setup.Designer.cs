@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260406141403_sstupMovilidadContrato")]
-    partial class sstupMovilidadContrato
+    [Migration("20260406211945_setup")]
+    partial class setup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -125,10 +125,28 @@ namespace ContratosYReembolsos.Migrations
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Cemetery", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -470,6 +488,126 @@ namespace ContratosYReembolsos.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Conductores");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentSpace", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ColumnNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FloorNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("InhumationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RowLetter")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StructureId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.HasIndex("StructureId");
+
+                    b.ToTable("SepulturasNichos");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentStructure", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CemeteryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CemeteryId");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("SepulturasEstructura");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentStructureTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ColsPerFace")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DefaultPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDoubleFace")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("RowsCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalFloors")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TemplatesSepulturas");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Niche", b =>
@@ -823,6 +961,40 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("Contract");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentSpace", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Contract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("ContractId");
+
+                    b.HasOne("ContratosYReembolsos.Models.IntermentStructure", "Structure")
+                        .WithMany("Spaces")
+                        .HasForeignKey("StructureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+
+                    b.Navigation("Structure");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentStructure", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Cemetery", "Cemetery")
+                        .WithMany("Structures")
+                        .HasForeignKey("CemeteryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ContratosYReembolsos.Models.IntermentStructureTemplate", "Template")
+                        .WithMany("CreatedStructures")
+                        .HasForeignKey("TemplateId");
+
+                    b.Navigation("Cemetery");
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.Niche", b =>
                 {
                     b.HasOne("ContratosYReembolsos.Models.Pavilion", "Pavilion")
@@ -883,6 +1055,11 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("Vehicle");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.Cemetery", b =>
+                {
+                    b.Navigation("Structures");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.Coffin", b =>
                 {
                     b.Navigation("Variants");
@@ -898,6 +1075,16 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("Details");
 
                     b.Navigation("MovilityDetails");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentStructure", b =>
+                {
+                    b.Navigation("Spaces");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.IntermentStructureTemplate", b =>
+                {
+                    b.Navigation("CreatedStructures");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Service", b =>

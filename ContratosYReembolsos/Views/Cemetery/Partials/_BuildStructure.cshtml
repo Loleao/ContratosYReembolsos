@@ -1,0 +1,62 @@
+﻿@model IntermentStructure
+
+<div class="modal fade" id="modalBuild" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title"><i class="fa-solid fa-hammer me-2"></i>Construcción de @ViewBag.CurrentType</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formBuildStructure" asp-action="BuildStructure" method="post">
+                @* --- CAMPOS OCULTOS AUTOMÁTICOS --- *@
+                <input type="hidden" asp-for="Type" />
+                <input type="hidden" asp-for="CemeteryId" />
+
+                <div class="modal-body p-4">
+                    @* Info de la Sede Actual (Solo lectura para confirmación del usuario) *@
+                    <div class="mb-4 p-3 bg-light rounded-3 border-start border-4 border-primary">
+                        <small class="text-muted d-block fw-bold x-small text-uppercase">Sede Destino</small>
+                        <span class="fw-bold text-dark"><i class="fa-solid fa-location-dot me-2 text-primary"></i>@ViewBag.CemeteryName</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-muted text-uppercase small">Nombre del Pabellón/Sector</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-signature text-primary"></i></span>
+                                <input asp-for="Name" class="form-control border-start-0 fw-bold border-2 shadow-sm" placeholder="Ej: San Pedro Arrepentido" required>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-primary small text-uppercase">Modelo de Construcción (Plantilla)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-layer-group"></i></span>
+                                <select name="templateId" class="form-select border-2 shadow-sm fw-bold" required>
+                                    <option value="">-- Seleccione Modelo --</option>
+                                    @foreach (var t in ViewBag.Templates)
+                                    {
+                                        <option value="@t.Id">@t.Name (@t.RowsCount Filas x @(t.IsDoubleFace ? t.ColsPerFace * 2 : t.ColsPerFace) Columnas)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-4 mb-0 border-0 shadow-sm rounded-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-circle-info fa-2x me-3"></i>
+                            <small class="fw-bold">Al procesar, el sistema generará automáticamente todos los espacios basados en el modelo seleccionado para <strong>@ViewBag.CemeteryName</strong>.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="submitBuildForm('formBuildStructure', 'modalBuild')">
+                        Construir Estructura <i class="fa-solid fa-bolt ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ContratosYReembolsos.Migrations
 {
     /// <inheritdoc />
-    public partial class Setup : Migration
+    public partial class setup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -61,10 +61,15 @@ namespace ContratosYReembolsos.Migrations
                 name: "Cementerios",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UbigeoId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    UbigeoId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -138,6 +143,25 @@ namespace ContratosYReembolsos.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Pabellones", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TemplatesSepulturas",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TotalFloors = table.Column<int>(type: "int", nullable: false),
+                    RowsCount = table.Column<int>(type: "int", nullable: false),
+                    ColsPerFace = table.Column<int>(type: "int", nullable: false),
+                    IsDoubleFace = table.Column<bool>(type: "bit", nullable: false),
+                    DefaultPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TemplatesSepulturas", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -222,6 +246,28 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DetallesMovilidadContrato",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ContractId = table.Column<int>(type: "int", nullable: false),
+                    ServiceType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDispatched = table.Column<bool>(type: "bit", nullable: false),
+                    ScheduledDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DetallesMovilidadContrato", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DetallesMovilidadContrato_Contratos_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contratos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Nichos",
                 columns: table => new
                 {
@@ -248,6 +294,34 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SepulturasEstructura",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CemeteryId = table.Column<int>(type: "int", nullable: false),
+                    TemplateId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SepulturasEstructura", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SepulturasEstructura_Cementerios_CemeteryId",
+                        column: x => x.CemeteryId,
+                        principalTable: "Cementerios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SepulturasEstructura_TemplatesSepulturas_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "TemplatesSepulturas",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VehiculosServicios",
                 columns: table => new
                 {
@@ -255,6 +329,7 @@ namespace ContratosYReembolsos.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     VehicleId = table.Column<int>(type: "int", nullable: false),
                     DriverId = table.Column<int>(type: "int", nullable: false),
+                    ServiceType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContractId = table.Column<int>(type: "int", nullable: false),
                     DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -351,6 +426,38 @@ namespace ContratosYReembolsos.Migrations
                         name: "FK_StockItems_Servicios_ServiceId",
                         column: x => x.ServiceId,
                         principalTable: "Servicios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SepulturasNichos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FloorNumber = table.Column<int>(type: "int", nullable: false),
+                    RowLetter = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ColumnNumber = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StructureId = table.Column<int>(type: "int", nullable: false),
+                    ContractId = table.Column<int>(type: "int", nullable: true),
+                    InhumationDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SepulturasNichos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SepulturasNichos_Contratos_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contratos",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SepulturasNichos_SepulturasEstructura_StructureId",
+                        column: x => x.StructureId,
+                        principalTable: "SepulturasEstructura",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -467,6 +574,11 @@ namespace ContratosYReembolsos.Migrations
                 column: "StockItemId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DetallesMovilidadContrato_ContractId",
+                table: "DetallesMovilidadContrato",
+                column: "ContractId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MovimientosAtaudes_CoffinVariantId",
                 table: "MovimientosAtaudes",
                 column: "CoffinVariantId");
@@ -475,6 +587,26 @@ namespace ContratosYReembolsos.Migrations
                 name: "IX_Nichos_PavilionId",
                 table: "Nichos",
                 column: "PavilionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SepulturasEstructura_CemeteryId",
+                table: "SepulturasEstructura",
+                column: "CemeteryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SepulturasEstructura_TemplateId",
+                table: "SepulturasEstructura",
+                column: "TemplateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SepulturasNichos_ContractId",
+                table: "SepulturasNichos",
+                column: "ContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SepulturasNichos_StructureId",
+                table: "SepulturasNichos",
+                column: "StructureId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Servicios_ServiceCategoryId",
@@ -517,13 +649,16 @@ namespace ContratosYReembolsos.Migrations
                 name: "AtaudTransferencias");
 
             migrationBuilder.DropTable(
-                name: "Cementerios");
-
-            migrationBuilder.DropTable(
                 name: "DetallesContrato");
 
             migrationBuilder.DropTable(
+                name: "DetallesMovilidadContrato");
+
+            migrationBuilder.DropTable(
                 name: "Nichos");
+
+            migrationBuilder.DropTable(
+                name: "SepulturasNichos");
 
             migrationBuilder.DropTable(
                 name: "StockFilial");
@@ -544,6 +679,9 @@ namespace ContratosYReembolsos.Migrations
                 name: "Pabellones");
 
             migrationBuilder.DropTable(
+                name: "SepulturasEstructura");
+
+            migrationBuilder.DropTable(
                 name: "Conductores");
 
             migrationBuilder.DropTable(
@@ -557,6 +695,12 @@ namespace ContratosYReembolsos.Migrations
 
             migrationBuilder.DropTable(
                 name: "Servicios");
+
+            migrationBuilder.DropTable(
+                name: "Cementerios");
+
+            migrationBuilder.DropTable(
+                name: "TemplatesSepulturas");
 
             migrationBuilder.DropTable(
                 name: "Ataudes");

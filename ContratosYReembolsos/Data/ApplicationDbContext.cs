@@ -28,6 +28,6 @@ namespace ContratosYReembolsos.Data
         public DbSet<VehicleService> VehiculosServicios { get; set; }
         public DbSet<IntermentStructureTemplate> TemplatesSepulturas { get; set; }
         public DbSet<IntermentStructure> SepulturasEstructura { get; set; }
-        public DbSet<IntermentSpace> SpeulturasNichos { get; set; }
+        public DbSet<IntermentSpace> SepulturasNichos { get; set; }
     }
 }

@@ -1,0 +1,58 @@
+﻿<div class="modal fade" id="modalExhumation" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white p-3">
+                <h5 class="modal-title small fw-bold"><i class="fa-solid fa-truck-moving me-2"></i>ORDEN DE TRASLADO / EXHUMACIÓN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card-body text-center p-4">
+                                <div class="badge bg-danger-subtle text-danger rounded-pill px-3 mb-3">ORIGEN ACTUAL</div>
+                                <i class="fa-solid fa-monument fa-3x text-muted mb-3"></i>
+                                <h5 class="fw-bold mb-1">@ViewBag.OriginSpace.Code</h5>
+                                <p class="text-muted small">@ViewBag.OriginSpace.Structure.Name</p>
+                                <hr />
+                                <p class="x-small fw-bold text-uppercase mb-0">Difunto Identificado</p>
+                                <span class="small">JUAN PEREZ GARCIA</span> @* Dato de ejemplo *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-center justify-content-center">
+                        <i class="fa-solid fa-circle-arrow-right fa-3x text-primary opacity-50"></i>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="card border-2 border-dashed border-primary rounded-4 h-100 bg-white shadow-sm d-flex align-items-center justify-content-center p-4">
+                            <div id="destinationSelected" class="text-center d-none">
+                                <div class="badge bg-success-subtle text-success rounded-pill px-3 mb-3">NUEVO DESTINO</div>
+                                <h5 id="destCode" class="fw-bold mb-1 text-primary">---</h5>
+                                <p id="destStructure" class="text-muted small">---</p>
+                                <button class="btn btn-link btn-sm text-decoration-none" onclick="reselectDestiny()">Cambiar</button>
+                            </div>
+                            <div id="noDestiny" class="text-center">
+                                <i class="fa-solid fa-magnifying-glass-location fa-2x text-primary mb-3"></i>
+                                <p class="small fw-bold text-dark mb-3">No se ha seleccionado destino</p>
+                                <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" onclick="selectNewSpace()">Buscar Espacio</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label x-small fw-bold text-muted">MOTIVO DEL TRASLADO</label>
+                        <textarea id="transferReason" class="form-control border-2" rows="2" placeholder="Ej: Solicitud de familiares, fin de contrato de alquiler..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-white rounded-bottom-4">
+                <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btnConfirmTransfer" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" disabled onclick="executeTransfer()">
+                    Confirmar Traslado <i class="fa-solid fa-check-double ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

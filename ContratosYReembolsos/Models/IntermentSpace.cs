@@ -29,6 +29,5 @@ namespace ContratosYReembolsos.Models
 
         // Datos de Inhumación (Opcional pero recomendado)
         public DateTime? InhumationDate { get; set; }
-        public string Observations { get; set; }
     }
 }

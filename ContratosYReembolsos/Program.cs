@@ -1,4 +1,5 @@
 using ContratosYReembolsos.Data;
+using ContratosYReembolsos.Services;
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
 
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDbContext<LimaContractsDbContext>(options =>
     options.UseSqlServer(externalConnectionString));
 
+builder.Services.AddScoped<IntermentService>();
 
 var app = builder.Build();
 

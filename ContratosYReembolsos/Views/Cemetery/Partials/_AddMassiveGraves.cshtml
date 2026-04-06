@@ -1,0 +1,77 @@
+﻿@using System.Linq
+@{
+    var existingRows = ViewBag.ExistingRows as IEnumerable<IGrouping<string, ContratosYReembolsos.Models.IntermentSpace>>;
+    string nextLetter = ViewBag.NextLetter;
+}
+
+<div class="modal fade" id="modalMassiveTumbas" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4 p-3">
+                <h5 class="modal-title small fw-bold"><i class="fa-solid fa-plus-circle me-2"></i>GENERAR ESPACIOS EN TIERRA</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <ul class="nav nav-pills nav-fill mb-4 bg-light p-1 rounded-pill" id="tumbaTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active rounded-pill fw-bold small" id="exist-tab" data-bs-toggle="pill" data-bs-target="#tab-existente" type="button">
+                            <i class="fa-solid fa-list-check me-1"></i> EXISTENTE
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link rounded-pill fw-bold small" id="new-tab" data-bs-toggle="pill" data-bs-target="#tab-nueva" type="button">
+                            <i class="fa-solid fa-plus me-1"></i> NUEVA FILA
+                        </button>
+                    </li>
+                </ul>
+
+                <form id="formMassiveTumbas" asp-action="AddMassiveTumbas" method="post">
+                    <input type="hidden" name="structureId" value="@ViewBag.StructureId" />
+                    @* Este input oculto es el que enviaremos al controlador *@
+                    <input type="hidden" name="rowLetter" id="finalRowLetter" />
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-existente" role="tabpanel">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Fila Actual</label>
+                            <select id="selectExistente" class="form-select border-2 fw-bold mb-3">
+                                @if (existingRows != null && existingRows.Any())
+                                {
+                                    @foreach (var row in existingRows)
+                                    {
+                                        <option value="@row.Key">FILA @row.Key (@row.Count() espacios)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-nueva" role="tabpanel">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de Fila</label>
+                            <input type="text" id="inputNuevaFila" class="form-control border-2 text-uppercase fw-bold"
+                                   value="@nextLetter" placeholder="Ej: @nextLetter">
+                            <div class="mt-2 text-center text-success x-small fw-bold">
+                                <i class="fa-solid fa-info-circle me-1"></i> Sugerencia basada en orden alfabético.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Cantidad de tumbas</label>
+                        <input name="quantity" type="number" min="1" max="50" class="form-control border-2 fw-bold text-center" value="10">
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="validateAndSubmit()">
+                    Generar Espacios <i class="fa-solid fa-bolt ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    
+</script>

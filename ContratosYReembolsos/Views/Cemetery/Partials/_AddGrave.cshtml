@@ -1,0 +1,49 @@
+﻿@model IntermentSpace
+
+<div class="modal fade" id="modalAddTumba" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4">
+                <h5 class="modal-title"><i class="fa-solid fa-seedling me-2"></i>Registrar Espacio en Tierra</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAddTumba" asp-action="AddManualSpace" method="post">
+                <input type="hidden" asp-for="StructureId" />
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-4">Ubicación: <strong>@ViewBag.StructureName</strong></p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-uppercase">Fila / Sector</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-grip-lines"></i></span>
+                                <input asp-for="RowLetter" class="form-control border-2 shadow-sm text-uppercase" placeholder="Ej: A" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-uppercase">Número de Tumba</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-hashtag"></i></span>
+                                <input asp-for="ColumnNumber" type="number" class="form-control border-2 shadow-sm" placeholder="Ej: 15" required>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="alert alert-warning border-0 shadow-sm rounded-3 small">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                El código correlativo se generará automáticamente según el nombre del sector y la ubicación ingresada.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success rounded-pill px-5 fw-bold shadow" onclick="submitTumbaForm('formAddTumba', 'modalAddTumba')">
+                        Registrar Tumba <i class="fa-solid fa-plus ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

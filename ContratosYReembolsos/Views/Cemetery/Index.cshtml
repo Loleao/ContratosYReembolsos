@@ -1,0 +1,80 @@
+﻿<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h4 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-hospital-user me-2 text-primary"></i>Sedes de Cementerios</h4>
+        <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                onclick="openCreateCemeteryModal()">
+            <i class="fa-solid fa-plus me-1"></i> Nueva Sede
+        </button>
+    </div>
+
+    <div id="modalCemeteryContainer"></div>
+
+    <div class="list-group shadow-sm rounded-4 border-0">
+        @foreach (var cem in Model)
+        {
+            <a href="@Url.Action("SelectionMenu", new { id = cem.Id })"
+               class="list-group-item list-group-item-action border-0 border-bottom p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="fw-bold text-dark fs-5 me-3">@cem.Name</span>
+                        <span class="badge bg-light text-muted border px-2">RUC: @cem.RUC</span>
+                    </div>
+                    <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i> Ubigeo: @cem.UbigeoId</small>
+                </div>
+                <div class="text-end d-flex align-items-center">
+                    <div class="me-4 d-none d-md-block text-center">
+                        <span class="d-block x-small text-uppercase text-muted fw-bold">Estructuras</span>
+                        <span class="fw-bold h5 mb-0">@cem.Structures?.Count</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-primary opacity-50"></i>
+                </div>
+            </a>
+        }
+    </div>
+</div>
+
+<script>
+    const urlGetCreate = '@Url.Action("GetCreateCemetery", "Cemetery")';
+
+    async function openCreateCemeteryModal() {
+        try {
+            const response = await fetch(urlGetCreate);
+            const html = await response.text();
+            const container = document.getElementById('modalCemeteryContainer');
+            container.innerHTML = html;
+
+            // Mostrar el modal
+            new bootstrap.Modal(document.getElementById('modalCreateCemetery')).show();
+        } catch (error) {
+            Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+        }
+    }
+
+    async function submitCemeteryForm() {
+        const form = document.getElementById('formCreateCemetery');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalCreateCemetery')).hide();
+                Swal.fire('¡Éxito!', result.message, 'success').then(() => {
+                    location.reload(); // Recarga la lista para ver la nueva sede
+                });
+            } else {
+                Swal.fire('Atención', result.message, 'warning');
+            }
+        } catch (error) {
+            Swal.fire('Error', 'Ocurrió un problema en el servidor.', 'error');
+        }
+    }
+</script>

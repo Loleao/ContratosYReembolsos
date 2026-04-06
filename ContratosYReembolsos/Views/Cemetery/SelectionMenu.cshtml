@@ -1,0 +1,170 @@
+﻿@* @{
+    ViewData["Title"] = "Gestión de Sepulturas";
+}
+
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h4 class="fw-bold text-dark">Módulo de Sepulturas</h4>
+        <p class="text-muted small">Seleccione una categoría para gestionar el inventario o configurar el sistema.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-3">
+            <a href="@Url.Action("Index", "Cemetery", new { type = "PABELLON" })" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-card text-center p-4">
+                    <div class="icon-box bg-primary-subtle text-primary rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-building-columns fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Pabellones</h5>
+                    <p class="text-muted small mb-0">Gestión de nichos y bloques verticales.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a href="@Url.Action("Index", "Cemetery", new { type = "COLUMBARIO" })" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-card text-center p-4">
+                    <div class="icon-box bg-info-subtle text-info rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-box-archive fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Columbarios</h5>
+                    <p class="text-muted small mb-0">Espacios para urnas y cenizas.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a href="@Url.Action("Index", "Cemetery", new { type = "TUMBA" })" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-card text-center p-4">
+                    <div class="icon-box bg-success-subtle text-success rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-mound fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Tumbas</h5>
+                    <p class="text-muted small mb-0">Gestión de fosas en suelo y césped.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a href="@Url.Action("Templates", "Cemetery")" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm hover-card border-start border-primary border-4 text-center p-4">
+                    <div class="icon-box bg-warning-subtle text-warning rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-gears fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Modelos</h5>
+                    <p class="text-muted small mb-0">Configurar plantillas de construcción.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            background-color: #f8f9fa;
+        }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff;
+    }
+
+    .bg-info-subtle {
+        background-color: #e0f7fa;
+    }
+
+    .bg-success-subtle {
+        background-color: #e8f5e9;
+    }
+
+    .bg-warning-subtle {
+        background-color: #fff3e0;
+    }
+</style> *@
+
+<div class="container py-4">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb x-small fw-bold text-uppercase">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Inicio</a></li>
+                <li class="breadcrumb-item active">@Model.Name</li>
+            </ol>
+        </nav>
+        <h3 class="fw-bold">@Model.Name</h3>
+        <p class="text-muted">Seleccione el módulo que desea gestionar:</p>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <a href="@Url.Action("InventoryList", new { id = Model.Id, type = "PABELLON" })"
+               class="d-flex align-items-center p-4 bg-white border rounded-4 text-decoration-none hover-list-item shadow-sm">
+                <div class="icon-box bg-primary-subtle text-primary me-4">
+                    <i class="fa-solid fa-building-columns fa-lg"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-0 text-dark">Pabellones y Nichos</h6>
+                    <small class="text-muted">Gestión de estructuras verticales y niveles.</small>
+                </div>
+                <i class="fa-solid fa-arrow-right text-muted"></i>
+            </a>
+        </div>
+
+        <div class="col-12">
+            <a href="@Url.Action("InventoryList", new { id = Model.Id, type = "COLUMBARIO" })"
+               class="d-flex align-items-center p-4 bg-white border rounded-4 text-decoration-none hover-list-item shadow-sm">
+                <div class="icon-box bg-info-subtle text-info me-4">
+                    <i class="fa-solid fa-box-archive fa-lg"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-0 text-dark">Columbarios</h6>
+                    <small class="text-muted">Gestión de espacios para urnas y cenizas.</small>
+                </div>
+                <i class="fa-solid fa-arrow-right text-muted"></i>
+            </a>
+        </div>
+
+        <div class="col-12">
+            <a href="@Url.Action("InventoryList", new { id = Model.Id, type = "TUMBA" })"
+               class="d-flex align-items-center p-4 bg-white border rounded-4 text-decoration-none hover-list-item shadow-sm">
+                <div class="icon-box bg-success-subtle text-success me-4">
+                    <i class="fa-solid fa-seedling fa-lg"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-0 text-dark">Tumbas y Mausoleos</h6>
+                    <small class="text-muted">Gestión de parcelas en tierra y áreas verdes.</small>
+                </div>
+                <i class="fa-solid fa-arrow-right text-muted"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-box {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .hover-list-item {
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+        .hover-list-item:hover {
+            background-color: #f8f9fa !important;
+            transform: translateX(10px);
+        }
+
+    .x-small {
+        font-size: 11px;
+    }
+</style>

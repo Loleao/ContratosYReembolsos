@@ -1,0 +1,66 @@
+﻿@model ContratosYReembolsos.Models.Cemetery
+
+<div class="modal fade" id="modalCreateCemetery" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4 p-3">
+                <h5 class="modal-title small fw-bold">
+                    <i class="fa-solid fa-hospital-user me-2"></i>REGISTRO DE NUEVA SEDE
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCreateCemetery" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 bg-light-subtle">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre del Cementerio</label>
+                            <input asp-for="Name" class="form-control border-2 shadow-none fw-bold" placeholder="Ej: Cementerio General de Piura" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">RUC</label>
+                            <input asp-for="RUC" class="form-control border-2 shadow-none" placeholder="11 dígitos" maxlength="11" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Código Ubigeo</label>
+                            <input asp-for="UbigeoId" class="form-control border-2 shadow-none" placeholder="Ej: 200101" required>
+                        </div>
+
+                        <hr class="my-3 opacity-10">
+
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Dirección Física</label>
+                            <input asp-for="Address" class="form-control border-2 shadow-none" placeholder="Av. Principal Nro 123..." required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Teléfono de Contacto</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-phone text-muted small"></i></span>
+                                <input asp-for="Phone" class="form-control border-2 border-start-0 shadow-none" placeholder="999 999 999">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-envelope text-muted small"></i></span>
+                                <input asp-for="Email" type="email" class="form-control border-2 border-start-0 shadow-none" placeholder="sede@fonafun.com">
+                            </div>
+                        </div>
+
+                        <input type="hidden" asp-for="IsActive" value="true" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" onclick="submitCemeteryForm()">
+                        Registrar Sede <i class="fa-solid fa-save ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

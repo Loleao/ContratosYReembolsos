@@ -18,7 +18,7 @@ html, body {
     flex-direction: column;
     padding: 24px 16px;
     transition: all 0.3s;
-    flex-shrink: 0; /* Evita que el sidebar se achique */
+    flex-shrink: 0; 
 }
 
 .sidebar-header {
@@ -92,4 +92,14 @@ html, body {
     height: 100vh;
     overflow-y: auto;
     background-color: #f8f9fa;
+}
+
+.active-container {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 8px;
+}
+
+.nav-item .d-flex:hover {
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
 }
