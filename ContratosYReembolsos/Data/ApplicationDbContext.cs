@@ -13,6 +13,7 @@ namespace ContratosYReembolsos.Data
         public DbSet<Pavilion> Pabellones { get; set; }
         public DbSet<Contract> Contratos { get; set; }
         public DbSet<ContractDetail> DetallesContrato { get; set; }
+        public DbSet<ContractMovilityDetail> DetallesMovilidadContrato { get; set; }
         public DbSet<Service> Servicios { get; set; }
         public DbSet<ServiceCategory> CategoriasServicios { get; set; }
         public DbSet<StockItem> StockItems { get; set; }
@@ -25,7 +26,8 @@ namespace ContratosYReembolsos.Data
         public DbSet<Driver> Conductores { get; set; }
         public DbSet<Vehicle> Vehiculos { get; set; }
         public DbSet<VehicleService> VehiculosServicios { get; set; }
-
-
+        public DbSet<IntermentStructureTemplate> TemplatesSepulturas { get; set; }
+        public DbSet<IntermentStructure> SepulturasEstructura { get; set; }
+        public DbSet<IntermentSpace> SpeulturasNichos { get; set; }
     }
 }

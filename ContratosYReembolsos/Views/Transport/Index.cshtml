@@ -108,10 +108,11 @@
             const contractId = document.querySelector('input[name="contractId"]').value;
             const vehicleId = document.getElementById('modalVehicleId').value;
             const driverId = document.getElementById('modalDriverId').value;
+            const serviceType = document.getElementById('modalServiceType').value;
             const observations = document.getElementById('modalObservations').value;
 
-            if (!vehicleId || !driverId) {
-                Swal.fire('Atención', 'Debe seleccionar un vehículo y un conductor.', 'warning');
+            if (!serviceType || !vehicleId || !driverId) {
+                Swal.fire('Atención', 'Debe completar todos los campos obligatorios.', 'warning');
                 return;
             }
 
@@ -120,6 +121,7 @@
             formData.append('contractId', contractId);
             formData.append('vehicleId', vehicleId);
             formData.append('driverId', driverId);
+			formData.append('serviceType', serviceType);
             formData.append('observations', observations);
 
             try {
@@ -144,7 +146,7 @@
                         showConfirmButton: false
                     }).then(() => {
                         // Recargar la vista de contratos para que desaparezca el que acabamos de asignar
-                        switchTransportView('contracts');
+                        switchTransportView('getPendingContractsModal');
                     });
                 } else {
                     Swal.fire('Error', result.message, 'error');
@@ -194,9 +196,9 @@
                             // Refrescamos la vista actual (ya sea Seguimiento o Vehículos)
                             // Esta es la clave para que pase de "En Curso" a "Finalizado"
                             if (document.getElementById('en-ruta-tab')) {
-                                switchTransportView('history');
+                                switchTransportView('getHistoryModal');
                             } else {
-                                switchTransportView('vehicles');
+                                switchTransportView('getVehiclesModal');
                             }
                         });
                     } else {

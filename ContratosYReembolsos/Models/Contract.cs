@@ -56,5 +56,7 @@ namespace ContratosYReembolsos.Models
 
         // --- RELACIONES ---
         public virtual ICollection<ContractDetail> Details { get; set; } = new List<ContractDetail>();
+        public virtual ICollection<ContractMovilityDetail> MovilityDetails { get; set; } = new List<ContractMovilityDetail>();
+
     }
 }

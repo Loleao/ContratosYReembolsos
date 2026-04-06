@@ -15,6 +15,9 @@ namespace ContratosYReembolsos.Models
         public int DriverId { get; set; }
         public virtual Driver Driver { get; set; }
 
+        [Required]
+        public string ServiceType { get; set; }
+
         public int ContractId { get; set; }
         public virtual Contract Contract { get; set; }
 
