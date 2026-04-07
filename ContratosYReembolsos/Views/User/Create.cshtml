@@ -1,0 +1,54 @@
+﻿@model ContratosYReembolsos.Models.ViewModels.RegisterUserViewModel
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h4 class="fw-bold mb-0"><i class="fa-solid fa-user-plus text-primary me-2"></i>Nuevo Trabajador</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">DNI (Usuario)</label>
+                                <input asp-for="DNI" class="form-control rounded-3" placeholder="8 dígitos" />
+                                <span asp-validation-for="DNI" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Nombre Completo</label>
+                                <input asp-for="FullName" class="form-control rounded-3" placeholder="Nombres y Apellidos" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small">Correo Institucional</label>
+                                <input asp-for="Email" class="form-control rounded-3" placeholder="ejemplo@fonafun.com" />
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold text-primary small">Filial Asignada</label>
+                                <select asp-for="BranchId" class="form-select" asp-items="Model.Branches">
+                                    <option value="">-- SELECCIONAR FILIAL --</option>
+                                </select>
+                                <div class="form-text text-muted">El trabajador solo podrá gestionar datos de la filial seleccionada.</div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small">Contraseña Temporal</label>
+                                <input asp-for="Password" class="form-control rounded-3" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-light rounded-pill px-4 me-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                Registrar en FONAFUN
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

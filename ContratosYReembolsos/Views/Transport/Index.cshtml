@@ -218,7 +218,7 @@
             // Evento para guardar
             document.getElementById('formVehicle').onsubmit = async (e) => {
                 e.preventDefault();
-                await saveResource('@Url.Action("CreateVehicle", "Transport")', new FormData(e.target), 'vehicles');
+                await saveResource('@Url.Action("CreateVehicle", "Transport")', new FormData(e.target), 'getVehiclesModal');
             };
         }
 
@@ -227,21 +227,19 @@
             document.getElementById('modalContainer').innerHTML = await response.text();
             new bootstrap.Modal(document.getElementById('createDriverModal')).show();
 
-            // Evento para guardar
             document.getElementById('formDriver').onsubmit = async (e) => {
                 e.preventDefault();
-                await saveResource('@Url.Action("CreateDriver", "Transport")', new FormData(e.target), 'drivers');
+                await saveResource('@Url.Action("CreateDriver", "Transport")', new FormData(e.target), 'getDriversModal');
             };
         }
 
-        // Función genérica para guardar y refrescar la vista actual
         async function saveResource(url, formData, viewToRefresh) {
             const response = await fetch(url, { method: 'POST', body: formData });
             const result = await response.json();
             if (result.success) {
                 bootstrap.Modal.getInstance(document.querySelector('.modal')).hide();
                 Swal.fire('¡Éxito!', result.message, 'success');
-                switchTransportView(viewToRefresh); // Refresca la parcial correspondiente
+                switchTransportView(viewToRefresh);
             } else {
                 Swal.fire('Error', result.message, 'error');
             }

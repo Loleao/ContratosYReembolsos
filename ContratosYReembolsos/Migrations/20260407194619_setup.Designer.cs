@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260406211945_setup")]
+    [Migration("20260407194619_setup")]
     partial class setup
     {
         /// <inheritdoc />
@@ -92,6 +92,48 @@ namespace ContratosYReembolsos.Migrations
                     b.ToTable("Agencias");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.Branch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UbigeoId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UbigeoId");
+
+                    b.ToTable("Filiales");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.BranchStock", b =>
                 {
                     b.Property<int>("Id")
@@ -135,6 +177,9 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -154,11 +199,9 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UbigeoId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.ToTable("Cementerios");
                 });
@@ -786,6 +829,34 @@ namespace ContratosYReembolsos.Migrations
                     b.ToTable("StockItems");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.Ubigeo", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("Abbreviation")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("District")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Province")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Ubigeos");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.Vehicle", b =>
                 {
                     b.Property<int>("Id")
@@ -894,6 +965,17 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("StockItem");
                 });
 
+            modelBuilder.Entity("ContratosYReembolsos.Models.Branch", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Ubigeo", "Ubigeo")
+                        .WithMany()
+                        .HasForeignKey("UbigeoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ubigeo");
+                });
+
             modelBuilder.Entity("ContratosYReembolsos.Models.BranchStock", b =>
                 {
                     b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
@@ -903,6 +985,17 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired();
 
                     b.Navigation("CoffinVariant");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Cemetery", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
+                        .WithMany("Cemeteries")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.CoffinMovement", b =>
@@ -1053,6 +1146,11 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("Driver");
 
                     b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Branch", b =>
+                {
+                    b.Navigation("Cemeteries");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Cemetery", b =>

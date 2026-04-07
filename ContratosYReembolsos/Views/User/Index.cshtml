@@ -1,0 +1,69 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.ViewModels.UserListViewModel>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">Gestión de Personal</h3>
+            <p class="text-muted small">Administra los usuarios y sus accesos por filial</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            <i class="fa-solid fa-user-plus me-2"></i> Nuevo Trabajador
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Trabajador</th>
+                            <th>DNI</th>
+                            <th>Filial Asignada</th>
+                            <th>Rol</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-bold">@item.FullName</p>
+                                            <small class="text-muted">@item.Email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-secondary">@item.DNI</span></td>
+                                <td>
+                                    <span class="text-dark">
+                                        <i class="fa-solid fa-building text-muted me-1"></i> @item.BranchName
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (item.Role == "Admin")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger">Admin</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info-subtle text-info border border-info">@item.Role</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-light rounded-circle me-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn btn-sm btn-light text-danger rounded-circle" title="Dar de baja"><i class="fa-solid fa-user-minus"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

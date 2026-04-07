@@ -58,25 +58,6 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Cementerios",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UbigeoId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Cementerios", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Conductores",
                 columns: table => new
                 {
@@ -162,6 +143,21 @@ namespace ContratosYReembolsos.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TemplatesSepulturas", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Ubigeos",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: false),
+                    Region = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Province = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    District = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Abbreviation = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Ubigeos", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -294,31 +290,28 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SepulturasEstructura",
+                name: "Filiales",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CemeteryId = table.Column<int>(type: "int", nullable: false),
-                    TemplateId = table.Column<int>(type: "int", nullable: true)
+                    UbigeoId = table.Column<string>(type: "nvarchar(6)", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SepulturasEstructura", x => x.Id);
+                    table.PrimaryKey("PK_Filiales", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SepulturasEstructura_Cementerios_CemeteryId",
-                        column: x => x.CemeteryId,
-                        principalTable: "Cementerios",
+                        name: "FK_Filiales_Ubigeos_UbigeoId",
+                        column: x => x.UbigeoId,
+                        principalTable: "Ubigeos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SepulturasEstructura_TemplatesSepulturas_TemplateId",
-                        column: x => x.TemplateId,
-                        principalTable: "TemplatesSepulturas",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -431,33 +424,26 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SepulturasNichos",
+                name: "Cementerios",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    FloorNumber = table.Column<int>(type: "int", nullable: false),
-                    RowLetter = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ColumnNumber = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    StructureId = table.Column<int>(type: "int", nullable: false),
-                    ContractId = table.Column<int>(type: "int", nullable: true),
-                    InhumationDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    RUC = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SepulturasNichos", x => x.Id);
+                    table.PrimaryKey("PK_Cementerios", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SepulturasNichos_Contratos_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contratos",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_SepulturasNichos_SepulturasEstructura_StructureId",
-                        column: x => x.StructureId,
-                        principalTable: "SepulturasEstructura",
+                        name: "FK_Cementerios_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -538,6 +524,66 @@ namespace ContratosYReembolsos.Migrations
                         principalColumn: "Id");
                 });
 
+            migrationBuilder.CreateTable(
+                name: "SepulturasEstructura",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CemeteryId = table.Column<int>(type: "int", nullable: false),
+                    TemplateId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SepulturasEstructura", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SepulturasEstructura_Cementerios_CemeteryId",
+                        column: x => x.CemeteryId,
+                        principalTable: "Cementerios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SepulturasEstructura_TemplatesSepulturas_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "TemplatesSepulturas",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SepulturasNichos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    FloorNumber = table.Column<int>(type: "int", nullable: false),
+                    RowLetter = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ColumnNumber = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StructureId = table.Column<int>(type: "int", nullable: false),
+                    ContractId = table.Column<int>(type: "int", nullable: true),
+                    InhumationDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SepulturasNichos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SepulturasNichos_Contratos_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contratos",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SepulturasNichos_SepulturasEstructura_StructureId",
+                        column: x => x.StructureId,
+                        principalTable: "SepulturasEstructura",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AtaudTransferencias_ArrivalMovementId",
                 table: "AtaudTransferencias",
@@ -559,6 +605,11 @@ namespace ContratosYReembolsos.Migrations
                 column: "CoffinModelId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Cementerios_BranchId",
+                table: "Cementerios",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DetallesContrato_ContractId",
                 table: "DetallesContrato",
                 column: "ContractId");
@@ -577,6 +628,11 @@ namespace ContratosYReembolsos.Migrations
                 name: "IX_DetallesMovilidadContrato_ContractId",
                 table: "DetallesMovilidadContrato",
                 column: "ContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Filiales_UbigeoId",
+                table: "Filiales",
+                column: "UbigeoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MovimientosAtaudes_CoffinVariantId",
@@ -707,6 +763,12 @@ namespace ContratosYReembolsos.Migrations
 
             migrationBuilder.DropTable(
                 name: "CategoriasServicios");
+
+            migrationBuilder.DropTable(
+                name: "Filiales");
+
+            migrationBuilder.DropTable(
+                name: "Ubigeos");
         }
     }
 }

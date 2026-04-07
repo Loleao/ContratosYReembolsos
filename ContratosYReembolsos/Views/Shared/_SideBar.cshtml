@@ -1,9 +1,15 @@
-﻿@{
-    // Helpers para las clases active
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<ContratosYReembolsos.Models.ApplicationUser> UserManager
+
+@{
     string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
     string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
-    // Capturamos el parámetro 'type' de la URL para iluminar el sub-menú correcto
-    string currentType = Context.Request.Query["type"].ToString().ToUpper();
+
+    // Obtenemos los datos del usuario logueado
+    var user = await UserManager.GetUserAsync(User);
+    var fullName = user?.FullName ?? "Usuario";
+    var roles = await UserManager.GetRolesAsync(user!);
+    var roleDisplay = roles.FirstOrDefault() ?? "Sin Rol";
 }
 
 <aside class="sidebar" id="mainSidebar">
@@ -18,13 +24,11 @@
     </div>
 
     <nav class="nav flex-column flex-grow-1">
-
         <a href="@Url.Action("Index", "Home")"
            class="nav-link @(currentController == "Home" ? "active" : "")">
             <i class="fa-solid fa-house-chimney"></i>
             <span class="sidebar-text ms-2">Dashboard</span>
         </a>
-
 
         <a href="@Url.Action("Index", "Contract")"
            class="nav-link @(currentController == "Contract" ? "active" : "")">
@@ -45,69 +49,49 @@
         </a>
 
         <div class="nav-item">
-            <div class="d-flex align-items-center justify-content-between @(currentController == "Cemetery" ? "active-container" : "")">
-                <a href="@Url.Action("Index", "Cemetery")"
-                   class="nav-link flex-grow-1 @(currentController == "Cemetery" ? "active" : "")"
-                   style="border-radius: 8px 0 0 8px;">
-                    <i class="fa-solid fa-monument"></i>
-                    <span class="sidebar-text ms-2">Sepulturas</span>
-                </a>
+            <a href="@Url.Action("Index", "Cemetery")"
+               class="nav-link @(currentController == "Cemetery" && currentAction != "Templates" ? "active" : "")">
+                <i class="fa-solid fa-monument"></i>
+                <span class="sidebar-text ms-2">Sepulturas</span>
+            </a>
 
-                <a class="nav-link px-3 @(currentController == "Cemetery" ? "active" : "")"
-                   data-bs-toggle="collapse"
-                   href="#collapseSepulturas"
-                   role="button"
-                   aria-expanded="@(currentController == "Cemetery" ? "true" : "false")"
-                   style="border-radius: 0 8px 8px 0; border-left: 1px solid rgba(255,255,255,0.1);">
-                    <i class="fa-solid fa-chevron-down small sidebar-text" style="font-size: 9px;"></i>
+            <div class="ps-3 mt-1">
+                <a href="@Url.Action("Templates", "Cemetery")"
+                   class="nav-link py-1 @(currentAction == "Templates" ? "active text-primary fw-bold" : "text-muted")"
+                   style="font-size: 12px; background: transparent !important; box-shadow: none !important;">
+                    <i class="fa-solid fa-gears me-2" style="font-size: 10px;"></i>
+                    <span class="sidebar-text">Modelos Técnicos</span>
                 </a>
-            </div>
-
-            <div class="collapse @(currentController == "Cemetery" ? "show" : "")" id="collapseSepulturas">
-                <ul class="sub-menu list-unstyled">
-                    <li>
-                        <a href="@Url.Action("Index", "Cemetery", new { type = "PABELLON" })"
-                           class="sub-link @(currentType == "PABELLON" ? "fw-bold text-primary" : "")">
-                            • Pabellones
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("Index", "Cemetery", new { type = "COLUMBARIO" })"
-                           class="sub-link @(currentType == "COLUMBARIO" ? "fw-bold text-primary" : "")">
-                            • Columbarios
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Action("Index", "Cemetery", new { type = "TUMBA" })"
-                           class="sub-link @(currentType == "TUMBA" ? "fw-bold text-primary" : "")">
-                            • Tumbas (Suelo)
-                        </a>
-                    </li>
-                    <li class="mt-2 pt-2 border-top border-secondary opacity-50">
-                        <a href="@Url.Action("Templates", "Cemetery")"
-                           class="sub-link @(currentAction == "Templates" ? "fw-bold text-primary" : "")">
-                            <i class="fa-solid fa-gears me-1" style="font-size: 10px;"></i> Modelos
-                        </a>
-                    </li>
-                </ul>
             </div>
         </div>
+
+        <a href="@Url.Action("Index", "Branch")"
+           class="nav-link @(currentController == "Branch" ? "active" : "")">
+            <i class="fa-solid fa-building-user"></i>
+            <span class="sidebar-text ms-2">Filiales</span>
+        </a>
     </nav>
 
+    @* --- SECCIÓN DE PERFIL REAL --- *@
     <div class="user-profile border-top pt-3 mt-auto">
         <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
-                <div class="avatar bg-light text-primary rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                <div class="avatar bg-light text-primary rounded-circle me-2"
+                     style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
                     <i class="fa-solid fa-user-tie"></i>
                 </div>
                 <div class="sidebar-text">
-                    <p class="mb-0 fw-bold small">Paolo Software</p>
-                    <small class="text-muted" style="font-size: 10px;">Administrador</small>
+                    <p class="mb-0 fw-bold small">@fullName</p>
+                    <small class="text-muted" style="font-size: 10px;">@roleDisplay</small>
                 </div>
             </div>
-            <a href="/Account/Logout" class="text-muted sidebar-text" title="Cerrar Sesión">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </a>
+
+            @* Logout con Formulario por seguridad *@
+            <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                <button type="submit" class="btn btn-link text-muted p-0 sidebar-text" title="Cerrar Sesión">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </form>
         </div>
     </div>
 </aside>

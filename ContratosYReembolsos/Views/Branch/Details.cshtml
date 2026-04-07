@@ -1,0 +1,206 @@
+﻿@model ContratosYReembolsos.Models.Branch
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb x-small fw-bold text-uppercase">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index")">Filiales</a></li>
+            <li class="breadcrumb-item active">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-md-4 bg-dark text-white p-4 d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="icon-circle bg-white text-dark mb-3 shadow">
+                        <i class="fa-solid fa-building fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">@Model.Code</h3>
+                    <span class="badge bg-primary px-3 rounded-pill text-uppercase">
+                        <i class="fa-solid fa-map me-1"></i> @Model.Ubigeo.Region
+                    </span>
+                </div>
+
+                <div class="col-md-8 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="fw-bold text-dark mb-0">@Model.Name</h2>
+                            <small class="text-primary fw-bold text-uppercase" style="font-size: 10px;">
+                                @Model.Ubigeo.District, @Model.Ubigeo.Province
+                            </small>
+                        </div>
+                        <button onclick="openEditBranchModal(@Model.Id)" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Editar Filial
+                        </button>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block text-uppercase fw-bold x-small">Dirección Exacta</small>
+                            <p class="mb-0 fw-semibold text-dark">
+                                <i class="fa-solid fa-location-dot me-2 text-primary"></i>@Model.Address
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block text-uppercase fw-bold x-small">Ubicación Geográfica</small>
+                            <p class="mb-0 fw-semibold text-dark">
+                                <i class="fa-solid fa-earth-americas me-2 text-primary"></i>
+                                @Model.Ubigeo.Region / @Model.Ubigeo.Province / @Model.Ubigeo.District
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block text-uppercase fw-bold x-small">Contacto Telefónico</small>
+                            <p class="mb-0 fw-semibold text-dark">
+                                <i class="fa-solid fa-phone me-2 text-primary"></i>@Model.Phone
+                            </p>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block text-uppercase fw-bold x-small">Estado Operativo</small>
+                            <div>
+                                <span class="badge @(Model.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-3 border border-@(Model.IsActive ? "success" : "danger")-subtle">
+                                    <i class="fa-solid @(Model.IsActive ? "fa-check-circle" : "fa-times-circle") me-1"></i>
+                                    @(Model.IsActive ? "OPERATIVA" : "INACTIVA")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-12 text-truncate">
+                            <small class="text-muted d-block text-uppercase fw-bold x-small">Correo Electrónico</small>
+                            <p class="mb-0 fw-semibold text-dark">
+                                <i class="fa-solid fa-envelope me-2 text-primary"></i>@Model.Email
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-monument me-2 text-primary"></i>Cementerios bajo gestión
+                </h5>
+                <span class="badge bg-white text-dark border shadow-sm px-3 py-2 rounded-pill">
+                    Total: <span class="fw-bold text-primary">@(Model.Cemeteries?.Count ?? 0)</span>
+                </span>
+            </div>
+
+            @if (Model.Cemeteries != null && Model.Cemeteries.Any())
+            {
+                <div class="row g-3">
+                    @foreach (var cem in Model.Cemeteries)
+                    {
+                        <div class="col-md-4">
+                            <a href="@Url.Action("SelectionMenu", "Cemetery", new { id = cem.Id })" class="text-decoration-none">
+                                <div class="card border-0 shadow-sm rounded-4 h-100 card-hover border-start border-4 border-primary transition-all">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="fw-bold text-dark mb-1">@cem.Name</h6>
+                                            <i class="fa-solid fa-chevron-right text-light"></i>
+                                        </div>
+                                        <small class="text-muted d-block mb-3">
+                                            <i class="fa-solid fa-id-card me-1 small"></i> RUC: @cem.RUC
+                                        </small>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="x-small text-uppercase fw-bold text-primary">Gestionar Inventario</span>
+                                            <i class="fa-solid fa-arrow-right-long text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 bg-white rounded-4 shadow-sm border">
+                    <div class="text-light mb-3">
+                        <i class="fa-solid fa-folder-open fa-4x"></i>
+                    </div>
+                    <h6 class="fw-bold text-muted">Sin cementerios registrados</h6>
+                    <p class="text-muted small">Esta filial no tiene unidades operativas asignadas actualmente.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="modalBranchContainer"></div>
+
+<style>
+    .x-small {
+        font-size: 11px;
+    }
+
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        transition: 0.3s;
+        background-color: #f8faff;
+    }
+</style>
+
+<script>
+    const urlGetEditBranch = '@Url.Action("GetEditBranch", "Branch")';
+    const urlEditBranch = '@Url.Action("Edit", "Branch")';
+
+    async function openEditBranchModal(id) {
+        try {
+            const response = await fetch(`${urlGetEditBranch}?id=${id}`);
+
+            if (!response.ok) throw new Error("No se pudo obtener la filial");
+
+            const html = await response.text();
+            const container = document.getElementById('modalBranchContainer');
+            container.innerHTML = html;
+
+            const modalElement = document.getElementById('modalEditBranch');
+            new bootstrap.Modal(modalElement).show();
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo cargar la información de la filial.', 'error');
+        }
+    }
+
+    async function submitEditBranchForm() {
+        const form = document.getElementById('formEditBranch');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        try {
+            // Usamos la constante generada por Url.Action
+            const response = await fetch(urlEditBranch, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditBranch'));
+                modal.hide();
+
+                Swal.fire('¡Éxito!', result.message, 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Atención', result.message, 'warning');
+            }
+        } catch (error) {
+            Swal.fire('Error', 'Hubo un problema al procesar la solicitud.', 'error');
+        }
+    }
+</script>

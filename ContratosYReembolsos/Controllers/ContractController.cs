@@ -240,7 +240,7 @@ namespace ContratosYReembolsos.Controllers
         public async Task<IActionResult> GetCemeteries(string inei)
         {
             var cemeteries = await _context.Cementerios
-                .Where(c => c.UbigeoId == inei)
+                .Where(c => c.Branch.Ubigeo.Id == inei)
                 .Select(c => new {
                     id = c.Id,
                     name = c.Name,

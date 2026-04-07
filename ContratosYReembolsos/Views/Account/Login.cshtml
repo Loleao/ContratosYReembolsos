@@ -1,0 +1,92 @@
+﻿@{
+    Layout = null;
+}
+@model ContratosYReembolsos.Models.ApplicationUser
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Sistema de Legajos</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 1rem 3rem rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+        }
+
+        .form-control {
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid #eee;
+        }
+
+            .form-control:focus {
+                border-color: #0d6efd;
+                box-shadow: none;
+            }
+
+        .btn-login {
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <i class="fa-solid fa-shield-halved fa-3x text-primary mb-3"></i>
+            <h4 class="fw-bold text-dark">FONAFUN</h4>
+            <p class="text-muted small">Sistema de Gestión de Legajos</p>
+        </div>
+
+        <form asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-muted text-uppercase">Número de DNI</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-2 border-end-0"><i class="fa-solid fa-user"></i></span>
+                    <input name="dni" class="form-control border-2 border-start-0" placeholder="Ingrese su DNI" required maxlength="8" />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-uppercase">Contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-2 border-end-0"><i class="fa-solid fa-lock"></i></span>
+                    <input name="password" type="password" class="form-control border-2 border-start-0" placeholder="••••••••" required />
+                </div>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="rememberMe" class="form-check-input" id="remember">
+                <label class="form-check-label small text-muted" for="remember">Recordar sesión</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-login shadow">
+                Entrar <i class="fa-solid fa-arrow-right-to-bracket ms-2"></i>
+            </button>
+        </form>
+    </div>
+
+</body>
+</html>

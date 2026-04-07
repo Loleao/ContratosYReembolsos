@@ -79,16 +79,79 @@
 
             const formData = new FormData(form);
             try {
-                const response = await fetch(form.action, { method: 'POST', body: formData });
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
                 const result = await response.json();
+
                 if (result.success) {
-                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Logrado!',
+                        text: result.message,
+                        confirmButtonColor: '#198754'
+                    }).then(() => location.reload());
                 } else {
-                    Swal.fire('Error', result.message, 'error');
+                    // Aquí verás el error que definimos en el paso 1 (los errores de validación)
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No se pudo guardar',
+                        text: result.message,
+                        confirmButtonColor: '#ffc107'
+                    });
                 }
             } catch (error) {
-                Swal.fire('Error', 'Error de servidor', 'error');
+                Swal.fire('Error', 'Error crítico de conexión con el servidor.', 'error');
             }
+        }
+
+        async function loadProvincias() {
+            const region = document.getElementById('selectRegion').value;
+            const selectProv = document.getElementById('selectProvincia');
+            const selectDist = document.getElementById('selectDistrito');
+
+            // Resetear hijos
+            selectProv.innerHTML = '<option value="">Cargando...</option>';
+            selectDist.innerHTML = '<option value="">Seleccione...</option>';
+            selectDist.disabled = true;
+
+            if (!region) {
+                selectProv.disabled = true;
+                return;
+            }
+
+            const response = await fetch(`@Url.Action("GetProvincias", "Branch")?region=${region}`);
+            const data = await response.json();
+
+            selectProv.innerHTML = '<option value="">Seleccione Provincia</option>';
+            data.forEach(p => {
+                selectProv.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+            selectProv.disabled = false;
+        }
+
+        async function loadDistritos() {
+            const region = document.getElementById('selectRegion').value;
+            const provincia = document.getElementById('selectProvincia').value;
+            const selectDist = document.getElementById('selectDistrito');
+
+            selectDist.innerHTML = '<option value="">Cargando...</option>';
+
+            if (!provincia) {
+                selectDist.disabled = true;
+                return;
+            }
+
+            const response = await fetch(`@Url.Action("GetDistritos", "Branch")?region=${region}&provincia=${provincia}`);
+            const data = await response.json();
+
+            selectDist.innerHTML = '<option value="">Seleccione Distrito</option>';
+            data.forEach(d => {
+                selectDist.innerHTML += `<option value="${d.id}">${d.district}</option>`;
+            });
+            selectDist.disabled = false;
         }
     </script>
 }

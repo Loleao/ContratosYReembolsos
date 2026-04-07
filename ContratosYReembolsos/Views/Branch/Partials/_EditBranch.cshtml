@@ -1,0 +1,74 @@
+﻿@model Branch
+
+<div class="modal fade" id="modalEditBranch" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4 p-3 border-0">
+                <h5 class="modal-title small fw-bold text-uppercase">
+                    <i class="fa-solid fa-pen-to-square me-2"></i>Editar Filial: @Model.Code
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formEditBranch" asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                @* Mantenemos el UbigeoId oculto para que el POST no lo pierda *@
+                <input type="hidden" asp-for="UbigeoId" />
+
+                <div class="modal-body p-4 bg-light-subtle">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Filial</label>
+                            <input asp-for="Name" class="form-control border-2 shadow-none font-monospace" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Ubicación (No editable)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-2 border-end-0"><i class="fa-solid fa-map-pin text-muted"></i></span>
+                                <input class="form-control border-2 bg-light shadow-none small"
+                                       value="@Model.Ubigeo.Region / @Model.Ubigeo.Province / @Model.Ubigeo.District" readonly>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Código Interno</label>
+                            <input asp-for="Code" class="form-control border-2 bg-light shadow-none fw-bold text-primary" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Estado de Sede</label>
+                            <select asp-for="IsActive" class="form-select border-2 shadow-none">
+                                <option value="true">Activa / Operativa</option>
+                                <option value="false">Inactiva / Cerrada</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Dirección Física</label>
+                            <input asp-for="Address" class="form-control border-2 shadow-none" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Teléfono</label>
+                            <input asp-for="Phone" class="form-control border-2 shadow-none">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Correo de Filial</label>
+                            <input asp-for="Email" type="email" class="form-control border-2 shadow-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="submitEditBranchForm()">
+                        Actualizar Cambios <i class="fa-solid fa-rotate ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

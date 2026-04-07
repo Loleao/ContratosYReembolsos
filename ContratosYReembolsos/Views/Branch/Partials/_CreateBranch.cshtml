@@ -1,0 +1,81 @@
+﻿@model Branch
+
+<div class="modal fade" id="modalCreateBranch" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4 p-3 border-0">
+                <h5 class="modal-title small fw-bold text-uppercase">
+                    <i class="fa-solid fa-building-circle-plus me-2 text-warning"></i>Nueva Filial Regional
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCreateBranch" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 bg-light-subtle">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Filial</label>
+                            <input asp-for="Name" class="form-control border-2 shadow-none" placeholder="Ej: Filial Piura - Sullana" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Código</label>
+                            <input asp-for="Code" class="form-control border-2 bg-light shadow-none fw-bold text-primary" placeholder="AUTO-GEN" readonly>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Ubicación Geográfica (Ubigeo)</label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label x-small fw-bold text-muted text-uppercase">Departamento</label>
+                                    <select id="selectRegion" class="form-select border-2 shadow-none" onchange="loadProvincias()">
+                                        <option value="">Seleccione...</option>
+                                        @foreach (var depto in (List<string>)ViewBag.Departamentos)
+                                        {
+                                            <option value="@depto">@depto</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label x-small fw-bold text-muted text-uppercase">Provincia</label>
+                                    <select id="selectProvincia" class="form-select border-2 shadow-none" onchange="loadDistritos()" disabled>
+                                        <option value="">Seleccione...</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label x-small fw-bold text-muted text-uppercase">Distrito</label>
+                                    <select asp-for="UbigeoId" id="selectDistrito" class="form-select border-2 shadow-none" disabled required>
+                                        <option value="">Seleccione...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Dirección Física</label>
+                            <input asp-for="Address" class="form-control border-2 shadow-none" placeholder="Av. Principal Nro 123..." required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Teléfono de Contacto</label>
+                            <input asp-for="Phone" class="form-control border-2 shadow-none" placeholder="999 999 999">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Correo de Filial</label>
+                            <input asp-for="Email" type="email" class="form-control border-2 shadow-none" placeholder="sucursal@fonafun.com">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-dark rounded-pill px-5 fw-bold shadow" onclick="submitBranchForm()">
+                        Guardar Filial <i class="fa-solid fa-save ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
