@@ -1,0 +1,52 @@
+﻿@model ContratosYReembolsos.Models.ViewModels.CoffinCreateViewModel
+
+<div class="modal fade" id="createCoffinModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title"><i class="fa-solid fa-book-medical me-2"></i>Registrar en Catálogo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCreateCoffin">
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-4">Esta acción registrará el modelo y sus especificaciones técnicas en el sistema global.</p>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">NOMBRE DEL MODELO</label>
+                            <input asp-for="ModelName" class="form-control border-2" placeholder="Ej: Cofre Estándar" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">COLOR</label>
+                            <input asp-for="Color" class="form-control border-2" placeholder="Blanco" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">TAMAÑO</label>
+                            <select asp-for="Size" class="form-select border-2">
+                                <option value="Párvulo">Párvulo</option>
+                                <option value="Adulto">Adulto</option>
+                                <option value="XL">Extra Grande (XL)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">MATERIAL</label>
+                            <select asp-for="Material" class="form-select border-2">
+                                <option value="Madera">Madera</option>
+                                <option value="Metal">Metal</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold shadow" onclick="saveNewCoffin()">
+                        Confirmar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -28,6 +28,20 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AspNetRoles",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Ataudes",
                 columns: table => new
                 {
@@ -55,24 +69,6 @@ namespace ContratosYReembolsos.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CategoriasServicios", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Conductores",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LicenseNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Conductores", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -196,6 +192,27 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AspNetRoleClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AtaudVariantes",
                 columns: table => new
                 {
@@ -315,94 +332,6 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "VehiculosServicios",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    VehicleId = table.Column<int>(type: "int", nullable: false),
-                    DriverId = table.Column<int>(type: "int", nullable: false),
-                    ServiceType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ContractId = table.Column<int>(type: "int", nullable: false),
-                    DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TripStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_VehiculosServicios", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_VehiculosServicios_Conductores_DriverId",
-                        column: x => x.DriverId,
-                        principalTable: "Conductores",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_VehiculosServicios_Contratos_ContractId",
-                        column: x => x.ContractId,
-                        principalTable: "Contratos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_VehiculosServicios_Vehiculos_VehicleId",
-                        column: x => x.VehicleId,
-                        principalTable: "Vehiculos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MovimientosAtaudes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
-                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RegisteredBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BalanceAfter = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MovimientosAtaudes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MovimientosAtaudes_AtaudVariantes_CoffinVariantId",
-                        column: x => x.CoffinVariantId,
-                        principalTable: "AtaudVariantes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "StockFilial",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
-                    SubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    MinimumStock = table.Column<int>(type: "int", nullable: false),
-                    LastUpdate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_StockFilial", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_StockFilial_AtaudVariantes_CoffinVariantId",
-                        column: x => x.CoffinVariantId,
-                        principalTable: "AtaudVariantes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "StockItems",
                 columns: table => new
                 {
@@ -421,6 +350,39 @@ namespace ContratosYReembolsos.Migrations
                         principalTable: "Servicios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUsers",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DNI = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUsers_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -449,44 +411,89 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AtaudTransferencias",
+                name: "Conductores",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LicenseNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conductores", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Conductores_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MovimientosAtaudes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    OriginSubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TargetSubsidiaryId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DepartureMovementId = table.Column<int>(type: "int", nullable: true),
-                    ArrivalMovementId = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    GuiaRemision = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DateSent = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    SentBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DateReceived = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReceivedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ReceptionObservations = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RegisteredBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BalanceAfter = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AtaudTransferencias", x => x.Id);
+                    table.PrimaryKey("PK_MovimientosAtaudes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AtaudTransferencias_AtaudVariantes_CoffinVariantId",
+                        name: "FK_MovimientosAtaudes_AtaudVariantes_CoffinVariantId",
                         column: x => x.CoffinVariantId,
                         principalTable: "AtaudVariantes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AtaudTransferencias_MovimientosAtaudes_ArrivalMovementId",
-                        column: x => x.ArrivalMovementId,
-                        principalTable: "MovimientosAtaudes",
-                        principalColumn: "Id");
+                        name: "FK_MovimientosAtaudes_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockFilial",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    MinimumStock = table.Column<int>(type: "int", nullable: false),
+                    LastUpdate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockFilial", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AtaudTransferencias_MovimientosAtaudes_DepartureMovementId",
-                        column: x => x.DepartureMovementId,
-                        principalTable: "MovimientosAtaudes",
-                        principalColumn: "Id");
+                        name: "FK_StockFilial_AtaudVariantes_CoffinVariantId",
+                        column: x => x.CoffinVariantId,
+                        principalTable: "AtaudVariantes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StockFilial_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -525,6 +532,91 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AspNetUserClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserClaims_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserLogins",
+                columns: table => new
+                {
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserLogins_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserRoles",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserTokens",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SepulturasEstructura",
                 columns: table => new
                 {
@@ -549,6 +641,96 @@ namespace ContratosYReembolsos.Migrations
                         name: "FK_SepulturasEstructura_TemplatesSepulturas_TemplateId",
                         column: x => x.TemplateId,
                         principalTable: "TemplatesSepulturas",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VehiculosServicios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    VehicleId = table.Column<int>(type: "int", nullable: false),
+                    DriverId = table.Column<int>(type: "int", nullable: false),
+                    ServiceType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ContractId = table.Column<int>(type: "int", nullable: false),
+                    DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TripStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Observations = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VehiculosServicios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Conductores_DriverId",
+                        column: x => x.DriverId,
+                        principalTable: "Conductores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Contratos_ContractId",
+                        column: x => x.ContractId,
+                        principalTable: "Contratos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VehiculosServicios_Vehiculos_VehicleId",
+                        column: x => x.VehicleId,
+                        principalTable: "Vehiculos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AtaudTransferencias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CoffinVariantId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    OriginBranchId = table.Column<int>(type: "int", nullable: false),
+                    TargetBranchId = table.Column<int>(type: "int", nullable: false),
+                    DepartureMovementId = table.Column<int>(type: "int", nullable: true),
+                    ArrivalMovementId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GuiaRemision = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateSent = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SentBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateReceived = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReceivedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReceptionObservations = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AtaudTransferencias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_AtaudVariantes_CoffinVariantId",
+                        column: x => x.CoffinVariantId,
+                        principalTable: "AtaudVariantes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_Filiales_OriginBranchId",
+                        column: x => x.OriginBranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_Filiales_TargetBranchId",
+                        column: x => x.TargetBranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_MovimientosAtaudes_ArrivalMovementId",
+                        column: x => x.ArrivalMovementId,
+                        principalTable: "MovimientosAtaudes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AtaudTransferencias_MovimientosAtaudes_DepartureMovementId",
+                        column: x => x.DepartureMovementId,
+                        principalTable: "MovimientosAtaudes",
                         principalColumn: "Id");
                 });
 
@@ -585,6 +767,50 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetRoleClaims_RoleId",
+                table: "AspNetRoleClaims",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "RoleNameIndex",
+                table: "AspNetRoles",
+                column: "NormalizedName",
+                unique: true,
+                filter: "[NormalizedName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserClaims_UserId",
+                table: "AspNetUserClaims",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserLogins_UserId",
+                table: "AspNetUserLogins",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_RoleId",
+                table: "AspNetUserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "EmailIndex",
+                table: "AspNetUsers",
+                column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_BranchId",
+                table: "AspNetUsers",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "UserNameIndex",
+                table: "AspNetUsers",
+                column: "NormalizedUserName",
+                unique: true,
+                filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AtaudTransferencias_ArrivalMovementId",
                 table: "AtaudTransferencias",
                 column: "ArrivalMovementId");
@@ -600,6 +826,16 @@ namespace ContratosYReembolsos.Migrations
                 column: "DepartureMovementId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AtaudTransferencias_OriginBranchId",
+                table: "AtaudTransferencias",
+                column: "OriginBranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AtaudTransferencias_TargetBranchId",
+                table: "AtaudTransferencias",
+                column: "TargetBranchId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AtaudVariantes_CoffinModelId",
                 table: "AtaudVariantes",
                 column: "CoffinModelId");
@@ -607,6 +843,11 @@ namespace ContratosYReembolsos.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Cementerios_BranchId",
                 table: "Cementerios",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conductores_BranchId",
+                table: "Conductores",
                 column: "BranchId");
 
             migrationBuilder.CreateIndex(
@@ -633,6 +874,11 @@ namespace ContratosYReembolsos.Migrations
                 name: "IX_Filiales_UbigeoId",
                 table: "Filiales",
                 column: "UbigeoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MovimientosAtaudes_BranchId",
+                table: "MovimientosAtaudes",
+                column: "BranchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MovimientosAtaudes_CoffinVariantId",
@@ -670,6 +916,11 @@ namespace ContratosYReembolsos.Migrations
                 column: "ServiceCategoryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_StockFilial_BranchId",
+                table: "StockFilial",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StockFilial_CoffinVariantId",
                 table: "StockFilial",
                 column: "CoffinVariantId");
@@ -702,6 +953,21 @@ namespace ContratosYReembolsos.Migrations
                 name: "Agencias");
 
             migrationBuilder.DropTable(
+                name: "AspNetRoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserLogins");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserRoles");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
                 name: "AtaudTransferencias");
 
             migrationBuilder.DropTable(
@@ -724,6 +990,12 @@ namespace ContratosYReembolsos.Migrations
 
             migrationBuilder.DropTable(
                 name: "VehiculosServicios");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "MovimientosAtaudes");

@@ -22,7 +22,7 @@ namespace ContratosYReembolsos.Controllers
             return View(filiales);
         }
 
-        public async Task<IActionResult> Inventory(string id)
+        public async Task<IActionResult> Inventory(int id)
         {
             var filial = await _limaContext.Filiales.FindAsync(id);
             if (filial == null) return NotFound();
@@ -33,7 +33,7 @@ namespace ContratosYReembolsos.Controllers
             // Buscamos los stocks que pertenecen a esta filial
             var stock = await _context.StockFilial
                 .Include(s => s.CoffinVariant)
-                .Where(s => s.SubsidiaryId == id)
+                .Where(s => s.BranchId == id)
                 .ToListAsync();
 
             return View(stock);

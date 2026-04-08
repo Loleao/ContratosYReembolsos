@@ -54,10 +54,27 @@ RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
     try
     {
         var ubigeoService = services.GetRequiredService<IUbigeoService>();
         await ubigeoService.SeedIfEmptyAsync();
+
+        if (!context.Filiales.Any(f => f.Code == "LIM1"))
+        {
+            var central = new Branch
+            {
+                Name = "ALMACÉN CENTRAL - LIMA",
+                UbigeoId = "150101",
+                Code = "LIM1",
+                Address = "Av. Principal 123, Lima",
+                Phone = "999999999",
+                Email = "lima@gmail.com",
+                IsActive = true
+            };
+            context.Filiales.Add(central);
+            await context.SaveChangesAsync();
+        }
     }
     catch (Exception ex)
     {

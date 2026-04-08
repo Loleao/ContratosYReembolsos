@@ -10,10 +10,11 @@ namespace ContratosYReembolsos.Models
         public int CoffinVariantId { get; set; }
         public CoffinVariant CoffinVariant { get; set; }
 
-        public string SubsidiaryId { get; set; }
+        public int BranchId { get; set; }
+        public virtual Branch Branch { get; set; }
 
         public int Quantity { get; set; }
-        public int MinimumStock { get; set; } // ¡Importante! Cada filial tiene su propia meta mínima
+        public int MinimumStock { get; set; }
         public DateTime LastUpdate { get; set; } = DateTime.Now;
     }
 }

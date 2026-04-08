@@ -218,6 +218,9 @@ namespace ContratosYReembolsos.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CoffinVariantId")
                         .HasColumnType("int");
 
@@ -230,11 +233,9 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("SubsidiaryId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("CoffinVariantId");
 
@@ -316,6 +317,9 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("BalanceAfter")
                         .HasColumnType("int");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CoffinVariantId")
                         .HasColumnType("int");
 
@@ -334,15 +338,13 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<string>("RegisteredBy")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SubsidiaryId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("CoffinVariantId");
 
@@ -375,9 +377,8 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<string>("GuiaRemision")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OriginSubsidiaryId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("OriginBranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -395,9 +396,8 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TargetSubsidiaryId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TargetBranchId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -406,6 +406,10 @@ namespace ContratosYReembolsos.Migrations
                     b.HasIndex("CoffinVariantId");
 
                     b.HasIndex("DepartureMovementId");
+
+                    b.HasIndex("OriginBranchId");
+
+                    b.HasIndex("TargetBranchId");
 
                     b.ToTable("AtaudTransferencias");
                 });
@@ -582,6 +586,9 @@ namespace ContratosYReembolsos.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -600,11 +607,9 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SubsidiaryId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.ToTable("Conductores");
                 });
@@ -1196,11 +1201,19 @@ namespace ContratosYReembolsos.Migrations
 
             modelBuilder.Entity("ContratosYReembolsos.Models.BranchStock", b =>
                 {
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
                         .WithMany("Stocks")
                         .HasForeignKey("CoffinVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("CoffinVariant");
                 });
@@ -1218,11 +1231,19 @@ namespace ContratosYReembolsos.Migrations
 
             modelBuilder.Entity("ContratosYReembolsos.Models.CoffinMovement", b =>
                 {
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ContratosYReembolsos.Models.CoffinVariant", "CoffinVariant")
                         .WithMany()
                         .HasForeignKey("CoffinVariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("CoffinVariant");
                 });
@@ -1243,11 +1264,27 @@ namespace ContratosYReembolsos.Migrations
                         .WithMany()
                         .HasForeignKey("DepartureMovementId");
 
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "OriginBranch")
+                        .WithMany()
+                        .HasForeignKey("OriginBranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "TargetBranch")
+                        .WithMany()
+                        .HasForeignKey("TargetBranchId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("ArrivalMovement");
 
                     b.Navigation("CoffinVariant");
 
                     b.Navigation("DepartureMovement");
+
+                    b.Navigation("OriginBranch");
+
+                    b.Navigation("TargetBranch");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.CoffinVariant", b =>
@@ -1270,6 +1307,17 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired();
 
                     b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Driver", b =>
+                {
+                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.IntermentSpace", b =>

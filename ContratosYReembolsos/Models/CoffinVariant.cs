@@ -10,10 +10,10 @@ namespace ContratosYReembolsos.Models
         public int CoffinModelId { get; set; }
         public virtual Coffin Coffin { get; set; }
 
-        public string Color { get; set; } //
-        public string Material { get; set; } // "Madera Caoba"
-        public string Size { get; set; } // "A"Blanco", "Nogal", "Plata"
-        public string? ImageUrl { get; set; } // La foto específica de ese color
+        public string Color { get; set; }
+        public string Material { get; set; }
+        public string Size { get; set; }
+        public string? ImageUrl { get; set; }
 
         public virtual ICollection<BranchStock> Stocks { get; set; }
     }

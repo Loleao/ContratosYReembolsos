@@ -1,4 +1,6 @@
-﻿namespace ContratosYReembolsos.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ContratosYReembolsos.Models
 {
     public class CoffinTransfer
     {
@@ -9,13 +11,14 @@
         public virtual CoffinVariant CoffinVariant { get; set; }
         public int Quantity { get; set; }
 
-        // Ruta
-        public string OriginSubsidiaryId { get; set; } // "070000" (Lima)
-        public string TargetSubsidiaryId { get; set; } // "100502" (Andahuaylas)
+        public int OriginBranchId { get; set; }
+        [ForeignKey("OriginBranchId")]
+        public virtual Branch OriginBranch { get; set; }
 
-        // --- RASTREO DE MOVIMIENTOS (Tu idea de los 2 campos) ---
+        public int TargetBranchId { get; set; }
+        [ForeignKey("TargetBranchId")]
+        public virtual Branch TargetBranch { get; set; }
 
-        // ID del movimiento "TRANSFERENCIA_OUT" en el origen
         public int? DepartureMovementId { get; set; }
         public virtual CoffinMovement? DepartureMovement { get; set; }
 

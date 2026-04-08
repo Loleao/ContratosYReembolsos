@@ -70,6 +70,12 @@
             <i class="fa-solid fa-building-user"></i>
             <span class="sidebar-text ms-2">Filiales</span>
         </a>
+
+        <a href="@Url.Action("Index", "User")"
+           class="nav-link @(currentController == "User" ? "active" : "")">
+            <i class="fa-solid fa-users-gear"></i>
+            <span class="sidebar-text ms-2">Gestión de Personal</span>
+        </a>
     </nav>
 
     @* --- SECCIÓN DE PERFIL REAL --- *@

@@ -74,6 +74,25 @@ namespace ContratosYReembolsos.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<CoffinTransfer>()
+                .HasOne(t => t.OriginBranch)
+                .WithMany()
+                .HasForeignKey(t => t.OriginBranchId)
+                .OnDelete(DeleteBehavior.Restrict); // Desactivar cascada en el origen
+
+            modelBuilder.Entity<CoffinTransfer>()
+                .HasOne(t => t.TargetBranch)
+                .WithMany()
+                .HasForeignKey(t => t.TargetBranchId)
+                .OnDelete(DeleteBehavior.NoAction); // Desactivar cascada en el destino
+
+            // También es recomendable hacerlo para los movimientos si dan error similar
+            modelBuilder.Entity<CoffinMovement>()
+                .HasOne(m => m.Branch)
+                .WithMany()
+                .HasForeignKey(m => m.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

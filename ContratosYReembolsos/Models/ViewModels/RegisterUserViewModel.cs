@@ -6,22 +6,29 @@ namespace ContratosYReembolsos.Models.ViewModels
     public class RegisterUserViewModel
     {
         [Required(ErrorMessage = "El DNI es obligatorio")]
-        [StringLength(8, MinimumLength = 8, ErrorMessage = "DNI debe tener 8 dígitos")]
+        [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "El DNI debe tener exactamente 8 números")]
         public string DNI { get; set; }
 
-        [Required(ErrorMessage = "Nombre completo es obligatorio")]
+        [Required(ErrorMessage = "El nombre completo es obligatorio")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Nombre demasiado corto o largo")]
         public string FullName { get; set; }
 
-        [Required, EmailAddress]
+        [Required(ErrorMessage = "El correo es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
         public string Email { get; set; }
 
-        [Required, DataType(DataType.Password)]
+        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        [DataType(DataType.Password)]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
         public string Password { get; set; }
 
-        [DataType(DataType.Password), Compare("Password", ErrorMessage = "No coinciden")]
+        [Required(ErrorMessage = "Debes confirmar la contraseña")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Las contraseñas no coinciden")]
+        [Display(Name = "Confirmar Contraseña")]
         public string ConfirmPassword { get; set; }
 
-        public int? BranchId { get; set; } // El amarre
-        public IEnumerable<SelectListItem>? Branches { get; set; } // El combo
+        public int? BranchId { get; set; }
+        public IEnumerable<SelectListItem>? Branches { get; set; }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace ContratosYReembolsos.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ContratosYReembolsos.Models
 {
     public class CoffinMovement
     {
@@ -7,7 +9,9 @@
         public int CoffinVariantId { get; set; }
         public CoffinVariant CoffinVariant { get; set; }
 
-        public string SubsidiaryId { get; set; }
+        public int BranchId { get; set; }
+        [ForeignKey("BranchId")]
+        public virtual Branch Branch { get; set; }
 
         public int Quantity { get; set; }
 

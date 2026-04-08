@@ -13,6 +13,9 @@
             <button id="btnFiliales" class="btn btn-primary rounded-pill px-4 fw-bold active" onclick="switchView('filiales')">
                 <i class="fa-solid fa-building-shield me-2"></i>Sedes
             </button>
+            <button id="btnCatalogo" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchView('catalogo')">
+                <i class="fa-solid fa-book me-2"></i>Catálogo
+            </button>
             <button id="btnTransfers" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchView('transferencias')">
                 <i class="fa-solid fa-truck-fast me-2"></i>Traslados
             </button>
@@ -35,42 +38,49 @@
 
 @section Scripts {
     <script>
-        // URLs dinámicas
+        // 1. URLs dinámicas (Limpias y sin errores de comillas)
         const urls = {
             getSubsidiaryStockModal: '@Url.Action("GetFilialesGrid", "Coffin")',
             getTransfersModal: '@Url.Action("GetTransfersGrid", "Coffin")',
             getCreateTransferStockModal: '@Url.Action("GetCreateTransferStock", "Coffin")',
-            executeTransfer: '@Url.Action("TransferFromGeneral", "Coffin")'
+            executeTransfer: '@Url.Action("TransferFromGeneral", "Coffin")',
+            getCatalogModal: '@Url.Action("GetCatalog", "Coffin")',
+            getCreateCoffinModal: '@Url.Action("GetCreateCoffin", "Coffin")'
         };
 
-        document.addEventListener("DOMContentLoaded", () => switchView('filiales'));
+        // 2. Carga inicial al cargar el DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            switchView('filiales');
+        });
 
-        // Función de Filtrado (Ahora global para evitar errores de definición)
-        function applyFilters() {
-            const code = document.getElementById('filterCode')?.value || '';
-            const name = document.getElementById('filterName')?.value || '';
-            switchView('filiales', code, name, 1);
-        }
-
+        // 3. Función principal de navegación
         async function switchView(viewName, code = '', name = '', page = 1) {
             const container = document.getElementById('mainViewContainer');
-            const btnF = document.getElementById('btnFiliales');
-            const btnT = document.getElementById('btnTransfers');
+            const btns = {
+                filiales: document.getElementById('btnFiliales'),
+                catalogo: document.getElementById('btnCatalogo'),
+                transferencias: document.getElementById('btnTransfers')
+            };
 
-            // Toggle de clases para los botones
-            if(viewName === 'filiales') {
-                btnF.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
-                btnT.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
-            } else {
-                btnT.className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
-                btnF.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            // Resetear estilos de botones
+            Object.values(btns).forEach(btn => {
+                if(btn) btn.className = "btn btn-light rounded-pill px-4 fw-bold text-muted";
+            });
+
+            // Activar botón seleccionado
+            if (btns[viewName]) {
+                btns[viewName].className = "btn btn-primary rounded-pill px-4 fw-bold shadow-sm";
             }
 
             try {
-                // USANDO TUS URLS EXACTAS
-                const url = viewName === 'filiales'
-                    ? `${urls.getSubsidiaryStockModal}?searchCode=${encodeURIComponent(code)}&searchName=${encodeURIComponent(name)}&page=${page}`
-                    : urls.getTransfersModal;
+                let url;
+                if (viewName === 'filiales') {
+                    url = `${urls.getSubsidiaryStockModal}?searchCode=${encodeURIComponent(code)}&searchName=${encodeURIComponent(name)}&page=${page}`;
+                } else if (viewName === 'catalogo') {
+                    url = urls.getCatalogModal;
+                } else {
+                    url = urls.getTransfersModal;
+                }
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error("Status: " + response.status);
@@ -79,11 +89,73 @@
                 container.innerHTML = html;
             } catch (error) {
                 console.error("Fetch Error:", error);
-                container.innerHTML = '<div class="alert alert-danger">Error al cargar datos. Revisa la consola (F12).</div>';
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar datos.</div>';
             }
         }
 
-        // Abrir Modal de Nueva Transferencia
+        // 4. Abrir modal para nuevo Coffin o nueva Variante
+        async function openCreateCoffinModal(existingModelName = '') {
+            try {
+                const url = `${urls.getCreateCoffinModal}?modelName=${encodeURIComponent(existingModelName)}`;
+                const response = await fetch(url);
+                const html = await response.text();
+
+                const container = document.getElementById('modalContainer');
+                container.innerHTML = html;
+
+                // Bloquear nombre si ya existe
+                if (existingModelName !== '') {
+                    const input = container.querySelector('input[name="ModelName"]');
+                    if (input) {
+                        input.readOnly = true;
+                        input.classList.add('bg-light');
+                    }
+                }
+
+                new bootstrap.Modal(document.getElementById('createCoffinModal')).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo abrir el formulario.', 'error');
+            }
+        }
+
+        // 5. Guardar el formulario del modal vía AJAX
+        async function saveNewCoffin() {
+            const form = document.getElementById('formCreateCoffin');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            try {
+                const response = await fetch('@Url.Action("Create", "Coffin")', {
+                    method: 'POST',
+                    headers: { "RequestVerificationToken": token },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        Swal.fire('¡Éxito!', result.message, 'success').then(() => {
+                            const modalEl = document.getElementById('createCoffinModal');
+                            bootstrap.Modal.getInstance(modalEl).hide();
+                            switchView('catalogo');
+                        });
+                    } else {
+                        Swal.fire('Error', result.message, 'error');
+                    }
+                } else {
+                    Swal.fire('Error', 'Error en el servidor', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo de conexión.', 'error');
+            }
+        }
+
+        // 6. Otras funciones de apoyo
         async function openTransferModal() {
             try {
                 const response = await fetch(urls.getCreateTransferStockModal);
@@ -92,55 +164,58 @@
                 container.innerHTML = html;
                 new bootstrap.Modal(container.querySelector('.modal')).show();
             } catch (error) {
-                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+                Swal.fire('Error', 'No se pudo cargar el traslado.', 'error');
             }
         }
 
-        async function executeTransfer() {
-            // Capturamos los datos del modal
-            const variantId = document.getElementById('transferVariantId').value;
-            const targetId = document.getElementById('targetSubsidiaryId').value;
-            const qty = document.getElementById('transferQuantity').value;
-            const ref = document.getElementById('transferReference').value;
+        async function deleteVariant(id) {
+            const result = await Swal.fire({
+                title: '¿Eliminar variante?',
+                text: "Esta acción no se puede deshacer si no hay stock.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Sí, borrar',
+                cancelButtonText: 'Cancelar'
+            });
 
-            // Validación de frontend
-            if (!variantId || !targetId || !qty || !ref) {
-                Swal.fire('Atención', 'Complete todos los campos obligatorios.', 'warning');
-                return;
-            }
-
-            // Validación de stock local en el cliente
-            const selectedOpt = document.querySelector('#transferVariantId option:checked');
-            const max = parseInt(selectedOpt.dataset.max);
-            if (parseInt(qty) > max) {
-                Swal.fire('Error', `Solo hay ${max} unidades disponibles.`, 'error');
-                return;
-            }
-
-            try {
-                const url = `${urls.executeTransfer}?variantId=${variantId}&targetSubsidiaryId=${targetId}&quantity=${qty}&reference=${ref}`;
-                const response = await fetch(url, { method: 'POST' });
-                const result = await response.json();
-
-                if (result.success) {
-                    Swal.fire('¡Despachado!', result.message, 'success').then(() => {
-                        // Cerramos modal y refrescamos la pestaña de Traslados
-                        bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
-                        switchView('transferencias');
-                    });
-                } else {
-                    Swal.fire('Error', result.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Fallo de conexión.', 'error');
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`@Url.Action("DeleteVariant", "Coffin")/${id}`, { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Eliminado', data.message, 'success');
+                        switchView('catalogo');
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) { console.error(e); }
             }
         }
 
-        function applyFilters() {
-            const code = document.getElementById('filterCode')?.value || '';
-            const name = document.getElementById('filterName')?.value || '';
-            // Reiniciamos a la página 1 al filtrar
-            switchView('filiales', code, name, 1);
+        async function deleteCoffin(id, name) {
+            const result = await Swal.fire({
+                title: `¿Borrar ${name}?`,
+                text: "Se eliminarán el modelo y TODAS sus variantes. Esta acción es definitiva.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Eliminar Todo',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`@Url.Action("DeleteCoffin", "Coffin")/${id}`, { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Eliminado', data.message, 'success');
+                        switchView('catalogo');
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) { console.error(e); }
+            }
         }
     </script>
 }

@@ -15,8 +15,8 @@ namespace ContratosYReembolsos.Models
 
         public string Category { get; set; } // Ej: A-IIb
 
-        [Required]
-        public string SubsidiaryId { get; set; }
+        public int BranchId { get; set; }
+        public virtual Branch Branch { get; set; }
 
         public bool IsAvailable { get; set; } = true; // Si está libre para un servicio
 

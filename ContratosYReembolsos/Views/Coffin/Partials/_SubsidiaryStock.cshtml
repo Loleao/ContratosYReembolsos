@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ContratosYReembolsos.Models.External.Subsidiary>
+﻿@model IEnumerable<ContratosYReembolsos.Models.Branch>
 
 <div class="animate__animated animate__fadeIn">
     <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -7,7 +7,7 @@
                 <div class="col-md-4">
                     <label class="form-label x-small fw-bold text-muted mb-1">CÓDIGO</label>
                     <input type="text" id="filterCode" class="form-control form-control-sm border-0 bg-light"
-                           placeholder="Ej: 070000" value="@ViewBag.SearchCode">
+                           placeholder="Ej: 001" value="@ViewBag.SearchCode">
                 </div>
                 <div class="col-md-5">
                     <label class="form-label x-small fw-bold text-muted mb-1">NOMBRE DE SEDE</label>
@@ -33,7 +33,9 @@
                             <i class="fa-solid fa-warehouse text-primary"></i>
                         </div>
                         <h6 class="fw-bold mb-1 text-truncate">@filial.Name</h6>
-                        <p class="text-muted mb-4" style="font-size: 11px;">ID: @filial.Id</p>
+                        @* CAMBIO: Usamos filial.Code en lugar de Id si quieres mostrar el código 001, 002 *@
+                        <p class="text-muted mb-4" style="font-size: 11px;">CÓDIGO: @(filial.Code ?? filial.Id.ToString())</p>
+
                         <a href="@Url.Action("Inventory", "Coffin", new { id = filial.Id })" class="btn btn-dark btn-sm w-100 rounded-pill py-2">
                             Abrir Almacén <i class="fa-solid fa-arrow-right ms-1"></i>
                         </a>
@@ -47,7 +49,6 @@
     {
         <nav class="mt-5">
             <ul class="pagination justify-content-center">
-                @* Botón Anterior *@
                 <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
                     <a class="page-link rounded-start-pill px-3" href="javascript:void(0)"
                        onclick="switchView('filiales', '@ViewBag.SearchCode', '@ViewBag.SearchName', @(ViewBag.CurrentPage - 1))">
@@ -55,7 +56,6 @@
                     </a>
                 </li>
 
-                @* Números *@
                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                 {
                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
@@ -64,7 +64,6 @@
                     </li>
                 }
 
-                @* Botón Siguiente *@
                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
                     <a class="page-link rounded-end-pill px-3" href="javascript:void(0)"
                        onclick="switchView('filiales', '@ViewBag.SearchCode', '@ViewBag.SearchName', @(ViewBag.CurrentPage + 1))">
@@ -75,12 +74,3 @@
         </nav>
     }
 </div>
-
-<script>
-    function applyFilters() {
-        const code = document.getElementById('filterCode').value;
-        const name = document.getElementById('filterName').value;
-        // Reiniciamos a la página 1 al filtrar
-        switchView('filiales', code, name, 1);
-    }
-</script>

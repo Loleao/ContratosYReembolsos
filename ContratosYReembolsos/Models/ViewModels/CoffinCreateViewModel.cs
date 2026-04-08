@@ -4,15 +4,12 @@ namespace ContratosYReembolsos.Models.ViewModels
 {
     public class CoffinCreateViewModel
     {
-        public string ModelName { get; set; }
-
-        public string Color { get; set; }
-        public string Material { get; set; }
-        public string Size { get; set; }
-
-        [Range(0, 99999)]
+        [Required]
+        public string ModelName { get; set; } // "Cofre Estándar"
+        public string Color { get; set; }     // "Blanco"
+        public string Material { get; set; }  // "Madera"
+        public string Size { get; set; }      // "Adulto", "Párvulo" o "XL"
         public int InitialStock { get; set; }
-
         public int MinimumStock { get; set; }
     }
 }

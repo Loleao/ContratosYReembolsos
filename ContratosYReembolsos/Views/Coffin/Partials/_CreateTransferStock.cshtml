@@ -7,61 +7,66 @@
             </div>
             <div class="modal-body p-4">
                 <div class="row g-3">
+                    @* ORIGEN: Ahora dinámico basado en tu Sede Central *@
                     <div class="col-12">
                         <label class="form-label x-small fw-bold text-muted text-uppercase small">Origen</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-building-circle-check text-success"></i></span>
-                            <input type="text" class="form-control bg-light border-start-0 fw-bold" value="ALMACÉN GENERAL (070000)" readonly>
+                            <input type="text" class="form-control bg-light border-start-0 fw-bold"
+                                   value="ALMACÉN CENTRAL - LIMA (Cód: LIM1)" readonly>
                         </div>
                     </div>
 
+                    @* PRODUCTO: Cargando desde la tabla local de Stock *@
                     <div class="col-md-6">
-                        <label class="form-label x-small fw-bold text-primary small">ATAÚD A ENVIAR (Variante/Color)</label>
+                        <label class="form-label x-small fw-bold text-primary small">ATAÚD A ENVIAR (Modelo/Variante)</label>
                         <select id="transferVariantId" class="form-select border-2 shadow-sm">
                             <option value="">-- Seleccione Modelo y Color --</option>
                             @foreach (var p in ViewBag.Products)
                             {
-                                @* Usamos VariantId y DisplayName definidos en el Controller *@
+                                @* Nota: p.VariantId es int, p.StockDisponible es CurrentStock *@
                                 <option value="@p.VariantId" data-max="@p.StockDisponible">
-                                    @p.DisplayName (Disp: @p.StockDisponible)
+                                    @p.DisplayName (Stock: @p.StockDisponible)
                                 </option>
                             }
                         </select>
                     </div>
 
+                    @* DESTINO: Ahora usando los IDs numéricos de tu tabla Filiales *@
                     <div class="col-md-6">
                         <label class="form-label x-small fw-bold text-primary small">FILIAL DESTINO</label>
                         <select id="targetSubsidiaryId" class="form-select border-2 shadow-sm">
                             <option value="">-- Seleccione Sede Destino --</option>
                             @foreach (var f in ViewBag.Subsidiaries)
                             {
-                                <option value="@f.Id">@f.Name (@f.Id)</option>
+                                @* Usamos f.Id (int) y f.Code (string) *@
+                                <option value="@f.Id">@f.Name (Cód: @f.Code)</option>
                             }
                         </select>
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label x-small fw-bold small">CANTIDAD</label>
+                        <label class="form-label x-small fw-bold small">CANTIDAD A ENVIAR</label>
                         <div class="input-group">
                             <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('transferQuantity').stepDown()">-</button>
-                            <input type="number" id="transferQuantity" class="form-control text-center fw-bold" value="1" min="1">
+                            <input type="number" id="transferQuantity" class="form-control text-center fw-bold border-2" value="1" min="1">
                             <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('transferQuantity').stepUp()">+</button>
                         </div>
                     </div>
 
                     <div class="col-md-8">
-                        <label class="form-label x-small fw-bold small">DOCUMENTO DE REFERENCIA</label>
+                        <label class="form-label x-small fw-bold small">GUÍA DE REMISIÓN / REFERENCIA</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-file-invoice"></i></span>
-                            <input type="text" id="transferReference" class="form-control" placeholder="Ej: Guía de Remisión G001-002">
+                            <span class="input-group-text border-2"><i class="fa-solid fa-file-invoice"></i></span>
+                            <input type="text" id="transferReference" class="form-control border-2" placeholder="Ej: G001-000456">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="executeTransfer()">
-                    Procesar Envío <i class="fa-solid fa-paper-plane ms-2"></i>
+                    Generar Traslado <i class="fa-solid fa-paper-plane ms-2"></i>
                 </button>
             </div>
         </div>
