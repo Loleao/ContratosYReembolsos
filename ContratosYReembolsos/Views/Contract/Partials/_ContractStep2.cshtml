@@ -4,69 +4,93 @@
     </h4>
 
     <div class="row g-4">
-        <div class="col-md-12">
-            <label class="form-label fw-bold text-muted small text-uppercase">Tipo de Fallecimiento</label>
-            <div class="animate__animated animate__fadeIn">
-                <select id="DeceasedType" class="form-select rounded-pill border-2" onchange="handleDeceasedTypeChange()">
+        @* Bloque de Selección de Tipo *@
+        <div class="col-md-6">
+            <label class="form-label fw-bold text-muted small text-uppercase">Condición del Fallecido</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-2 border-end-0 rounded-start-pill text-primary">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                </span>
+                <select id="DeceasedType" class="form-select border-2 border-start-0 rounded-end-pill" onchange="handleDeceasedTypeChange()">
                     <option value="">Seleccione...</option>
-                    <option value="Titular">Titular (Policía)</option>
-                    <option value="Beneficiario">Beneficiario (Familiar)</option>
+                    <option value="Titular">Titular (Efectivo Policial)</option>
+                    <option value="Beneficiario">Beneficiario (Familiar / Carga)</option>
                 </select>
             </div>
-            <div id="alertRestriction" class="alert alert-info mt-2 py-2 rounded-4 d-none" style="font-size: 0.85rem;">
+            @* Alerta de restricción mejorada *@
+            <div id="alertRestriction" class="alert alert-primary mt-2 py-2 rounded-4 d-none animate__animated animate__headShake" style="font-size: 0.85rem;">
                 <i class="fa-solid fa-circle-info me-2"></i>
-                Como usted es el <b>Titular Solicitante</b>, el fallecido debe ser un familiar registrado.
+                Usted es el <b>Titular Solicitante</b>, seleccione al familiar fallecido.
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6"></div> @* Espaciador para equilibrio visual *@
+
+        @* Bloque de Datos de Identidad *@
+        <div class="col-md-3">
             <label class="form-label fw-bold text-muted small text-uppercase">DNI del Difunto</label>
-            <div class="input-group">
-                <input type="text" id="DeceasedDni" class="form-control bg-light" readonly>
+            <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                <input type="text" id="DeceasedDni" class="form-control border-2 border-end-0 bg-light" placeholder="00000000" readonly>
                 <button class="btn btn-primary px-4 border-2 border-start-0" type="button" id="btnLupaDeceased" onclick="openSearchBeneficiaries()">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <label class="form-label fw-bold text-muted small text-uppercase">Apellidos y Nombres</label>
-            <input type="text" id="DeceasedName" class="form-control form-control-lg border-2 rounded-pill bg-light" readonly>
+        <div class="col-md-9">
+            <label class="form-label fw-bold text-muted small text-uppercase">Apellidos y Nombres Completos</label>
+            <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                <span class="input-group-text bg-light border-2 border-end-0 text-muted">
+                    <i class="fa-solid fa-user"></i>
+                </span>
+                <input type="text" id="DeceasedName" class="form-control form-control-lg border-2 border-start-0 bg-light" placeholder="Datos cargados desde el buscador..." readonly>
+            </div>
         </div>
+    </div>
 
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label fw-bold small">Fecha de Fallecimiento</label>
-                <input type="date" id="DeathDate" class="form-control rounded-pill"
-                       onchange="validateDatesInline()">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label fw-bold small">Fecha de Sepelio</label>
-                <input type="date" id="BurialDate" class="form-control rounded-pill"
-                       onchange="validateDatesInline()">
-            </div>
-            @* <div class="col-md-4">
-                <label class="form-label fw-bold small text-muted">Hora de sepelio</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-clock text-primary"></i></span>
-                    <input type="time" id="BurialTime" step="3600" class="form-control border-start-0 rounded-end-pill">
-                </div>
-                <small class="text-muted" style="font-size: 0.7rem;">* Solo horas exactas</small>
-            </div> *@
+    <div class="row g-4">
+        @* Bloque de Cronología *@
+        <div class="row g-4 mt-2">
+            @* Fecha Fallecimiento *@
             <div class="col-md-4">
-                <label class="form-label fw-bold small text-muted">Hora de sepelio</label>
+                <label class="form-label fw-bold text-muted small text-uppercase">
+                    <i class="fa-solid fa-calendar-xmark me-1"></i> Fecha de Fallecimiento
+                </label>
                 <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                    <span class="input-group-text bg-white border-end-0">
+                    <input type="date" id="DeathDate" class="form-control border-2 py-2"
+                           onchange="validateDatesInline()">
+                </div>
+            </div>
+
+            @* Fecha Sepelio *@
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small text-uppercase">
+                    <i class="fa-solid fa-calendar-check me-1"></i> Fecha de Sepelio (Programada)
+                </label>
+                <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                    <input type="date" id="BurialDate" class="form-control border-2 py-2"
+                           onchange="validateDatesInline()">
+                </div>
+            </div>
+
+            @* Hora Sepelio *@
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted small text-uppercase">
+                    <i class="fa-solid fa-clock me-1"></i> Hora del Sepelio
+                </label>
+                <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                    <span class="input-group-text bg-white border-2 border-end-0">
                         <i class="fa-solid fa-clock text-primary"></i>
                     </span>
-                    <select id="BurialTime" class="form-select border-start-0 py-2" style="cursor: pointer;">
-                        @* <optgroup label="Mañana"> *@
+                    <select id="BurialTime" class="form-select border-2 border-start-0 py-2" style="cursor: pointer;">
+                        <option value="">Seleccione hora...</option>
+                        <optgroup label="Mañana">
                             <option value="08:00">08:00 AM</option>
                             <option value="09:00">09:00 AM</option>
                             <option value="10:00">10:00 AM</option>
                             <option value="11:00">11:00 AM</option>
-                        @* </optgroup> *@
-                        @* <optgroup label="Tarde"> *@
+                        </optgroup>
+                        <optgroup label="Tarde">
                             <option value="12:00">12:00 PM</option>
                             <option value="13:00">01:00 PM</option>
                             <option value="14:00">02:00 PM</option>
@@ -74,47 +98,59 @@
                             <option value="16:00">04:00 PM</option>
                             <option value="17:00">05:00 PM</option>
                             <option value="18:00">06:00 PM</option>
-                        @* </optgroup> *@
-                        @* <optgroup label="Noche"> *@
+                        </optgroup>
+                        <optgroup label="Noche (Casos Especiales)">
                             <option value="19:00">07:00 PM</option>
                             <option value="20:00">08:00 PM</option>
-                            <option value="21:00">09:00 PM</option>
-                            <option value="22:00">10:00 PM</option>
-                            <option value="23:00">11:00 PM</option>
-                            <option value="24:00">12:00 PM</option>
-                        @* </optgroup> *@
+                        </optgroup>
                     </select>
                 </div>
             </div>
         </div>
-        <div id="dateErrorMessage" class="text-danger small mt-2 d-none">
-            <i class="fa-solid fa-circle-exclamation me-1"></i>
+
+        @* Mensaje de error dinámico mejorado *@
+        <div id="dateErrorMessage" class="alert alert-danger py-2 px-3 rounded-4 mt-3 d-none animate__animated animate__shakeX" style="font-size: 0.85rem;">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
             <span id="dateErrorText"></span>
         </div>
 
         <div class="col-md-12">
-            <hr class="text-muted opacity-25">
-            <label class="form-label fw-bold text-primary small mb-3">
-                <i class="fa-solid fa-location-dot me-1"></i> UBICACIÓN DEL FALLECIMIENTO
-            </label>
+            <hr class="text-muted opacity-25 my-4">
+            <h6 class="text-primary fw-bold mb-3">
+                <i class="fa-solid fa-location-dot me-2"></i> LUGAR DEL FALLECIMIENTO
+            </h6>
             <div class="row g-3">
+                @* Departamento *@
                 <div class="col-md-4">
-                    <label class="form-label text-muted small fw-bold">DEPARTAMENTO</label>
-                    <select id="DeathDept" class="form-select rounded-pill border-2" onchange="loadProvinces()">
-                        <option value="">Seleccione...</option>
-                    </select>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Departamento</label>
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                        <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-map text-primary opacity-50"></i></span>
+                        <select id="DeathDept" class="form-select border-2 border-start-0 py-2" onchange="loadProvinces()">
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
                 </div>
+
+                @* Provincia *@
                 <div class="col-md-4">
-                    <label class="form-label text-muted small fw-bold">PROVINCIA</label>
-                    <select id="DeathProv" class="form-select rounded-pill border-2" onchange="loadDistricts()" disabled>
-                        <option value="">Seleccione Dept...</option>
-                    </select>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Provincia</label>
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                        <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-map-location-dot text-primary opacity-50"></i></span>
+                        <select id="DeathProv" class="form-select border-2 border-start-0 py-2" onchange="loadDistricts()" disabled>
+                            <option value="">Seleccione Dept...</option>
+                        </select>
+                    </div>
                 </div>
+
+                @* Distrito *@
                 <div class="col-md-4">
-                    <label class="form-label text-muted small fw-bold">DISTRITO</label>
-                    <select id="DeathDist" class="form-select rounded-pill border-2" disabled>
-                        <option value="">Seleccione Prov...</option>
-                    </select>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Distrito</label>
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                        <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-location-crosshairs text-primary opacity-50"></i></span>
+                        <select id="DeathDist" class="form-select border-2 border-start-0 py-2" disabled>
+                            <option value="">Seleccione Prov...</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>

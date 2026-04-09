@@ -8,20 +8,24 @@ namespace ContratosYReembolsos.Models
         [Key]
         public int Id { get; set; }
 
-        // Código generado: JUN202600001
         [Required, StringLength(20)]
-        public string ContractNumber { get; set; }
+        public string ContractNumber { get; set; } // Ejemplo: LIM-2026-0001
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string Status { get; set; } = "Finalizado";
 
-        // --- PASO 1: SOLICITANTE ---
+        // --- VÍNCULO CON LA FILIAL ---
+        [Required]
+        public int BranchId { get; set; }
+        [ForeignKey("BranchId")]
+        public virtual Branch? Branch { get; set; }
+
+        // --- SOLICITANTE Y FALLECIDO ---
         public string SolicitorDni { get; set; }
         public string SolicitorName { get; set; }
         public string SolicitorCip { get; set; }
-        public string SolicitorType { get; set; } // "Titular" o "Familiar"
+        public string SolicitorType { get; set; }
 
-        // --- PASO 2: FALLECIDO ---
         public string DeceasedDni { get; set; }
         public string DeceasedName { get; set; }
         public DateTime DeathDate { get; set; }
@@ -29,34 +33,27 @@ namespace ContratosYReembolsos.Models
         // --- LOGÍSTICA DE SEPULCRO ---
         public DateTime BurialDate { get; set; }
         public TimeSpan BurialTime { get; set; }
+        public string UbigeoFull { get; set; }
 
-        // Ubicación del Fallecimiento (Ubigeo)
-        public string IneiCode { get; set; } // El ID del distrito seleccionado
-        public string UbigeoFull { get; set; } // Texto: "JUNIN - HUANCAYO - EL TAMBO"
+        // Referencia al Nicho específico en el inventario
+        public int? IntermentSpaceId { get; set; }
+        [ForeignKey("IntermentSpaceId")]
+        public virtual IntermentSpace? IntermentSpace { get; set; }
 
-        // Velatorio
-        public int? WakeId { get; set; }
-        public string WakeName { get; set; } // Denormalizado para histórico
+        // Respaldo de texto (Denormalización)
+        public string BurialDetail { get; set; } // Ej: "Pabellón A - Fila 2 - Nro 15"
 
-        // Cementerio
-        public string CemeteryId { get; set; }
-        public string CemeteryName { get; set; } // Denormalizado para histórico
-
-        public string BurialType { get; set; } // "Pabellon", "Tumba", "Columbario"
-        public string BurialDetail { get; set; } // "Pabellón San Juan - Fila A - Nro 5"
-
-        // --- PASO 3: AGENCIA ---
+        // --- AGENCIA (RELACIÓN REAL) ---
         public int AgencyId { get; set; }
-        public string AgencyName { get; set; }
-        public string AgencyAddress { get; set; }
+        [ForeignKey("AgencyId")]
+        public virtual Agency? Agency { get; set; }
 
         // --- FINANZAS ---
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
 
-        // --- RELACIONES ---
+        // --- RELACIONES HIJAS ---
         public virtual ICollection<ContractDetail> Details { get; set; } = new List<ContractDetail>();
         public virtual ICollection<ContractMovilityDetail> MovilityDetails { get; set; } = new List<ContractMovilityDetail>();
-
     }
 }

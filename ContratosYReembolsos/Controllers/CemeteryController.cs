@@ -1,57 +1,121 @@
 ﻿using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContratosYReembolsos.Controllers
 {
+    [Authorize(Policy = "Policy.Global.Lectura")]
     public class CemeteryController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IntermentService _intermentService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CemeteryController(ApplicationDbContext context, IntermentService intermentService)
+        public CemeteryController(ApplicationDbContext context, IntermentService intermentService, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _intermentService = intermentService;
+            _userManager = userManager;
         }
 
         // Dashboard principal o listado filtrado
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? selectedBranchId)
         {
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+
+            int branchId;
+
+            if (isAdmin)
+            {
+                // Si el admin no ha elegido filial, le mandamos al selector
+                if (selectedBranchId == null)
+                {
+                    var branches = await _context.Filiales.Include(b => b.Cemeteries).ToListAsync();
+                    return View("BranchSelection", branches);
+                }
+                branchId = selectedBranchId.Value;
+            }
+            else
+            {
+                // El operador solo puede ver su propia filial
+                if (user.BranchId == null) return Forbid();
+                branchId = user.BranchId.Value;
+            }
+
+            // Cargamos los cementerios filtrados por la filial obtenida
             var cemeteries = await _context.Cementerios
                 .Include(c => c.Structures)
+                .Where(c => c.BranchId == branchId)
                 .ToListAsync();
-            return View(cemeteries);
+
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.SelectedBranchId = branchId;
+
+            // Obtenemos el nombre de la filial para el título
+            var branch = await _context.Filiales.FindAsync(branchId);
+            ViewBag.BranchName = branch?.Name;
+
+            return View(cemeteries); // Este usa tu Index actual (el de la lista de sedes)
         }
 
         [HttpGet]
-        public IActionResult GetCreateCemetery()
+        public IActionResult GetCreateCemetery(int branchId)
         {
-            return PartialView("Partials/_CreateCemetery", new Cemetery());
+            var model = new Cemetery
+            {
+                BranchId = branchId,
+                IsActive = true
+            };
+
+            var branch = _context.Filiales.Find(branchId);
+            ViewBag.BranchName = branch?.Name ?? "Filial";
+
+            return PartialView("Partials/_CreateCemetery", model);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken] // Buena práctica de seguridad
         public async Task<IActionResult> Create(Cemetery model)
         {
+            if (model.BranchId == 0)
+            {
+                return Json(new { success = false, message = "Error: No se ha detectado una Filial válida para esta sede." });
+            }
+
             if (ModelState.IsValid)
             {
-                // El ID al ser int e Identity no se asigna manualmente
                 _context.Cementerios.Add(model);
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = $"Sede {model.Name} registrada con éxito." });
             }
 
-            // Si hay errores de validación
-            var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-            return Json(new { success = false, message = "Error de validación: " + errors });
+            // Si falla, capturamos los errores específicos para avisarte
+            var errors = string.Join(" | ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+
+            return Json(new { success = false, message = "Errores: " + errors });
         }
 
         public async Task<IActionResult> SelectionMenu(int id)
         {
-            var cemetery = await _context.Cementerios.FindAsync(id);
+            var cemetery = await _context.Cementerios
+                .Include(c => c.Branch) // Importante para saber de qué filial es
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (cemetery == null) return NotFound();
+
+            // Seguridad extra: Si no es admin, verificar que el cementerio sea de su filial
+            var user = await _userManager.GetUserAsync(User);
+            if (!await _userManager.IsInRoleAsync(user, "Admin") && cemetery.BranchId != user.BranchId)
+            {
+                return Forbid();
+            }
 
             return View(cemetery);
         }

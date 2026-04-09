@@ -1,80 +1,198 @@
-﻿<div class="container py-4">
+﻿@model IEnumerable<ContratosYReembolsos.Models.Cemetery>
+
+@{
+    ViewData["Title"] = "Sedes de Cementerios";
+}
+
+<div class="container py-4">
+    @* --- 1. NAVEGACIÓN PARA ADMIN --- *@
+    @if (ViewBag.IsAdmin == true)
+    {
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb bg-light p-2 rounded-3 shadow-sm">
+                <li class="breadcrumb-item">
+                    <a asp-action="Index" asp-route-selectedBranchId="" class="text-decoration-none">
+                        <i class="fa-solid fa-map me-1"></i>Filiales
+                    </a>
+                </li>
+                <li class="breadcrumb-item active fw-bold text-primary">@ViewBag.BranchName</li>
+            </ol>
+        </nav>
+    }
+
+    @* --- 2. ENCABEZADO DINÁMICO --- *@
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-        <h4 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-hospital-user me-2 text-primary"></i>Sedes de Cementerios</h4>
-        <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm"
-                onclick="openCreateCemeteryModal()">
-            <i class="fa-solid fa-plus me-1"></i> Nueva Sede
-        </button>
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-church me-2 text-primary"></i>
+                Sedes en @(ViewBag.BranchName ?? "Mi Filial")
+            </h4>
+            <p class="text-muted small mb-0">Gestión de inventario de sepulturas y pabellones</p>
+        </div>
+
+        @* Solo Admin o usuarios con permiso pueden crear nuevas sedes físicas *@
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Filiales.Crear"))
+        {
+            <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
+                    onclick="openCreateCemeteryModal()">
+                <i class="fa-solid fa-plus me-2"></i>Nueva Sede
+            </button>
+        }
     </div>
 
-    <div id="modalCemeteryContainer"></div>
-
-    <div class="list-group shadow-sm rounded-4 border-0">
-        @foreach (var cem in Model)
+    @* --- 3. LISTADO DE SEDES (CEMENTERIOS) --- *@
+    <div class="row g-3">
+        @if (!Model.Any())
         {
-            <a href="@Url.Action("SelectionMenu", new { id = cem.Id })"
-               class="list-group-item list-group-item-action border-0 border-bottom p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="d-flex align-items-center mb-1">
-                        <span class="fw-bold text-dark fs-5 me-3">@cem.Name</span>
-                        <span class="badge bg-light text-muted border px-2">RUC: @cem.RUC</span>
-                    </div>
-                    <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i> Ubigeo: @cem.UbigeoId</small>
+            <div class="col-12 text-center py-5">
+                <i class="fa-solid fa-folder-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay sedes registradas para esta filial.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var cem in Model)
+            {
+                <div class="col-12">
+                    <a href="@Url.Action("SelectionMenu", new { id = cem.Id })"
+                       class="card border-0 shadow-sm rounded-4 text-decoration-none hover-card mb-2 transition-all">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-box bg-primary-subtle text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fa-solid fa-location-dot fs-4"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">@cem.Name</h5>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge bg-secondary-subtle text-secondary border px-2">RUC: @cem.RUC</span>
+                                        <small class="text-muted border-start ps-2">
+                                            <i class="fa-solid fa-phone me-1"></i> @(cem.Phone ?? "Sin teléfono")
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-end d-flex align-items-center">
+                                <div class="me-4 text-center d-none d-md-block">
+                                    <span class="d-block x-small text-uppercase text-muted fw-bold" style="font-size: 10px;">Pabellones</span>
+                                    <span class="fw-bold h5 mb-0 text-primary">@(cem.Structures?.Count ?? 0)</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-primary opacity-50 fs-5"></i>
+                            </div>
+                        </div>
+                    </a>
                 </div>
-                <div class="text-end d-flex align-items-center">
-                    <div class="me-4 d-none d-md-block text-center">
-                        <span class="d-block x-small text-uppercase text-muted fw-bold">Estructuras</span>
-                        <span class="fw-bold h5 mb-0">@cem.Structures?.Count</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-primary opacity-50"></i>
-                </div>
-            </a>
+            }
         }
     </div>
 </div>
 
+<div id="modalCemeteryContainer"></div>
+
 <script>
+    // Variables globales para los scripts
+    const currentBranchId = '@ViewBag.SelectedBranchId';
     const urlGetCreate = '@Url.Action("GetCreateCemetery", "Cemetery")';
 
+    /**
+     * Carga y muestra el modal de creación de cementerio vía AJAX
+     */
     async function openCreateCemeteryModal() {
         try {
-            const response = await fetch(urlGetCreate);
+            // Pasamos el branchId actual para que el nuevo cementerio sepa a dónde pertenece
+            const response = await fetch(`${urlGetCreate}?branchId=${currentBranchId}`);
+
+            if (!response.ok) {
+                throw new Error("Error al obtener el formulario.");
+            }
+
             const html = await response.text();
             const container = document.getElementById('modalCemeteryContainer');
+
+            // Inyectamos el HTML en el contenedor
             container.innerHTML = html;
 
-            // Mostrar el modal
-            new bootstrap.Modal(document.getElementById('modalCreateCemetery')).show();
+            // Inicializamos y mostramos el modal de Bootstrap
+            const modalElement = document.getElementById('modalCreateCemetery');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
         } catch (error) {
-            Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+            console.error("Error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudo cargar el formulario de registro.'
+            });
         }
     }
 
+    /**
+     * Envía el formulario de creación mediante POST asíncrono
+     */
     async function submitCemeteryForm() {
         const form = document.getElementById('formCreateCemetery');
+
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
 
         const formData = new FormData(form);
+
+        console.log("Enviando BranchId:", formData.get("BranchId"));
+
         try {
             const response = await fetch(form.action, {
                 method: 'POST',
                 body: formData
             });
+
             const result = await response.json();
 
             if (result.success) {
-                bootstrap.Modal.getInstance(document.getElementById('modalCreateCemetery')).hide();
-                Swal.fire('¡Éxito!', result.message, 'success').then(() => {
-                    location.reload(); // Recarga la lista para ver la nueva sede
+                // Cerramos el modal usando la instancia de Bootstrap
+                const modalEl = document.getElementById('modalCreateCemetery');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Sede Creada!',
+                    text: result.message,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#0d6efd'
+                }).then(() => {
+                    location.reload(); // Recargamos para ver la nueva sede en la lista
                 });
             } else {
                 Swal.fire('Atención', result.message, 'warning');
             }
         } catch (error) {
-            Swal.fire('Error', 'Ocurrió un problema en el servidor.', 'error');
+            Swal.fire('Error', 'Ocurrió un problema al procesar la solicitud.', 'error');
         }
     }
 </script>
+
+<style>
+    /* Estilos para que la lista se vea moderna como el resto del sistema */
+    .hover-card {
+        transition: all 0.25s ease;
+        border: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+        .hover-card:hover {
+            transform: translateX(5px);
+            background-color: #f8f9fa;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important;
+            border-color: #0d6efd !important;
+        }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .x-small {
+        font-size: 0.75rem;
+    }
+</style>

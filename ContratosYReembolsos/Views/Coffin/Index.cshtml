@@ -21,9 +21,13 @@
             </button>
         </div>
 
-        <button class="btn btn-dark rounded-pill px-4 shadow-sm" onclick="openTransferModal()">
-            <i class="fa-solid fa-plus me-2"></i>Nueva Transferencia
-        </button>
+         @if (User.IsInRole("Admin"))
+        {
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold"
+                    onclick="openTransferModal()">
+                <i class="fa-solid fa-truck-ramp-box me-2"></i>Nueva Transferencia
+            </button>
+        }
     </div>
 
     <div id="mainViewContainer" class="position-relative" style="min-height: 400px;">
@@ -165,6 +169,73 @@
                 new bootstrap.Modal(container.querySelector('.modal')).show();
             } catch (error) {
                 Swal.fire('Error', 'No se pudo cargar el traslado.', 'error');
+            }
+        }
+
+        function addTransferRow() {
+            const tbody = document.getElementById('tbodyTransferencia');
+            const options = document.getElementById('transferCatalogSource').innerHTML;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><select class="form-select form-select-sm t-variant-id border-2">${options}</select></td>
+                <td><input type="number" class="form-control form-control-sm t-qty border-2 text-center" value="1" min="1"></td>
+                <td><button class="btn btn-link text-danger btn-sm p-0" onclick="this.closest('tr').remove()"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        async function executeBulkTransfer() {
+            const targetId = document.getElementById('targetBranchId').value;
+            const guia = document.getElementById('bulkTransferReference').value;
+            const items = [];
+
+            // Validaciones básicas
+            if (!targetId || !guia) {
+                Swal.fire('Atención', 'Seleccione destino y número de Guía.', 'warning');
+                return;
+            }
+
+            const rows = document.querySelectorAll('#tbodyTransferencia tr');
+            rows.forEach(tr => {
+                const vId = tr.querySelector('.t-variant-id').value;
+                const vQty = tr.querySelector('.t-qty').value;
+                if (vId && vQty > 0) {
+                    items.push({
+                        VariantId: parseInt(vId),
+                        Quantity: parseInt(vQty)
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                Swal.fire('Atención', 'Agregue al menos un producto a la lista.', 'warning');
+                return;
+            }
+
+            const payload = {
+                TargetBranchId: parseInt(targetId),
+                Reference: guia, // Se mapea a GuiaRemision en el servidor
+                Items: items
+            };
+
+            try {
+                const response = await fetch('@Url.Action("TransferFromGeneralBulk", "Coffin")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    Swal.fire('¡Enviado!', result.message, 'success').then(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
+                        switchView('transferencias');
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Fallo de conexión.', 'error');
             }
         }
 

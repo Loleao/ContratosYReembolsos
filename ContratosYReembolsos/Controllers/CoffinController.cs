@@ -1,7 +1,9 @@
 ﻿using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Models.External;
+using ContratosYReembolsos.Models.ValueObjects;
 using ContratosYReembolsos.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +21,6 @@ namespace ContratosYReembolsos.Controllers
             _userManager = userManager;
         }
 
-        // PASO 1: Mostrar todas las Filiales (codfilial, descripcion...)
         public async Task<IActionResult> Index(string searchCode, string searchName, int page = 1)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -59,6 +60,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFilialesGrid(string searchCode, string searchName, int page = 1)
         {
             try
@@ -93,6 +95,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTransfersGrid()
         {
             try
@@ -114,6 +117,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetCreateTransferStock()
         {
             // 1. Buscamos la Filial Central por su código único
@@ -161,7 +165,6 @@ namespace ContratosYReembolsos.Controllers
             return View();
         }
 
-        // 2. Parcial: Stock Real de la Filial
         [HttpGet]
         public async Task<IActionResult> GetFilialStock(int id)
         {
@@ -184,87 +187,81 @@ namespace ContratosYReembolsos.Controllers
             return PartialView("Partials/_FilialStock", inventory);
         }
 
-        // 3. Parcial: Transferencias por Recibir
         [HttpGet]
         public async Task<IActionResult> GetFilialPendingTransfers(int id)
         {
-            var pending = await _context.AtaudTransferencias
-                .Include(t => t.CoffinVariant).ThenInclude(v => v.Coffin)
+            var pendingTransfers = await _context.AtaudTransferencias
+                .Include(t => t.CoffinVariant)
+                    .ThenInclude(v => v.Coffin) 
+                .Include(t => t.OriginBranch) 
                 .Where(t => t.TargetBranchId == id && t.Status == "EN_CAMINO")
-                .AsNoTracking().ToListAsync();
+                .OrderByDescending(t => t.DateSent)
+                .ToListAsync();
 
-            ViewBag.SubsidiaryId = id;
-            return PartialView("Partials/_FilialPendingTransfers", pending);
+            return PartialView("Partials/_FilialPendingTransfers", pendingTransfers);
         }
 
         [HttpPost]
-        public async Task<IActionResult> TransferFromGeneral(int variantId, int targetSubsidiaryId, int quantity, string reference)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> TransferFromGeneralBulk([FromBody] BulkTransferRequest request)
         {
-            // 1. Buscamos dinámicamente el ID de la central por su código "001"
+            // 1. Identificar Sede Central (Origen)
             var centralBranch = await _context.Filiales.FirstOrDefaultAsync(f => f.Code == "LIM1");
-
-            if (centralBranch == null)
-                return Json(new { success = false, message = "Error: La Sede Central no está configurada." });
-
-            int centralId = centralBranch.Id;
+            if (centralBranch == null) return Json(new { success = false, message = "No se encontró la Sede Central." });
 
             using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                // 2. Validar Stock en Origen (Usando CurrentStock)
-                var centralStock = await _context.StockFilial
-                    .FirstOrDefaultAsync(s => s.CoffinVariantId == variantId && s.BranchId == centralId);
-
-                if (centralStock == null || centralStock.Quantity < quantity)
-                    return Json(new { success = false, message = "Stock insuficiente en Central." });
-
-                // 3. Ejecutar Salida Física
-                centralStock.Quantity -= quantity;
-                centralStock.LastUpdate = DateTime.Now;
-
-                // 4. Crear el Movimiento de Salida (Kardex)
-                var moveOut = new CoffinMovement
+                foreach (var item in request.Items)
                 {
-                    CoffinVariantId = variantId,
-                    BranchId = centralId, // Usamos el ID numérico
-                    Quantity = -quantity, // Negativo porque sale del almacén
-                    Type = "TRANSFERENCIA_OUT",
-                    Reference = reference,
-                    Date = DateTime.Now,
-                    BalanceAfter = centralStock.Quantity,
-                    RegisteredBy = User.Identity?.Name ?? "Admin"
-                };
+                    // A. Validar y restar stock en Central
+                    var sourceStock = await _context.StockFilial
+                        .FirstOrDefaultAsync(s => s.BranchId == centralBranch.Id && s.CoffinVariantId == item.VariantId);
 
-                _context.MovimientosAtaudes.Add(moveOut);
-                await _context.SaveChangesAsync(); // Guardamos para obtener el Id de moveOut
+                    if (sourceStock == null || sourceStock.Quantity < item.Quantity)
+                        throw new Exception($"Stock insuficiente en Central para una de las variantes seleccionadas.");
 
-                // 5. Crear la Transferencia Logística
-                var transfer = new CoffinTransfer
-                {
-                    CoffinVariantId = variantId,
-                    OriginBranchId = centralId,
-                    TargetBranchId = targetSubsidiaryId, // Ya viene como int desde el modal
-                    Quantity = quantity,
-                    Status = "EN_CAMINO",
-                    GuiaRemision = reference,
-                    DateSent = DateTime.Now,
-                    SentBy = User.Identity?.Name ?? "Admin",
-                    DepartureMovementId = moveOut.Id // Puntero al Kardex de salida
-                };
+                    sourceStock.Quantity -= item.Quantity;
 
-                _context.AtaudTransferencias.Add(transfer);
+                    // B. Crear Movimiento de Salida (Kardex Origen)
+                    var departureMovement = new CoffinMovement
+                    {
+                        BranchId = centralBranch.Id,
+                        CoffinVariantId = item.VariantId,
+                        Quantity = -item.Quantity, // Negativo porque sale
+                        Type = "SALIDA_TRANSFERENCIA",
+                        Reference = $"Despacho a Sede ID: {request.TargetBranchId} - Guía: {request.Reference}",
+                        Date = DateTime.Now,
+                        BalanceAfter = sourceStock.Quantity,
+                        RegisteredBy = User.Identity?.Name ?? "Admin_Logistica"
+                    };
+                    _context.MovimientosAtaudes.Add(departureMovement);
+                    await _context.SaveChangesAsync(); // Guardamos para obtener el ID del movimiento
+
+                    var transfer = new CoffinTransfer
+                    {
+                        CoffinVariantId = item.VariantId,
+                        Quantity = item.Quantity,
+                        OriginBranchId = centralBranch.Id,
+                        TargetBranchId = request.TargetBranchId,
+                        DepartureMovementId = departureMovement.Id, // Vinculamos la salida
+                        Status = "EN_CAMINO",
+                        GuiaRemision = request.Reference,
+                        DateSent = DateTime.Now,
+                        SentBy = User.Identity?.Name ?? "Admin_Logistica"
+                    };
+                    _context.AtaudTransferencias.Add(transfer);
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Json(new { success = true, message = "Envío procesado. El stock ahora figura 'En Tránsito'." });
+                return Json(new { success = true, message = "Transferencia múltiple registrada con éxito. Los productos están en camino." });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                // Es mejor loguear el error interno y mandar un mensaje amigable
-                return Json(new { success = false, message = "Error al procesar traslado: " + ex.Message });
+                return Json(new { success = false, message = "Error: " + ex.Message });
             }
         }
 
@@ -272,129 +269,154 @@ namespace ContratosYReembolsos.Controllers
         public async Task<IActionResult> ConfirmReceipt(int transferId, string? observations)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                // 1. Obtener la transferencia pendiente
-                var transfer = await _context.AtaudTransferencias.FindAsync(transferId);
-                if (transfer == null || transfer.Status != "EN_CAMINO")
-                    return Json(new { success = false, message = "Transferencia no encontrada o ya procesada." });
+                // 1. Buscar el registro de transferencia
+                var transfer = await _context.AtaudTransferencias
+                    .Include(t => t.CoffinVariant)
+                    .FirstOrDefaultAsync(t => t.Id == transferId);
 
-                // 2. Buscar o crear el Stock en la Filial Destino
+                if (transfer == null || transfer.Status != "EN_CAMINO")
+                    return Json(new { success = false, message = "Transferencia no válida o ya recibida." });
+
+                // 2. Buscar o crear el registro de Stock en la sede destino
                 var targetStock = await _context.StockFilial
-                    .FirstOrDefaultAsync(s => s.CoffinVariantId == transfer.CoffinVariantId && s.BranchId == transfer.TargetBranchId);
+                    .FirstOrDefaultAsync(s => s.BranchId == transfer.TargetBranchId && s.CoffinVariantId == transfer.CoffinVariantId);
 
                 if (targetStock == null)
                 {
                     targetStock = new BranchStock
                     {
-                        CoffinVariantId = transfer.CoffinVariantId,
                         BranchId = transfer.TargetBranchId,
+                        CoffinVariantId = transfer.CoffinVariantId,
                         Quantity = 0,
-                        MinimumStock = 0, // Se puede ajustar después
+                        MinimumStock = 2,
                         LastUpdate = DateTime.Now
                     };
                     _context.StockFilial.Add(targetStock);
                 }
 
-                // 3. Ejecutar Entrada Física
+                // 3. Actualizar el stock
                 targetStock.Quantity += transfer.Quantity;
                 targetStock.LastUpdate = DateTime.Now;
 
-                // 4. Crear el Movimiento de Entrada (Kardex)
-                var moveIn = new CoffinMovement
+                // 4. Crear Movimiento de ENTRADA (Kardex Destino)
+                var arrivalMovement = new CoffinMovement
                 {
-                    CoffinVariantId = transfer.CoffinVariantId,
                     BranchId = transfer.TargetBranchId,
-                    Quantity = transfer.Quantity, // Positivo porque entra
+                    CoffinVariantId = transfer.CoffinVariantId,
+                    Quantity = transfer.Quantity,
                     Type = "TRANSFERENCIA_IN",
-                    Reference = transfer.GuiaRemision,
+                    Reference = $"Recepción de Sede Central - Guía: {transfer.GuiaRemision}",
                     Date = DateTime.Now,
                     BalanceAfter = targetStock.Quantity,
-                    RegisteredBy = User.Identity?.Name ?? "UserFilial"
+                    RegisteredBy = User.Identity?.Name ?? "Operario_Sede"
                 };
-                _context.MovimientosAtaudes.Add(moveIn);
-                await _context.SaveChangesAsync(); // Guardamos para obtener el Id de moveIn
+                _context.MovimientosAtaudes.Add(arrivalMovement);
+                await _context.SaveChangesAsync(); // Para obtener el ID del movimiento
 
-                // 5. Cerrar la Transferencia (Tu idea de los 2 campos)
-                transfer.ArrivalMovementId = moveIn.Id; // <-- Puntero al movimiento que finaliza el proceso
+                // 5. Actualizar la transferencia (Cerrar el ciclo)
                 transfer.Status = "RECIBIDO";
+                transfer.ArrivalMovementId = arrivalMovement.Id;
                 transfer.DateReceived = DateTime.Now;
-                transfer.ReceivedBy = User.Identity?.Name ?? "UserFilial";
+                transfer.ReceivedBy = User.Identity?.Name ?? "Operario_Sede";
                 transfer.ReceptionObservations = observations;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Json(new { success = true, message = "Stock recibido y cargado al inventario local." });
+                return Json(new { success = true, message = "Cargamento recibido y stock actualizado." });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return Json(new { success = false, message = "Error técnico: " + ex.Message });
+                return Json(new { success = false, message = "Error: " + ex.Message });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAddStock(int variantId, int subsidiaryId)
+        public async Task<IActionResult> GetAddStock(int branchId) 
         {
-            var variant = await _context.AtaudVariantes
-                .Include(v => v.Coffin)
-                .FirstOrDefaultAsync(v => v.Id == variantId);
+            try
+            {
+                var catalogData = await _context.AtaudVariantes
+                    .Include(v => v.Coffin)
+                    .Select(v => new {
+                        v.Id,
+                        Model = v.Coffin.ModelName,
+                        v.Color,
+                        v.Size
+                    })
+                    .ToListAsync();
 
-            var filial = await _context.Filiales.FirstOrDefaultAsync(f => f.Id == subsidiaryId);
+                var variants = catalogData.Select(v => new {
+                    Id = v.Id,
+                    DisplayName = $"{v.Model} - {v.Color} ({v.Size})"
+                }).OrderBy(v => v.DisplayName).ToList();
 
-            if (variant == null || filial == null) return NotFound();
+                var branch = await _context.Filiales.FindAsync(branchId);
 
-            ViewBag.VariantId = variant.Id;
-            ViewBag.ModelName = $"{variant.Coffin.ModelName} ({variant.Color})";
-            ViewBag.SubsidiaryName = filial.Name;
-            ViewBag.SubsidiaryId = subsidiaryId;
+                ViewBag.Variants = variants;
+                ViewBag.BranchId = branchId;
+                ViewBag.BranchName = branch?.Name ?? "Sede";
 
-            return PartialView("Partials/_AddStock");
+                return PartialView("Partials/_AddStock");
+            }
+            catch (Exception ex)
+            {
+                return Content($"<div class='alert alert-danger'>Error interno: {ex.Message}</div>");
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> RegisterEntry(int variantId, int branchId, int quantity, string reference)
+        public async Task<IActionResult> RegisterBulkEntry([FromBody] BulkEntryRequest request)
         {
+            if (request == null || request.Items == null || !request.Items.Any())
+                return Json(new { success = false, message = "Datos inválidos." });
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var stock = await _context.StockFilial
-                    .FirstOrDefaultAsync(s => s.CoffinVariantId == variantId && s.BranchId == branchId);
-
-                if (stock == null)
+                foreach (var item in request.Items)
                 {
-                    stock = new BranchStock
+                    // OJO: Usamos request.BranchId y item.VariantId
+                    var stock = await _context.StockFilial
+                        .FirstOrDefaultAsync(s => s.BranchId == request.BranchId && s.CoffinVariantId == item.VariantId);
+
+                    if (stock == null)
                     {
-                        CoffinVariantId = variantId,
-                        BranchId = branchId,
-                        Quantity = 0,
-                        MinimumStock = 5,
-                        LastUpdate = DateTime.Now
+                        stock = new BranchStock
+                        {
+                            BranchId = request.BranchId,
+                            CoffinVariantId = item.VariantId,
+                            Quantity = 0,
+                            MinimumStock = 2,
+                            LastUpdate = DateTime.Now
+                        };
+                        _context.StockFilial.Add(stock);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    stock.Quantity += item.Quantity;
+                    stock.LastUpdate = DateTime.Now;
+
+                    var movement = new CoffinMovement
+                    {
+                        CoffinVariantId = item.VariantId,
+                        BranchId = request.BranchId,
+                        Quantity = item.Quantity,
+                        Type = "INGRESO_LOTE",
+                        Reference = item.Reference ?? "Ingreso por lote",
+                        Date = DateTime.Now,
+                        BalanceAfter = stock.Quantity,
+                        RegisteredBy = User.Identity?.Name ?? "Admin"
                     };
-                    _context.StockFilial.Add(stock);
+                    _context.MovimientosAtaudes.Add(movement);
                 }
 
-                stock.Quantity += quantity;
-                stock.LastUpdate = DateTime.Now;
-
-                var movement = new CoffinMovement
-                {
-                    CoffinVariantId = variantId,
-                    BranchId = branchId,
-                    Quantity = quantity,
-                    Type = "INGRESO_MANUAL",
-                    Reference = reference,
-                    BalanceAfter = stock.Quantity,
-                    RegisteredBy = User.Identity?.Name
-                };
-
-                _context.MovimientosAtaudes.Add(movement);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                return Json(new { success = true });
+                return Json(new { success = true, message = "Cargamento procesado con éxito." });
             }
             catch (Exception ex)
             {
@@ -404,6 +426,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetCatalog()
         {
             var models = await _context.Ataudes
@@ -416,6 +439,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public IActionResult GetCreateCoffin(int? coffinId, string? modelName)
         {
             var vm = new CoffinCreateViewModel();
@@ -430,6 +454,7 @@ namespace ContratosYReembolsos.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(CoffinCreateViewModel vm, IFormFile? imageFile)
         {
             if (!ModelState.IsValid) return BadRequest("Información del modelo incompleta.");
@@ -485,6 +510,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteVariant(int id)
         {
             var variant = await _context.AtaudVariantes
@@ -513,6 +539,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCoffin(int id)
         {
             var coffin = await _context.Ataudes

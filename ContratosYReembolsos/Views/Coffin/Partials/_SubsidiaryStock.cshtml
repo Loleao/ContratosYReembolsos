@@ -33,7 +33,6 @@
                             <i class="fa-solid fa-warehouse text-primary"></i>
                         </div>
                         <h6 class="fw-bold mb-1 text-truncate">@filial.Name</h6>
-                        @* CAMBIO: Usamos filial.Code en lugar de Id si quieres mostrar el código 001, 002 *@
                         <p class="text-muted mb-4" style="font-size: 11px;">CÓDIGO: @(filial.Code ?? filial.Id.ToString())</p>
 
                         <a href="@Url.Action("Inventory", "Coffin", new { id = filial.Id })" class="btn btn-dark btn-sm w-100 rounded-pill py-2">

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260408150016_setup")]
+    [Migration("20260408203457_setup")]
     partial class setup
     {
         /// <inheritdoc />

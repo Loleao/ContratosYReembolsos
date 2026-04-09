@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using Rotativa.AspNetCore;
+using ContratosYReembolsos.Models.ViewModels;
+using Microsoft.AspNetCore.Identity;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -10,11 +12,13 @@ namespace ContratosYReembolsos.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly LimaContractsDbContext _limaContext;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ContractController(ApplicationDbContext context, LimaContractsDbContext limaContext)
+        public ContractController(ApplicationDbContext context, LimaContractsDbContext limaContext, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _limaContext = limaContext;
+            _userManager = userManager;
         }
 
         // 1. Carga la página principal (el cascarón del Stepper)
@@ -177,7 +181,7 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRegions()
         {
-            var depts = await _limaContext.Ubigeos
+            var depts = await _context.Ubigeos
                 .Select(u => u.Region)
                 .Distinct()
                 .Where(r => r != null)
@@ -189,7 +193,7 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProvinces(string region)
         {
-            var provs = await _limaContext.Ubigeos
+            var provs = await _context.Ubigeos
                 .Where(u => u.Region == region)
                 .Select(u => u.Province)
                 .Distinct()
@@ -202,10 +206,10 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDistricts(string region, string province)
         {
-            var dists = await _limaContext.Ubigeos
+            var dists = await _context.Ubigeos
                 .Where(u => u.Region == region && u.Province == province)
                 .Select(u => new {
-                    inei = u.INEI,
+                    inei = u.Id,
                     distrito = u.District
                 })
                 .OrderBy(d => d.distrito)
@@ -240,16 +244,53 @@ namespace ContratosYReembolsos.Controllers
         public async Task<IActionResult> GetCemeteries(string inei)
         {
             var cemeteries = await _context.Cementerios
-                .Where(c => c.Branch.Ubigeo.Id == inei)
+                .Where(c => c.Branch.UbigeoId == inei) // Usamos UbigeoId de tu modelo
                 .Select(c => new {
                     id = c.Id,
                     name = c.Name,
-                    ruc = c.RUC
+                    ruc = c.RUC,
+                    branchId = c.BranchId // <-- Crucial: Enviamos el ID de la filial
                 })
                 .OrderBy(c => c.name)
                 .ToListAsync();
 
             return Json(cemeteries);
+        }
+
+        public IActionResult GetNicheSelector()
+        {
+            return PartialView("Partials/_NicheSelector");
+        }
+
+        // Todo en ContractController.cs
+
+        [HttpGet]
+        public async Task<IActionResult> GetStructures(int cemeteryId, string type)
+        {
+            var structures = await _context.SepulturasEstructura
+                .Where(p => p.CemeteryId == cemeteryId && p.Type == type)
+                .Select(p => new { id = p.Id, name = p.Name })
+                .OrderBy(p => p.name)
+                .ToListAsync();
+
+            return Json(structures);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSpaceMap(int structureId)
+        {
+            var spaces = await _context.SepulturasNichos
+                .Where(n => n.StructureId == structureId)
+                .Select(n => new {
+                    id = n.Id,
+                    rowLetter = n.RowLetter,
+                    columnNumber = n.ColumnNumber,
+                    status = n.Status
+                })
+                .OrderBy(n => n.rowLetter).ThenBy(n => n.columnNumber)
+                .ToListAsync();
+
+            return Json(spaces);
         }
 
         [HttpGet]
@@ -266,9 +307,10 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAgencies(string ruc, string name)
+        public async Task<IActionResult> GetAgencies(string ruc, string name, int branchId)
         {
-            var query = _context.Agencias.AsQueryable();
+            // Filtramos por Filial y que esté activa
+            var query = _context.Agencias.Where(a => a.BranchId == branchId && a.IsActive).AsQueryable();
 
             if (!string.IsNullOrEmpty(ruc))
                 query = query.Where(a => a.RUC.Contains(ruc));
@@ -285,15 +327,10 @@ namespace ContratosYReembolsos.Controllers
                     address = a.Address,
                     phone = a.Phone
                 })
-                .Take(20) // Limitamos para mejorar rendimiento
+                .Take(20)
                 .ToListAsync();
 
             return Json(data);
-        }
-
-        public IActionResult GetNicheSelector()
-        {
-            return PartialView("Partials/_NicheSelector");
         }
 
         private string GetRegionPrefix(string regionName)
@@ -348,97 +385,106 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ContractUploadViewModel model)
+        public async Task<IActionResult> Create([FromBody] ContractViewModel model) // Usamos tu nuevo ViewModel
         {
             if (model == null) return BadRequest(new { message = "Datos no recibidos correctamente." });
+
+            // Obtenemos el usuario para saber su filial
+            var user = await _userManager.GetUserAsync(User);
+            int branchId = user.BranchId ?? 0;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Obtener Prefijo Regional con validación
-                string regionName = "LIMA";
-                if (!string.IsNullOrEmpty(model.Deceased.UbigeoFull) && model.Deceased.UbigeoFull.Contains("-"))
-                {
-                    regionName = model.Deceased.UbigeoFull.Split('-')[0].Trim();
-                }
-
+                // 1. Lógica de Prefijo y Correlativo (Mejorada para usar la filial del usuario)
+                var branch = await _context.Filiales.FindAsync(branchId);
+                string regionName = branch?.Ubigeo?.Region ?? "LIMA";
                 string prefix = GetRegionPrefix(regionName);
                 int currentYear = DateTime.Now.Year;
 
-                // 2. Calcular Correlativo Regional
                 int regionCount = await _context.Contratos
                     .CountAsync(c => c.ContractNumber.StartsWith(prefix) && c.CreatedAt.Year == currentYear);
+
                 string contractCode = $"{prefix}{currentYear}{(regionCount + 1).ToString("D5")}";
 
-                // 3. Mapear Cabecera
+                // 2. Mapear Cabecera con las nuevas relaciones
                 var contract = new Contract
                 {
                     ContractNumber = contractCode,
                     CreatedAt = DateTime.Now,
                     Status = "Finalizado",
-                    SolicitorDni = model.Solicitor.Dni,
-                    SolicitorName = model.Solicitor.Name,
-                    SolicitorCip = model.Solicitor.Cip,
-                    SolicitorType = model.Solicitor.Type,
-                    DeceasedDni = model.Deceased.Dni,
-                    DeceasedName = model.Deceased.Name,
-                    DeathDate = model.Deceased.DeathDate,
-                    BurialDate = model.Deceased.BurialDate,
+                    BranchId = branchId, // Vínculo con Filial
 
-                    // Usamos TryParse para que no explote si la hora viene mal
-                    BurialTime = TimeSpan.TryParse(model.Deceased.BurialTime, out var bt) ? bt : TimeSpan.Zero,
+                    // Datos del Solicitante
+                    SolicitorDni = model.SolicitorDni,
+                    SolicitorName = model.SolicitorName,
+                    SolicitorCip = model.SolicitorCip,
+                    SolicitorType = model.SolicitorType,
 
-                    IneiCode = model.Deceased.Inei,
-                    UbigeoFull = model.Deceased.UbigeoFull,
-                    WakeId = model.Deceased.WakeId,
-                    WakeName = model.Deceased.WakeName,
-                    CemeteryId = model.Deceased.CemeteryId,
-                    CemeteryName = model.Deceased.CemeteryName,
-                    BurialType = model.Deceased.BurialType,
-                    BurialDetail = model.Deceased.BurialDetail,
-                    AgencyId = model.Agency.Id,
-                    AgencyName = model.Agency.Name,
-                    AgencyAddress = model.Agency.Address,
+                    // Datos del Fallecido
+                    DeceasedDni = model.DeceasedDni,
+                    DeceasedName = model.DeceasedName,
+                    DeathDate = model.DeathDate,
+                    BurialDate = model.BurialDate,
+                    BurialTime = model.BurialTime,
+                    UbigeoFull = model.UbigeoFull,
+
+                    // Sepulturas (Relación Real)
+                    IntermentSpaceId = model.IntermentSpaceId,
+                    BurialDetail = model.BurialDetail,
+
+                    // Agencia (Relación Real)
+                    AgencyId = model.AgencyId,
+
                     TotalAmount = model.TotalAmount
                 };
 
                 _context.Contratos.Add(contract);
-                await _context.SaveChangesAsync(); // Genera el ID
+                await _context.SaveChangesAsync();
 
-                // 4. Mapear Detalles
-                foreach (var s in model.Services)
+                // 3. Actualizar estado del Nicho a "Ocupado"
+                if (contract.IntermentSpaceId.HasValue)
                 {
-                    var detail = new ContractDetail
+                    var space = await _context.SepulturasNichos.FindAsync(contract.IntermentSpaceId);
+                    if (space != null) space.Status = "Ocupado";
+                }
+
+                // 4. Mapear Ataúd (ContractDetail) y Movilidades (ContractMovilityDetail)
+                // Aquí iteramos los detalles que vienen del Wizard...
+
+                // Ejemplo para el Ataúd:
+                if (model.SelectedStockItemId > 0)
+                {
+                    var stock = await _context.StockItems.FindAsync(model.SelectedStockItemId);
+                    if (stock != null)
+                    {
+                        stock.Status = "Vendido";
+                        _context.DetallesContrato.Add(new ContractDetail
+                        {
+                            ContractId = contract.Id,
+                            ServiceId = 1, // Supongamos que 1 es 'Ataúd'
+                            StockItemId = stock.Id,
+                            Price = 0 // O el precio del stock
+                        });
+                    }
+                }
+
+                // Ejemplo para Movilidades:
+                foreach (var type in model.SelectedMovilityTypes)
+                {
+                    _context.DetallesMovilidadContrato.Add(new ContractMovilityDetail
                     {
                         ContractId = contract.Id,
-                        ServiceId = s.ServiceId,
-                        Observations = $"Lógica: {s.LogicType}",
-                        ScheduledDate = (s.LogicType == "MOVILIDAD" && !string.IsNullOrEmpty(s.ExtraData?.ScheduledDate))
-                                        ? DateTime.Parse(s.ExtraData.ScheduledDate) : (DateTime?)null,
-                        ScheduledTime = (s.LogicType == "MOVILIDAD" && !string.IsNullOrEmpty(s.ExtraData?.ScheduledTime))
-                                        ? TimeSpan.Parse(s.ExtraData.ScheduledTime) : (TimeSpan?)null,
-                        StockItemId = s.ExtraData?.StockItemId
-                    };
-
-                    if (s.LogicType == "ATAUD" && s.ExtraData?.StockItemId != null)
-                    {
-                        var stock = await _context.StockItems.FindAsync(s.ExtraData.StockItemId);
-                        if (stock != null) stock.Status = "Vendido";
-                    }
-
-                    _context.DetallesContrato.Add(detail);
+                        ServiceType = type,
+                        IsDispatched = false,
+                        ScheduledDate = contract.BurialDate
+                    });
                 }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // --- EL CAMBIO ESTÁ AQUÍ: Agregamos "id = contract.Id" ---
-                return Ok(new
-                {
-                    success = true,
-                    id = contract.Id,
-                    contractNumber = contract.ContractNumber
-                });
+                return Ok(new { success = true, id = contract.Id, contractNumber = contract.ContractNumber });
             }
             catch (Exception ex)
             {

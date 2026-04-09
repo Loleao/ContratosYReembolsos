@@ -1,3 +1,4 @@
+using ContratosYReembolsos.Constants;
 using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Services;
@@ -41,6 +42,35 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddAuthorization(options =>
+{
+    // --- SCOPES DE ATAÚDES ---
+    options.AddPolicy("Policy.Ataudes.Full", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            (context.User.HasClaim("Permission", Permissions.Ataudes.Ingresos) &&
+             context.User.HasClaim("Permission", Permissions.Ataudes.Traslados))));
+
+    // --- SCOPES DE VENTAS ---
+    options.AddPolicy("Policy.Contratos.Operar", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            context.User.HasClaim("Permission", Permissions.Contratos.Crear)));
+
+    // --- SCOPE DE RRHH / SEGURIDAD ---
+    options.AddPolicy("Policy.Personal.Admin", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            context.User.HasClaim("Permission", Permissions.Personal.Permisos)));
+
+    // --- SCOPE GLOBAL DE LECTURA (Para el Sidebar) ---
+    // Si tiene CUALQUIER claim que termine en ".Ver", puede ver el módulo correspondiente
+    options.AddPolicy("Policy.Global.Lectura", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            context.User.Claims.Any(c => c.Type == "Permission" && c.Value.EndsWith(".Ver"))));
+});
+
 // 2. Configurar hacia dónde redirigir si no está logueado
 builder.Services.ConfigureApplicationCookie(options => {
     options.LoginPath = "/Account/Login";
@@ -64,12 +94,28 @@ using (var scope = app.Services.CreateScope())
         {
             var central = new Branch
             {
-                Name = "ALMACÉN CENTRAL - LIMA",
-                UbigeoId = "150101",
+                Name = "Almacen Central - LIMA",
+                UbigeoId = "150108",
                 Code = "LIM1",
-                Address = "Av. Principal 123, Lima",
+                Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
                 Phone = "999999999",
                 Email = "lima@gmail.com",
+                IsActive = true
+            };
+            context.Filiales.Add(central);
+            await context.SaveChangesAsync();
+        }
+
+        if (!context.Filiales.Any(f => f.Code == "LIM2"))
+        {
+            var central = new Branch
+            {
+                Name = "Filial Av. Brasil - LIMA",
+                UbigeoId = "150120",
+                Code = "LIM2",
+                Address = "Av. Brasil 2905, Magdalena del Mar 15086",
+                Phone = "999999999",
+                Email = "avbrasil@gmail.com",
                 IsActive = true
             };
             context.Filiales.Add(central);

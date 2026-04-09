@@ -69,13 +69,19 @@
             <h4 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2 text-primary"></i>@ViewBag.SubsidiaryName</h4>
         </div>
 
-        <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
-            <button id="btnStock" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="switchFilialView('stock')">
-                <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Actual
+        <div class="d-flex gap-3">
+            <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openEntryModal(null)">
+                <i class="fa-solid fa-plus-circle me-1"></i> Nuevo Ingreso
             </button>
-            <button id="btnPending" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchFilialView('pendientes')">
-                <i class="fa-solid fa-truck-ramp-box me-2"></i>Por Recibir
-            </button>
+
+            <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
+                <button id="btnStock" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="switchFilialView('stock')">
+                    <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Actual
+                </button>
+                <button id="btnPending" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchFilialView('pendientes')">
+                    <i class="fa-solid fa-truck-ramp-box me-2"></i>Por Recibir
+                </button>
+            </div>
         </div>
     </div>
 
@@ -95,7 +101,7 @@
             stock: '@Url.Action("GetFilialStock", "Coffin")',
             pendientes: '@Url.Action("GetFilialPendingTransfers", "Coffin")',
             getAddStockModal: '@Url.Action("GetAddStock", "Coffin")',
-            registerEntry: '@Url.Action("RegisterEntry", "Coffin")',
+            registerEntry: '@Url.Action("RegisterStockEntry", "Coffin")',
             confirmReceipt: '@Url.Action("ConfirmReceipt", "Coffin")'
         };
 
@@ -123,38 +129,131 @@
             }
         }
 
-        async function openEntryModal(variantId) {
-            const url = `${filialUrls.getAddStockModal}?variantId=${variantId}&subsidiaryId=${filialId}`;
+        async function openEntryModal() {
+            const url = `${filialUrls.getAddStockModal}?branchId=${filialId}`;
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error("Error en el servidor");
+
                 const html = await response.text();
-                const container = document.getElementById('modalContainer');
-                container.innerHTML = html;
-                new bootstrap.Modal(container.querySelector('.modal')).show();
+                document.getElementById('modalContainer').innerHTML = html;
+
+                const modal = new bootstrap.Modal(document.getElementById('entryModal'));
+                modal.show();
+
+                // Agregar la primera fila automáticamente
+                addRow();
             } catch (error) {
+                console.error(error);
                 Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
             }
         }
 
-        async function saveEntry() {
-            const variantId = document.getElementById('modalVariantId').value;
-            const qty = document.getElementById('entryQuantity').value;
-            const ref = document.getElementById('entryReference').value;
+        // 2. Función para añadir filas a la tabla
+        function addRow() {
+            const tbody = document.getElementById('tbodyIngreso');
+            const options = document.getElementById('catalogSource').innerHTML;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><select class="form-select form-select-sm variant-id border-2" required>${options}</select></td>
+                <td><input type="number" class="form-control form-control-sm variant-qty border-2 text-center" value="1" min="1"></td>
+                <td><input type="text" class="form-control form-control-sm variant-ref border-2" placeholder="Guía..."></td>
+                <td><button class="btn btn-link text-danger btn-sm p-0" onclick="this.closest('tr').remove()"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
 
-            if (!ref) {
-                Swal.fire('Atención', 'Ingrese una referencia (Guía/Factura).', 'warning');
+        async function saveBulkEntry() {
+            const items = [];
+            const rows = document.querySelectorAll('#tbodyIngreso tr');
+
+            rows.forEach(tr => {
+                const vId = tr.querySelector('.variant-id').value;
+                const vQty = tr.querySelector('.variant-qty').value;
+                const vRef = tr.querySelector('.variant-ref').value;
+
+                if (vId && parseInt(vQty) > 0) {
+                    items.push({
+                        VariantId: parseInt(vId),
+                        Quantity: parseInt(vQty),
+                        Reference: vRef
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                Swal.fire('Atención', 'Agregue al menos un producto válido.', 'warning');
                 return;
             }
 
-            const finalUrl = `${filialUrls.registerEntry}?variantId=${variantId}&subsidiaryId=${filialId}&quantity=${qty}&reference=${ref}`;
+            // CREAMOS EL OBJETO QUE COINCIDE CON BulkEntryRequest
+            const payload = {
+                BranchId: parseInt(filialId),
+                Items: items
+            };
 
             try {
-                const response = await fetch(finalUrl, { method: 'POST' });
+                const response = await fetch('@Url.Action("RegisterBulkEntry", "Coffin")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // Si usas tokens de seguridad, agrégalo aquí
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Verificamos si la respuesta es OK antes de intentar leer el JSON
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Error 400 Bad Request");
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (e) {
+                console.error("Detalle del error:", e);
+                Swal.fire('Error', 'El servidor rechazó los datos. Revisa que todos los campos estén llenos.', 'error');
+            }
+        }
+
+        async function saveEntry() {
+            const variantId = document.querySelector('[name="VariantId"]').value;
+            const qty = document.querySelector('[name="Quantity"]').value;
+            const ref = document.querySelector('[name="Reference"]').value;
+
+            if (!variantId || !qty || !ref) {
+                Swal.fire('Atención', 'Complete todos los campos obligatorios.', 'warning');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('branchId', filialId);
+            params.append('variantId', variantId);
+            params.append('quantity', qty);
+            params.append('reference', ref);
+
+            try {
+                const response = await fetch(filialUrls.registerEntry, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        // Si usas [ValidateAntiForgeryToken] en el POST, necesitas enviar el token aquí
+                    },
+                    body: params
+                });
+
                 const data = await response.json();
                 if (data.success) {
-                    Swal.fire('¡Éxito!', 'Stock actualizado.', 'success').then(() => {
-                        // Cerramos el modal y recargamos la vista de stock
-                        bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+                    Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                        const modalEl = document.querySelector('.modal');
+                        bootstrap.Modal.getInstance(modalEl).hide();
                         switchFilialView('stock');
                     });
                 } else {
@@ -168,30 +267,31 @@
         async function confirmReceipt(transferId) {
             const { value: obs } = await Swal.fire({
                 title: '¿Confirmar Recepción?',
-                text: "El stock se sumará a esta filial tras confirmar.",
+                text: "Verifica que la cantidad física coincida con la guía antes de confirmar.",
                 icon: 'question',
                 input: 'text',
-                inputLabel: 'Observaciones (Opcional)',
+                inputLabel: 'Observaciones / Estado del producto',
+                inputPlaceholder: 'Ej: Todo conforme / Caja dañada...',
                 showCancelButton: true,
-                confirmButtonText: 'Sí, recibir',
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Sí, recibir en almacén',
                 cancelButtonText: 'Cancelar'
             });
 
             if (obs !== undefined) {
                 try {
-                    const response = await fetch(`${filialUrls.confirmReceipt}?transferId=${transferId}&observations=${obs}`, {
-                        method: 'POST'
-                    });
+                    const url = `${filialUrls.confirmReceipt}?transferId=${transferId}&observations=${encodeURIComponent(obs)}`;
+                    const response = await fetch(url, { method: 'POST' });
                     const result = await response.json();
 
                     if (result.success) {
-                        Swal.fire('¡Recibido!', 'El inventario ha sido actualizado.', 'success')
-                            .then(() => switchFilialView('pendientes'));
+                        Swal.fire('¡Éxito!', result.message, 'success')
+                            .then(() => switchFilialView('pendientes')); // Recarga la pestaña de pendientes
                     } else {
                         Swal.fire('Error', result.message, 'error');
                     }
                 } catch (e) {
-                    Swal.fire('Error', 'Error de red.', 'error');
+                    Swal.fire('Error', 'Fallo de conexión al procesar la recepción.', 'error');
                 }
             }
         }

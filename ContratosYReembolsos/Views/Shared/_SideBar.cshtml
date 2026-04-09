@@ -1,11 +1,12 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
 @inject UserManager<ContratosYReembolsos.Models.ApplicationUser> UserManager
+@inject IAuthorizationService AuthorizationService
 
 @{
     string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
     string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
 
-    // Obtenemos los datos del usuario logueado
     var user = await UserManager.GetUserAsync(User);
     var fullName = user?.FullName ?? "Usuario";
     var roles = await UserManager.GetRolesAsync(user!);
@@ -24,58 +25,95 @@
     </div>
 
     <nav class="nav flex-column flex-grow-1">
+        @* Dashboard: Acceso para todos los logueados *@
         <a href="@Url.Action("Index", "Home")"
            class="nav-link @(currentController == "Home" ? "active" : "")">
             <i class="fa-solid fa-house-chimney"></i>
             <span class="sidebar-text ms-2">Dashboard</span>
         </a>
 
-        <a href="@Url.Action("Index", "Contract")"
-           class="nav-link @(currentController == "Contract" ? "active" : "")">
-            <i class="fa-solid fa-file-contract"></i>
-            <span class="sidebar-text ms-2">Contratos</span>
-        </a>
-
-        <a href="@Url.Action("Index", "Coffin")"
-           class="nav-link @(currentController == "Coffin" ? "active" : "")">
-            <i class="fa-solid fa-box"></i>
-            <span class="sidebar-text ms-2">Ataúdes</span>
-        </a>
-
-        <a href="@Url.Action("Index", "Transport")"
-           class="nav-link @(currentController == "Transport" ? "active" : "")">
-            <i class="fa-solid fa-car-side"></i>
-            <span class="sidebar-text ms-2">Movilidad</span>
-        </a>
-
-        <div class="nav-item">
-            <a href="@Url.Action("Index", "Cemetery")"
-               class="nav-link @(currentController == "Cemetery" && currentAction != "Templates" ? "active" : "")">
-                <i class="fa-solid fa-monument"></i>
-                <span class="sidebar-text ms-2">Sepulturas</span>
+        @* Contratos *@
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Policy.Global.Lectura")).Succeeded && User.HasClaim("Permission", "Contratos.Ver") || User.IsInRole("Admin"))
+        {
+            <a href="@Url.Action("Index", "Contract")"
+               class="nav-link @(currentController == "Contract" ? "active" : "")">
+                <i class="fa-solid fa-file-contract"></i>
+                <span class="sidebar-text ms-2">Contratos</span>
             </a>
+        }
 
-            <div class="ps-3 mt-1">
-                <a href="@Url.Action("Templates", "Cemetery")"
-                   class="nav-link py-1 @(currentAction == "Templates" ? "active text-primary fw-bold" : "text-muted")"
-                   style="font-size: 12px; background: transparent !important; box-shadow: none !important;">
-                    <i class="fa-solid fa-gears me-2" style="font-size: 10px;"></i>
-                    <span class="sidebar-text">Modelos Técnicos</span>
+        @* Ataúdes *@
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver"))
+        {
+            <a href="@Url.Action("Index", "Coffin")"
+               class="nav-link @(currentController == "Coffin" ? "active" : "")">
+                <i class="fa-solid fa-box"></i>
+                <span class="sidebar-text ms-2">Ataúdes</span>
+            </a>
+        }
+
+        @* Movilidad *@
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Movilidad.Ver"))
+        {
+            <a href="@Url.Action("Index", "Transport")"
+               class="nav-link @(currentController == "Transport" ? "active" : "")">
+                <i class="fa-solid fa-car-side"></i>
+                <span class="sidebar-text ms-2">Movilidad</span>
+            </a>
+        }
+
+        @* Sepulturas y Modelos Técnicos *@
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Sepulturas.Ver"))
+        {
+            <div class="nav-item">
+                <a href="@Url.Action("Index", "Cemetery")"
+                   class="nav-link @(currentController == "Cemetery" && currentAction != "Templates" ? "active" : "")">
+                    <i class="fa-solid fa-monument"></i>
+                    <span class="sidebar-text ms-2">Sepulturas</span>
                 </a>
+
+                @* Submenú: Solo si tiene permiso para Modelos o es Admin *@
+                @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Sepulturas.Modelos"))
+                {
+                    <div class="ps-3 mt-1">
+                        <a href="@Url.Action("Templates", "Cemetery")"
+                           class="nav-link py-1 @(currentAction == "Templates" ? "active text-primary fw-bold" : "text-muted")"
+                           style="font-size: 12px; background: transparent !important; box-shadow: none !important;">
+                            <i class="fa-solid fa-gears me-2" style="font-size: 10px;"></i>
+                            <span class="sidebar-text">Modelos Técnicos</span>
+                        </a>
+                    </div>
+                }
             </div>
-        </div>
+        }
 
-        <a href="@Url.Action("Index", "Branch")"
-           class="nav-link @(currentController == "Branch" ? "active" : "")">
-            <i class="fa-solid fa-building-user"></i>
-            <span class="sidebar-text ms-2">Filiales</span>
-        </a>
+        @* Configuración: Filiales *@
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Filiales.Ver"))
+        {
+            <a href="@Url.Action("Index", "Branch")"
+               class="nav-link @(currentController == "Branch" ? "active" : "")">
+                <i class="fa-solid fa-building-user"></i>
+                <span class="sidebar-text ms-2">Filiales</span>
+            </a>
+        }
 
-        <a href="@Url.Action("Index", "User")"
-           class="nav-link @(currentController == "User" ? "active" : "")">
-            <i class="fa-solid fa-users-gear"></i>
-            <span class="sidebar-text ms-2">Gestión de Personal</span>
-        </a>
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Agencias.Ver"))
+        {
+            <a href="@Url.Action("Index", "Agency")"
+               class="nav-link @(currentController == "Agency" ? "active" : "")">
+                <i class="fa-solid fa-handshake"></i>
+                <span class="sidebar-text ms-2">Agencias</span>
+            </a>
+        }
+
+        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Personal.Ver"))
+        {
+            <a href="@Url.Action("Index", "User")"
+               class="nav-link @(currentController == "User" ? "active" : "")">
+                <i class="fa-solid fa-users-gear"></i>
+                <span class="sidebar-text ms-2">Gestión de Personal</span>
+            </a>
+        }
     </nav>
 
     @* --- SECCIÓN DE PERFIL REAL --- *@
@@ -92,7 +130,6 @@
                 </div>
             </div>
 
-            @* Logout con Formulario por seguridad *@
             <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
                 <button type="submit" class="btn btn-link text-muted p-0 sidebar-text" title="Cerrar Sesión">
                     <i class="fa-solid fa-right-from-bracket"></i>

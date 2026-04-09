@@ -1,46 +1,50 @@
 ﻿<div class="modal fade" id="entryModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-dark text-white rounded-top-4">
-                <h5 class="modal-title">
-                    <i class="fa-solid fa-file-circle-plus me-2"></i>Ingreso Local de Stock
-                </h5>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-truck-loading me-2"></i>Ingreso de Cargamento</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <input type="hidden" id="modalVariantId" value="@ViewBag.VariantId" />
-
-                <div class="mb-4">
-                    <label class="form-label x-small fw-bold text-muted text-uppercase">Ubicación</label>
-                    <p class="fw-bold mb-0 text-primary">@ViewBag.SubsidiaryName (@ViewBag.SubsidiaryId)</p>
+                <div class="mb-3">
+                    <p class="small text-muted mb-0 text-uppercase fw-bold">Sede de recepción</p>
+                    <p class="fw-bold text-primary">@ViewBag.BranchName</p>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label x-small fw-bold text-muted text-uppercase">Producto seleccionado</label>
-                    <p class="fw-bold mb-0">@ViewBag.ModelName</p>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="fw-bold small">LISTA DE PRODUCTOS</label>
+                    <button type="button" class="btn btn-outline-dark btn-sm rounded-pill" onclick="addRow()">
+                        <i class="fa-solid fa-plus me-1"></i> Agregar fila
+                    </button>
                 </div>
 
-                <hr class="opacity-10">
+                <table class="table table-sm align-middle">
+                    <thead class="bg-light x-small">
+                        <tr>
+                            <th style="width: 45%;">Ataúd / Variante</th>
+                            <th style="width: 15%;">Cant.</th>
+                            <th style="width: 35%;">Ref. (Guía/Factura)</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyIngreso">
+                        @* Aquí se insertan las filas *@
+                    </tbody>
+                </table>
 
-                <div class="row g-3">
-                    <div class="col-md-5">
-                        <label class="form-label fw-bold small">Cantidad</label>
-                        <div class="input-group">
-                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('entryQuantity').stepDown()">-</button>
-                            <input type="number" id="entryQuantity" class="form-control text-center fw-bold border-2" value="1" min="1">
-                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('entryQuantity').stepUp()">+</button>
-                        </div>
-                    </div>
-                    <div class="col-md-7">
-                        <label class="form-label fw-bold small">Documento Ref. (Guía/Factura)</label>
-                        <input type="text" id="entryReference" class="form-control border-2" placeholder="Ej: F001-000123">
-                    </div>
-                </div>
+                @* Plantilla oculta para el selector de variantes *@
+                <select id="catalogSource" class="d-none">
+                    <option value="">-- Seleccionar --</option>
+                    @foreach (var v in ViewBag.Variants)
+                    {
+                        <option value="@v.Id">@v.DisplayName</option>
+                    }
+                </select>
             </div>
-            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+            <div class="modal-footer border-0">
                 <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="saveEntry()">
-                    Confirmar Ingreso <i class="fa-solid fa-save ms-1"></i>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="saveBulkEntry()">
+                    Confirmar Carga <i class="fa-solid fa-save ms-1"></i>
                 </button>
             </div>
         </div>

@@ -1,0 +1,45 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Branch>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-dark">Gestión de Camposantos</h2>
+        <p class="text-muted">Seleccione la filial para administrar sus sedes y pabellones</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        @foreach (var branch in Model)
+        {
+            <div class="col-md-4">
+                <a href="@Url.Action("Index", new { selectedBranchId = branch.Id })"
+                   class="card border-0 shadow-sm rounded-4 h-100 text-decoration-none hover-lift p-4 text-center">
+                    <div class="icon-circle bg-primary-subtle text-primary mb-3 mx-auto">
+                        <i class="fa-solid fa-location-dot fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">@branch.Name</h5>
+                    <span class="badge bg-light text-primary border rounded-pill">
+                        @(branch.Cemeteries?.Count ?? 0) Sedes
+                    </span>
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

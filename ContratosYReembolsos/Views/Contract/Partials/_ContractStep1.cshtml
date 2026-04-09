@@ -37,7 +37,7 @@
 
     <div class="d-flex justify-content-end mt-5">
         <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 shadow"
-                onclick="nextStep(2, validateStep1)">
+                onclick="if(validateStep1()) loadStep(2)">
             Siguiente <i class="fa-solid fa-arrow-right ms-2"></i>
         </button>
     </div>

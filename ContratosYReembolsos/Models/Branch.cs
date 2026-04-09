@@ -24,5 +24,6 @@ namespace ContratosYReembolsos.Models
         public bool IsActive { get; set; } = true;
 
         public virtual ICollection<Cemetery> Cemeteries { get; set; } = new List<Cemetery>();
+        public virtual ICollection<Agency> Agencies { get; set; } = new List<Agency>();
     }
 }

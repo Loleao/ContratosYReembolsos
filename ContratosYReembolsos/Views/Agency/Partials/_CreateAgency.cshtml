@@ -1,0 +1,95 @@
+﻿@model ContratosYReembolsos.Models.Agency
+
+<div class="modal fade" id="modalCreateAgency" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            @* Encabezado con estilo de "Convenio" *@
+            <div class="modal-header bg-dark text-white p-4">
+                <h5 class="modal-title fw-bold" id="modalLabel">
+                    <i class="fa-solid fa-handshake me-2 text-warning"></i>
+                    Nuevo Convenio: @ViewBag.BranchName
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formCreateAgency" asp-action="Create" asp-controller="Agency" method="post">
+                <div class="modal-body p-4">
+                    @* Campo oculto para vincular a la filial actual *@
+                    <input type="hidden" asp-for="BranchId" />
+                    <input type="hidden" asp-for="CreatedAt" />
+
+                    <div class="row">
+                        @* Razón Social *@
+                        <div class="col-md-8 mb-3">
+                            <label asp-for="Name" class="form-label fw-bold">Razón Social / Nombre de la Agencia</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-building"></i></span>
+                                <input asp-for="Name" class="form-control" placeholder="Ej: Funeraria Los Ángeles S.A.C." required />
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        @* RUC *@
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="RUC" class="form-label fw-bold">RUC</label>
+                            <input asp-for="RUC" class="form-control" placeholder="11 dígitos" maxlength="11" required />
+                            <span asp-validation-for="RUC" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        @* Persona de Contacto *@
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ContactPerson" class="form-label fw-bold">Representante / Contacto</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-user-tie"></i></span>
+                                <input asp-for="ContactPerson" class="form-control" placeholder="Nombre del gestor" />
+                            </div>
+                        </div>
+
+                        @* Teléfono *@
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label fw-bold">Teléfono de Contacto</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-phone"></i></span>
+                                <input asp-for="Phone" class="form-control" placeholder="Ej: 987654321" />
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Correo Electrónico *@
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Correo Electrónico (Para Liquidaciones)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-envelope"></i></span>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="agencia@correo.com" />
+                        </div>
+                        <div class="form-text">Se usará para enviar reportes de contratos y reembolsos.</div>
+                    </div>
+
+                    @* Dirección *@
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label fw-bold">Dirección de la Oficina</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-map-location-dot"></i></span>
+                            <input asp-for="Address" class="form-control" placeholder="Av. Siempre Viva 123..." />
+                        </div>
+                    </div>
+
+                    @* Switch de Estado *@
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
+                        <label class="form-check-label fw-bold" asp-for="IsActive">Convenio Activo</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light p-3 border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="submitAgencyForm()">
+                        Guardar Convenio <i class="fa-solid fa-save ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -6,20 +6,20 @@
             @if (!Model.Any())
             {
                 <div class="text-center py-5">
-                    <i class="fa-solid fa-circle-check fa-3x text-success opacity-25 mb-3"></i>
-                    <p class="text-muted">No hay envíos pendientes para esta sede.</p>
+                    <i class="fa-solid fa-truck-fast fa-3x text-muted opacity-25 mb-3"></i>
+                    <p class="text-muted">No tienes cargamentos en camino para esta sede.</p>
                 </div>
             }
             else
             {
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-primary text-white">
-                        <tr class="small">
-                            <th class="ps-4">PRODUCTO</th>
-                            <th>CANTIDAD</th>
-                            <th>ORIGEN</th>
-                            <th>GUÍA / REF</th>
-                            <th class="text-center">GESTIÓN</th>
+                    <thead class="bg-dark text-white">
+                        <tr class="x-small text-uppercase">
+                            <th class="ps-4 py-3">Producto / Variante</th>
+                            <th class="py-3">Cant.</th>
+                            <th class="py-3">Origen</th>
+                            <th class="py-3">Guía / Fecha Envío</th>
+                            <th class="text-center py-3">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -27,15 +27,24 @@
                         {
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold">@t.CoffinVariant.Coffin.ModelName</div>
-                                    <div class="small text-muted">@t.CoffinVariant.Color</div>
+                                    <div class="fw-bold text-primary">@t.CoffinVariant.Coffin.ModelName</div>
+                                    <div class="x-small text-muted">
+                                        @t.CoffinVariant.Color | @t.CoffinVariant.Material | @t.CoffinVariant.Size
+                                    </div>
                                 </td>
-                                <td><span class="badge bg-dark rounded-pill">@t.Quantity</span></td>
-                                <td class="small">Central (070000)</td>
-                                <td class="text-muted small">@t.GuiaRemision</td>
+                                <td><span class="badge bg-primary rounded-pill px-3">@t.Quantity</span></td>
+                                <td class="small">
+                                    <i class="fa-solid fa-location-arrow text-success me-1"></i>
+                                    @(t.OriginBranch?.Name ?? "Sede Desconocida")
+                                </td>
+                                <td>
+                                    <div class="small fw-bold">@t.GuiaRemision</div>
+                                    <div class="x-small text-muted">@t.DateSent.ToString("dd/MM/yyyy HH:mm")</div>
+                                </td>
                                 <td class="text-center">
-                                    <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="confirmReceipt(@t.Id)">
-                                        Confirmar Llegada
+                                    <button class="btn btn-success btn-sm rounded-pill px-4 fw-bold shadow-sm"
+                                            onclick="confirmReceipt(@t.Id)">
+                                        <i class="fa-solid fa-check-double me-1"></i> Recibir
                                     </button>
                                 </td>
                             </tr>

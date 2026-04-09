@@ -1,0 +1,63 @@
+﻿@model ContratosYReembolsos.Models.Agency
+
+<div class="modal fade" id="modalEditAgency" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i>Editar Agencia: @Model.Name</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditAgency" asp-action="Edit" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="BranchId" />
+                    <input type="hidden" asp-for="CreatedAt" />
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label asp-for="Name" class="form-label fw-bold">Razón Social</label>
+                            <input asp-for="Name" class="form-control" required />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="RUC" class="form-label fw-bold">RUC</label>
+                            <input asp-for="RUC" class="form-control" maxlength="11" required />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ContactPerson" class="form-label fw-bold">Contacto</label>
+                            <input asp-for="ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label fw-bold">Teléfono</label>
+                            <input asp-for="Phone" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label fw-bold">Dirección de la Oficina</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-map-location-dot"></i></span>
+                            <input asp-for="Address" class="form-control" placeholder="Av. Principal 123..." />
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                        <label class="form-check-label fw-bold" asp-for="IsActive">Convenio Vigente</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" onclick="submitEditAgencyForm()">Actualizar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

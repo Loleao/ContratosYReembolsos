@@ -56,8 +56,19 @@
                                     }
                                 </td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-light rounded-circle me-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                                    <button class="btn btn-sm btn-light text-danger rounded-circle" title="Dar de baja"><i class="fa-solid fa-user-minus"></i></button>
+                                    <a asp-action="ManagePermissions" asp-route-userId="@item.Id"
+                                       class="btn btn-sm btn-light text-primary rounded-circle me-1"
+                                       title="Gestionar Permisos">
+                                        <i class="fa-solid fa-shield"></i>
+                                    </a>
+
+                                    <button class="btn btn-sm btn-light rounded-circle me-1" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger rounded-circle" title="Dar de baja">
+                                        <i class="fa-solid fa-user-minus"></i>
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -67,3 +78,14 @@
         </div>
     </div>
 </div>
+
+<style>
+    .btn-sm.rounded-circle {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+</style>

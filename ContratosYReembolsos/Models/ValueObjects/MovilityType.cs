@@ -1,4 +1,4 @@
-﻿namespace ContratosYReembolsos.Models
+﻿namespace ContratosYReembolsos.Models.ValueObjects
 {
     public static class TipoMovilidad
     {

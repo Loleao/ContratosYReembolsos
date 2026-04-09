@@ -1,94 +1,57 @@
-﻿@model IEnumerable<IGrouping<string, ContratosYReembolsos.Models.Branch>>
+﻿@model ContratosYReembolsos.Models.Cemetery
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="fw-bold mb-0 text-dark">Gestión de Filiales</h4>
-            <p class="text-muted small">Administración por departamentos y sedes operativas</p>
-        </div>
-        <button class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="openCreateBranchModal()">
-            <i class="fa-solid fa-building-circle-plus me-2"></i>Nueva Filial
-        </button>
-    </div>
+<div class="modal fade" id="modalCreateCemetery" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold" id="modalLabel">
+                    <i class="fa-solid fa-church me-2"></i>Nueva Sede en @ViewBag.BranchName
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-    <div class="accordion border-0 shadow-sm rounded-4 overflow-hidden" id="accordionRegions">
-        @foreach (var group in Model)
-        {
-            <div class="accordion-item border-0 border-bottom">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed fw-bold bg-white text-dark py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@group.Key.Replace(" ", "")">
-                        <i class="fa-solid fa-map-location-dot me-3 text-primary"></i>
-                        @group.Key.ToUpper()
-                        <span class="badge bg-primary-subtle text-primary border ms-3">@group.Count() Sedes</span>
-                    </button>
-                </h2>
-                <div id="collapse-@group.Key.Replace(" ", "")" class="accordion-collapse collapse" data-bs-parent="#accordionRegions">
-                    <div class="accordion-body p-0 bg-light">
-                        <div class="list-group list-group-flush">
-                            @foreach (var branch in group)
-                            {
-                                <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom hover-bg">
-                                    <div class="ps-4">
-                                        <div class="fw-bold text-dark">@branch.Name</div>
-                                        <small class="text-muted">
-                                            <span class="badge bg-dark text-white me-2">@branch.Code</span>
-                                            <i class="fa-solid fa-location-dot me-1"></i>
-                                            @branch.Ubigeo.Region / @branch.Ubigeo.Province / @branch.Ubigeo.District
-                                        </small>
-                                    </div>
-                                    <div class="pe-3 d-flex align-items-center">
-                                        <span class="badge bg-light text-muted border rounded-pill me-3">
-                                            <i class="fa-solid fa-monument me-1"></i> @(branch.Cemeteries?.Count ?? 0)
-                                        </span>
-                                        <a href="@Url.Action("Details", "Branch", new { id = branch.Id })" class="btn btn-sm btn-white border shadow-sm rounded-pill px-3 fw-bold text-primary">
-                                            Ver Detalle
-                                        </a>
-                                    </div>
-                                </div>
-                            }
+            <form id="formCreateCemetery" asp-action="Create" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" asp-for="BranchId" />
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-bold">Nombre de la Sede</label>
+                        <input asp-for="Name" class="form-control rounded-3" placeholder="Ej: Cementerio General San José" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RUC" class="form-label fw-bold">RUC</label>
+                            <input asp-for="RUC" class="form-control rounded-3" placeholder="10XXXXXXXXX" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Phone" class="form-label fw-bold">Teléfono</label>
+                            <input asp-for="Phone" class="form-control rounded-3" placeholder="01-XXXXXX" />
                         </div>
                     </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label fw-bold">Dirección Física</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fa-solid fa-map-pin"></i></span>
+                            <input asp-for="Address" class="form-control rounded-end-3" placeholder="Av. Principal 123..." />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Correo de Contacto</label>
+                        <input asp-for="Email" type="email" class="form-control rounded-3" placeholder="sede@fonafun.com" />
+                    </div>
                 </div>
-            </div>
-        }
+
+                <div class="modal-footer bg-light p-3 border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="submitCemeteryForm()">
+                        Registrar Sede <i class="fa-solid fa-save ms-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-
-<div id="modalBranchContainer"></div>
-
-@section Scripts {
-    <script>
-        const urlGetCreateBranch = '@Url.Action("GetCreateBranch", "Branch")';
-
-        async function openCreateBranchModal() {
-            try {
-                const response = await fetch(urlGetCreateBranch);
-                const html = await response.text();
-                document.getElementById('modalBranchContainer').innerHTML = html;
-
-                // Inicializamos el modal
-                new bootstrap.Modal(document.getElementById('modalCreateBranch')).show();
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
-            }
-        }
-
-        async function submitBranchForm() {
-            const form = document.getElementById('formCreateBranch');
-            if (!form.checkValidity()) { form.reportValidity(); return; }
-
-            const formData = new FormData(form);
-            try {
-                const response = await fetch(form.action, { method: 'POST', body: formData });
-                const result = await response.json();
-                if (result.success) {
-                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
-                } else {
-                    Swal.fire('Error', result.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Error de servidor', 'error');
-            }
-        }
-    </script>
-}

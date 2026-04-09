@@ -15,7 +15,7 @@ namespace ContratosYReembolsos.Models
         [Required]
         public int BranchId { get; set; }
         [ForeignKey("BranchId")]
-        public virtual Branch Branch { get; set; }
+        public virtual Branch? Branch { get; set; }
 
         // --- 1. DATOS DE CONTACTO Y UBICACIÓN ---
         public string Address { get; set; }

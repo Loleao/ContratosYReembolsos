@@ -46,7 +46,7 @@
             <td style="width: 70%">
                 <h2 class="fw-bold mb-0 text-primary">FONAFUN PERÚ</h2>
                 <p class="mb-0 text-muted small">FONDO DE APOYO FUNERARIO - POLICÍA NACIONAL DEL PERÚ</p>
-                <p class="small">Agencia: <span class="val">@Model.AgencyName</span> - @Model.AgencyAddress</p>
+                <p class="small">Agencia: <span class="val">@Model.Agency.Id</span> - @Model.Agency.Address</p>
             </td>
             <td style="width: 30%; text-align: right;">
                 <div class="p-3 border border-primary rounded text-center">
@@ -85,8 +85,8 @@
             <div class="col-4">Ubigeo: <span class="val">@Model.UbigeoFull</span></div>
         </div>
         <div class="row mt-2">
-            <div class="col-6">Velatorio: <span class="val">@Model.WakeName</span></div>
-            <div class="col-6">Cementerio: <span class="val">@Model.CemeteryName (@Model.BurialType)</span></div>
+            @* <div class="col-6">Velatorio: <span class="val">@Model.WakeName</span></div> *@
+            <div class="col-6">Cementerio: <span class="val">@Model.IntermentSpace.Structure.Cemetery.Name (@Model.IntermentSpace.Structure.Type)</span></div>
         </div>
         @if (!string.IsNullOrEmpty(Model.BurialDetail))
         {
@@ -110,11 +110,11 @@
                     <tr>
                         <td><span class="val">@detail.Service?.Name</span></td>
                         <td>
-                            @detail.Observations
+                            @* @detail.Observations
                             @if (detail.ScheduledDate.HasValue)
                             {
                                 <span>(@detail.ScheduledDate.Value.ToShortDateString() @detail.ScheduledTime)</span>
-                            }
+                            } *@
                         </td>
                     </tr>
                 }
@@ -140,7 +140,7 @@
                 <td style="width: 40%">
                     <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto;"></div>
                     <p class="mb-0">Firma Autorizada FONAFUN</p>
-                    <small>@Model.AgencyName</small>
+                    <small>@Model.Agency.Name</small>
                 </td>
             </tr>
         </table>
