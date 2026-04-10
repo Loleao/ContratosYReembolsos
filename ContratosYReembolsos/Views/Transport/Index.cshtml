@@ -1,17 +1,46 @@
-﻿<div class="container-fluid py-4">
+﻿<style>
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    .border-primary-subtle {
+        border-color: rgba(13, 110, 253, 0.2) !important;
+    }
+    /* Estilo para que el botón de cambiar sede resalte al pasar el mouse */
+    a.text-primary:hover {
+        color: #004a99 !important;
+        text-decoration: underline !important;
+    }
+</style>
+
+<div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0">Gestión Operativa de Movilidad</h4>
-            <p class="text-muted small">Despacho de servicios y control de recursos.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h4 class="fw-bold mb-0">Gestión Operativa de Movilidad</h4>
+                @* Badge de la Filial Actual *@
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">
+                    <i class="fa-solid fa-location-dot me-1"></i> @ViewBag.BranchName
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <p class="text-muted small mb-0">Despacho de servicios y control de recursos.</p>
+                @* Botón para volver al selector solo si es Admin *@
+                @if (ViewBag.IsAdmin == true)
+                {
+                    <a href="@Url.Action("Index", "Transport", new { branchId = (int?)null })" class="text-decoration-none small fw-bold text-primary">
+                        <i class="fa-solid fa-rotate me-1"></i> Cambiar sede
+                    </a>
+                }
+            </div>
         </div>
 
-        @* El Switch de 3 posiciones *@
         <div class="bg-white p-1 rounded-pill shadow-sm border d-flex">
             <button id="btnContracts" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="switchTransportView('getPendingContractsModal')">
                 <i class="fa-solid fa-file-signature me-2"></i>Contratos <span class="badge bg-white text-primary ms-1">@ViewBag.PendingCount</span>
             </button>
             <button id="btnHistory" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchTransportView('getHistoryModal')">
-                <i class="fa-solid fa-id-card me-2"></i>Historial
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>Historial
             </button>
             <button id="btnVehicles" class="btn btn-light rounded-pill px-4 fw-bold text-muted" onclick="switchTransportView('getVehiclesModal')">
                 <i class="fa-solid fa-car-rear me-2"></i>Vehículos
@@ -30,6 +59,7 @@
 
 @section Scripts {
     <script>
+        const currentBranchId = @(ViewBag.SelectedBranchId ?? 0);
         const transportUrls = {
             getPendingContractsModal: '@Url.Action("GetPendingContracts")',
             getVehiclesModal: '@Url.Action("GetVehicles")',
@@ -41,22 +71,18 @@
 
         async function switchTransportView(view) {
             const container = document.getElementById('transportViewContainer');
-            const url = transportUrls[view];
+            const baseUrl = transportUrls[view];
 
-            if (!url) {
-                console.error("URL no encontrada para la vista:", view);
-                return;
-            }
+            if (!baseUrl) return;
 
-            // Feedback visual de carga
             container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
 
             try {
-                const response = await fetch(url);
+                // AGREGAMOS el branchId a la URL de la petición
+                const response = await fetch(`${baseUrl}?branchId=${currentBranchId}`);
                 const html = await response.text();
                 container.innerHTML = html;
 
-                // Actualizar los estilos de los botones
                 updateButtonStyles(view);
             } catch (error) {
                 container.innerHTML = '<div class="alert alert-danger">Error al cargar la información.</div>';
@@ -103,7 +129,6 @@
             }
         }
 
-        // Función para ejecutar el inicio del viaje
         async function executeDispatch() {
             const contractId = document.querySelector('input[name="contractId"]').value;
             const vehicleId = document.getElementById('modalVehicleId').value;
@@ -211,26 +236,80 @@
         }
 
         async function openCreateVehicle() {
-            const response = await fetch('@Url.Action("GetCreateVehicle", "Transport")');
-            document.getElementById('modalContainer').innerHTML = await response.text();
-            new bootstrap.Modal(document.getElementById('createVehicleModal')).show();
+            if (typeof currentBranchId === 'undefined' || currentBranchId === 0) {
+                Swal.fire('Error', 'No se ha detectado una filial activa.', 'error');
+                return;
+            }
 
-            // Evento para guardar
-            document.getElementById('formVehicle').onsubmit = async (e) => {
-                e.preventDefault();
-                await saveResource('@Url.Action("CreateVehicle", "Transport")', new FormData(e.target), 'getVehiclesModal');
-            };
+            const url = `@Url.Action("GetCreateVehicle", "Transport")?branchId=${currentBranchId}`;
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error("No se pudo obtener el formulario.");
+                }
+
+                const html = await response.text();
+
+                // 3. Insertamos el HTML en el contenedor
+                const modalContainer = document.getElementById('modalContainer');
+                modalContainer.innerHTML = html;
+
+                // 4. Inicializamos el modal SOLO si el elemento existe en el HTML cargado
+                const modalElement = document.getElementById('createVehicleModal');
+                if (modalElement) {
+                    const myModal = new bootstrap.Modal(modalElement);
+                    myModal.show();
+                } else {
+                    console.error("El elemento 'createVehicleModal' no se encontró en la respuesta.");
+                }
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo cargar el formulario de creación.', 'error');
+            }
         }
 
         async function openCreateDriver() {
-            const response = await fetch('@Url.Action("GetCreateDriver", "Transport")');
-            document.getElementById('modalContainer').innerHTML = await response.text();
-            new bootstrap.Modal(document.getElementById('createDriverModal')).show();
+            // 1. Verificar si tenemos la variable global de la filial actual
+            if (typeof currentBranchId === 'undefined' || currentBranchId === 0) {
+                Swal.fire('Atención', 'Debe seleccionar una filial primero.', 'warning');
+                return;
+            }
 
-            document.getElementById('formDriver').onsubmit = async (e) => {
-                e.preventDefault();
-                await saveResource('@Url.Action("CreateDriver", "Transport")', new FormData(e.target), 'getDriversModal');
-            };
+            // 2. Construir la URL con el parámetro branchId
+            // Es vital que el nombre del parámetro (branchId) coincida con el del controlador
+            const url = `@Url.Action("GetCreateDriver", "Transport")?branchId=${currentBranchId}`;
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error("Error al cargar el componente");
+                }
+
+                const html = await response.text();
+
+                // 3. Inyectar en el contenedor de modales
+                const modalContainer = document.getElementById('modalContainer');
+                if (modalContainer) {
+                    modalContainer.innerHTML = html;
+
+                    // 4. Mostrar el modal usando la instancia de Bootstrap
+                    const modalElement = document.getElementById('createDriverModal');
+                    if (modalElement) {
+                        const myModal = new bootstrap.Modal(modalElement);
+                        myModal.show();
+                    } else {
+                        console.error("No se encontró el ID 'createDriverModal' en el HTML devuelto. Revisa que el ID en la PartialView sea correcto.");
+                    }
+                }
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo cargar el formulario de conductores.', 'error');
+            }
         }
 
         async function saveResource(url, formData, viewToRefresh) {

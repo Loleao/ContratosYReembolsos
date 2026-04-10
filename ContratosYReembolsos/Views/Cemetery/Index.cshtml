@@ -90,17 +90,20 @@
 <div id="modalCemeteryContainer"></div>
 
 <script>
-    // Variables globales para los scripts
-    const currentBranchId = '@ViewBag.SelectedBranchId';
-    const urlGetCreate = '@Url.Action("GetCreateCemetery", "Cemetery")';
+    const currentBranchId = @(ViewBag.SelectedBranchId ?? 0);
 
-    /**
-     * Carga y muestra el modal de creación de cementerio vía AJAX
-     */
+    const transportUrls = {
+        getPendingContractsModal: '@Url.Action("GetPendingContracts")',
+        getVehiclesModal: '@Url.Action("GetVehicles")',
+        getDriversModal: '@Url.Action("GetDrivers")',
+        getHistoryModal: '@Url.Action("GetHistory")',
+		getCreateCemeteryModal: '@Url.Action("GetCreateCemetery", "Cemetery")'
+    };
+
     async function openCreateCemeteryModal() {
         try {
             // Pasamos el branchId actual para que el nuevo cementerio sepa a dónde pertenece
-            const response = await fetch(`${urlGetCreate}?branchId=${currentBranchId}`);
+            const response = await fetch(`${transportUrls.getCreateCemeteryModal}?branchId=${currentBranchId}`);
 
             if (!response.ok) {
                 throw new Error("Error al obtener el formulario.");
@@ -172,6 +175,26 @@
             Swal.fire('Error', 'Ocurrió un problema al procesar la solicitud.', 'error');
         }
     }
+
+    async function switchTransportView(view) {
+            const container = document.getElementById('transportViewContainer');
+            const baseUrl = transportUrls[view];
+
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                // Pasamos el branchId para que la lista (de vehículos, choferes, etc) esté filtrada
+                const response = await fetch(`${baseUrl}?branchId=${currentBranchId}`);
+                const html = await response.text();
+                container.innerHTML = html;
+
+                updateButtonStyles(view);
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar la información.</div>';
+            }
+        }
+
+
 </script>
 
 <style>

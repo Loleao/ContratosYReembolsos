@@ -1,41 +1,88 @@
-﻿<div class="modal fade" id="createDriverModal" tabindex="-1">
+﻿@model ContratosYReembolsos.Models.Driver
+
+<div class="modal fade" id="createDriverModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-dark text-white rounded-top-4">
-                <h5 class="modal-title small fw-bold text-uppercase">Registrar Conductor</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="formDriver">
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Nombre Completo</label>
-                        <input type="text" name="FullName" class="form-control border-2" required>
+            @* Encabezado con identidad visual *@
+            <div class="modal-header border-0 bg-light rounded-top-4 pb-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-dark text-white rounded-3 p-2 me-3 shadow-sm">
+                        <i class="fa-solid fa-id-card fa-lg"></i>
                     </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Registrar Conductor</h5>
+                        <small class="text-muted">Personal operativo de movilidad</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formDriver" onsubmit="saveResource('@Url.Action("CreateDriver", "Transport")', new FormData(this), 'getDriversModal'); return false;">
+                <div class="modal-body p-4">
+                    @* Sede / BranchId (Oculto y Visual) *@
+                    <input type="hidden" name="BranchId" value="@ViewBag.BranchId" />
+
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">N° Licencia</label>
-                            <input type="text" name="LicenseNumber" class="form-control border-2" required>
+                        @* Sección: Ubicación *@
+                        <div class="col-12 mb-2">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Sede Asignada</label>
+                            <div class="input-group">
+                                <span class="input-group-text border-0 bg-dark-subtle text-dark">
+                                    <i class="fa-solid fa-building"></i>
+                                </span>
+                                <input type="text" class="form-control border-0 bg-dark-subtle fw-bold text-dark"
+                                       value="@ViewBag.BranchName" readonly>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Categoría</label>
-                            <select name="Category" class="form-select border-2">
+
+                        @* Datos del Conductor *@
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Nombre Completo</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-2 border-end-0 text-muted">
+                                    <i class="fa-solid fa-user"></i>
+                                </span>
+                                <input type="text" name="FullName" class="form-control border-2 border-start-0 ps-0"
+                                       placeholder="Nombres y Apellidos" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold text-muted text-uppercase">N° Licencia</label>
+                            <input type="text" name="LicenseNumber" class="form-control border-2"
+                                   placeholder="Ej: Q41234567" required style="text-transform: uppercase;">
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Categoría</label>
+                            <select name="Category" class="form-select border-2 shadow-sm" required>
                                 <option value="A-IIa">A-IIa</option>
                                 <option value="A-IIb">A-IIb</option>
                                 <option value="A-IIIb">A-IIIb</option>
                                 <option value="A-IIIc">A-IIIc</option>
                             </select>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold">Sede Asignada</label>
-                            <input type="text" name="SubsidiaryId" class="form-control border-2" value="100502">
-                        </div>
                     </div>
                 </div>
+
                 <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
-                    <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow">Registrar Chofer</button>
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow">
+                        <i class="fa-solid fa-user-plus me-2"></i>Registrar Chofer
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+    .bg-dark-subtle {
+        background-color: rgba(33, 37, 41, 0.08) !important;
+    }
+
+    #formDriver .form-control:focus, #formDriver .form-select:focus {
+        border-color: #212529;
+        box-shadow: 0 0 0 0.25rem rgba(33, 37, 41, 0.1);
+    }
+</style>

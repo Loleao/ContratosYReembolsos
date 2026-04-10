@@ -1,56 +1,65 @@
 ﻿<div class="animate__animated animate__fadeIn">
-    <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div class="mb-4 d-flex justify-content-between align-items-end border-bottom pb-3">
         <div>
-            <h5 class="fw-bold text-primary mb-0"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Resumen Final</h5>
-            <p class="text-muted small mb-0">Verifique la información antes de confirmar.</p>
+            <h4 class="fw-bold text-primary mb-1">Verificación de Contrato</h4>
+            <p class="text-muted mb-0"><i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> Revise los datos antes de emitir el comprobante legal.</p>
         </div>
         <div class="text-end">
-            <span class="badge bg-light text-primary border border-primary px-3 py-2 fs-6" id="resContractPreview">
-                Cargando...
-            </span>
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 10px;">N° Correlativo Previsto</small>
+            <span class="badge bg-primary fs-5 px-3 rounded-pill shadow-sm" id="resContractPreview">---</span>
         </div>
     </div>
 
     <div class="row g-4">
         <div class="col-md-8">
-            <div class="card border-0 shadow-sm rounded-4 mb-3">
-                <div class="card-body">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-users me-2 text-primary"></i> Partes Interesadas</h6>
+            <div class="card border-0 shadow-sm rounded-4 mb-3 border-top border-primary border-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-uppercase small text-primary"><i class="fa-solid fa-id-card-clip me-2"></i>Información Personal</h6>
                     <div class="row">
                         <div class="col-md-6 border-end">
-                            <label class="text-muted small d-block">Solicitante (Titular/Familiar)</label>
-                            <span class="fw-bold" id="resSolicitorName">---</span>
-                            <small class="d-block text-muted" id="resSolicitorDni">DNI: ---</small>
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light p-2 rounded me-3 text-muted"><i class="fa-solid fa-user-tie"></i></div>
+                                <div>
+                                    <label class="text-muted small d-block">Titular / Solicitante</label>
+                                    <span class="fw-bold d-block h6" id="resSolicitorName">---</span>
+                                    <span class="badge bg-light text-dark border" id="resSolicitorDni">DNI: ---</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="text-muted small d-block">Fallecido / Beneficiario</label>
-                            <span class="fw-bold" id="resDeceasedName">---</span>
-                            <small class="d-block text-muted" id="resDeceasedDni">DNI: ---</small>
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light p-2 rounded me-3 text-muted"><i class="fa-solid fa-dove"></i></div>
+                                <div>
+                                    <label class="text-muted small d-block">Beneficiario / Fallecido</label>
+                                    <span class="fw-bold d-block h6" id="resDeceasedName">---</span>
+                                    <span class="badge bg-light text-dark border" id="resDeceasedDni">DNI: ---</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card border-0 shadow-sm rounded-4 mb-3">
-                <div class="card-body">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i> Logística de Sepelio</h6>
-                    <div class="row g-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-uppercase small text-primary"><i class="fa-solid fa-map-location-dot me-2"></i>Itinerario de Sepelio</h6>
+                    <div class="row g-4">
                         <div class="col-md-4">
-                            <label class="text-muted small d-block">Fecha y Hora</label>
-                            <span class="fw-bold" id="resBurialDateTime">---</span>
+                            <label class="text-muted small d-block mb-1">Programación</label>
+                            <span class="d-block fw-bold"><i class="fa-regular fa-calendar-check me-1 text-primary"></i> <span id="resBurialDateTime">---</span></span>
                         </div>
                         <div class="col-md-4">
-                            <label class="text-muted small d-block">Lugar de Velatorio</label>
-                            <span class="fw-bold" id="resWakePlace">---</span>
+                            <label class="text-muted small d-block mb-1">Velatorio</label>
+                            <span class="d-block fw-bold"><i class="fa-solid fa-house-chimney-window me-1 text-primary"></i> <span id="resWakePlace">---</span></span>
                         </div>
                         <div class="col-md-4">
-                            <label class="text-muted small d-block">Cementerio</label>
-                            <span class="fw-bold" id="resCemetery">---</span>
+                            <label class="text-muted small d-block mb-1">Destino Final</label>
+                            <span class="d-block fw-bold"><i class="fa-solid fa-monument me-1 text-primary"></i> <span id="resCemetery">---</span></span>
                         </div>
-                        <div class="col-12" id="resNicheRow">
-                            <div class="p-2 bg-light rounded-3 border-start border-4 border-primary">
-                                <label class="text-muted small d-block">Ubicación Específica (Pabellón/Nicho):</label>
-                                <span class="fw-bold" id="resNicheDetail">---</span>
+                        <div class="col-12 d-none" id="resNicheRow">
+                            <div class="p-3 bg-primary-subtle rounded-3 border-start border-4 border-primary shadow-sm">
+                                <label class="text-primary small d-block fw-bold mb-1">ESPACIO ASIGNADO EN MAPA:</label>
+                                <span class="fw-bold h6 mb-0 text-dark" id="resNicheDetail">---</span>
                             </div>
                         </div>
                     </div>
@@ -58,36 +67,32 @@
             </div>
 
             <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-list-check me-2 text-primary"></i> Detalle de Servicios Seleccionados</h6>
-                    <div id="resServicesTable">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-uppercase small text-primary"><i class="fa-solid fa-receipt me-2"></i>Servicios y Logística Seleccionada</h6>
+                    <div id="resServicesTable" class="mb-2">
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card border-0 shadow-lg rounded-4 bg-primary text-white sticky-top" style="top: 20px;">
+            <div class="card border-0 shadow-lg rounded-4 bg-dark text-white sticky-top" style="top: 20px;">
                 <div class="card-body p-4 text-center">
-                    <i class="fa-solid fa-hand-holding-dollar fa-3x mb-3 opacity-50"></i>
-                    <h4 class="fw-light">Total a Pagar</h4>
-                    <h2 class="fw-bold mb-4" id="resTotalAmount">S/ 0.00</h2>
+                    <div class="mb-3">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-bold small text-uppercase">Importe Contrato</span>
+                    </div>
+                    <h4 class="fw-light opacity-75">Suma Total</h4>
+                    <h1 class="fw-bold mb-4 display-5" id="resTotalAmount">S/ 0.00</h1>
 
                     <div class="d-grid gap-3">
-                        <button class="btn btn-light btn-lg rounded-pill fw-bold" onclick="saveFinalContract()">
-                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> REGISTRAR CONTRATO
+                        <button class="btn btn-primary btn-lg rounded-pill fw-bold shadow py-3" onclick="saveFinalContract()">
+                            <i class="fa-solid fa-check-double me-2"></i> CONFIRMAR REGISTRO
                         </button>
-                        <button class="btn btn-outline-light rounded-pill btn-sm" onclick="loadStep(4)">
-                            <i class="fa-solid fa-pen-to-square me-2"></i> Modificar Servicios
+                        <button class="btn btn-outline-light rounded-pill btn-sm border-0" onclick="loadStep(4)">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Regresar a catálogo
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-4 p-3 bg-white rounded-4 border shadow-sm">
-                <p class="small text-muted mb-0 text-center">
-                    <i class="fa-solid fa-circle-info me-1"></i> Al registrar, se generará el documento correlativo y se descontará el stock correspondiente.
-                </p>
             </div>
         </div>
     </div>

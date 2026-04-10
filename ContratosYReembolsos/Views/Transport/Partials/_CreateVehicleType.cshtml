@@ -1,0 +1,32 @@
+﻿<div class="modal fade" id="createVehicleTypeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Nuevo Tipo de Vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="CreateVehicleType" onsubmit="saveVehicleType(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Nombre del Tipo</label>
+                        <input type="text" name="Name" class="form-control rounded-pill border-2" placeholder="Ej: CARROZA DE LUJO" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Icono Visual</label>
+                        <select name="Icon" class="form-select rounded-pill border-2">
+                            <option value="fa-car-side">🚗 Carroza (Lateral)</option>
+                            <option value="fa-bus">🚌 Bus de acompañantes</option>
+                            <option value="fa-truck-pickup">🛻 Camioneta / Pick-up</option>
+                            <option value="fa-van-shuttle">🚐 Van / Combi</option>
+                            <option value="fa-car-rear">🚙 Vehículo de escolta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -151,7 +151,6 @@ namespace ContratosYReembolsos.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Seguridad: Si no es admin y quiere ver otra filial, bloqueamos
             if (!User.IsInRole("Admin") && user.BranchId != id)
             {
                 return Forbid();

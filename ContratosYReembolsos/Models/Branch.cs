@@ -22,6 +22,8 @@ namespace ContratosYReembolsos.Models
         public string Phone { get; set; }
         public string Email { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool HasWakeService { get; set; } 
+        public bool HasOwnCemetery { get; set; }
 
         public virtual ICollection<Cemetery> Cemeteries { get; set; } = new List<Cemetery>();
         public virtual ICollection<Agency> Agencies { get; set; } = new List<Agency>();

@@ -1,0 +1,107 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Selector de Filiales - Movilidad";
+}
+
+<div class="container py-5">
+    @* Cabecera Informativa *@
+    <div class="text-center mb-5 animate__animated animate__fadeInDown">
+        <div class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-2">
+            <i class="fa-solid fa-shield-halved me-2"></i>Panel de Administración Global
+        </div>
+        <h2 class="fw-bold text-dark">Gestión de Movilidad por Sede</h2>
+        <p class="text-muted mx-auto" style="max-width: 600px;">
+            Seleccione la filial que desea monitorear o despachar. Podrá gestionar vehículos, conductores y servicios pendientes de cada zona.
+        </p>
+    </div>
+
+    @* Rejilla de Filiales *@
+    <div class="row g-4 justify-content-center">
+        @foreach (var branch in Model)
+        {
+            <div class="col-md-6 col-lg-4 col-xl-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 branch-card animate__animated animate__fadeInUp"
+                     onclick="location.href='@Url.Action("Index", "Transport", new { branchId = branch.Id })'">
+
+                    <div class="card-body p-4">
+                        @* Icono y Título *@
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="flex-shrink-0 bg-primary rounded-3 p-3 text-white shadow-sm">
+                                <i class="fa-solid fa-location-dot fa-xl"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-bold mb-0 text-dark">@branch.Name</h6>
+                                <small class="text-muted">@branch.City</small>
+                            </div>
+                        </div>
+
+                        @* Estadísticas Rápidas *@
+                        <div class="row g-0 bg-light rounded-3 p-3 mb-3">
+                            <div class="col-6 border-end text-center">
+                                <span class="d-block h5 fw-bold mb-0 text-primary">@branch.VehicleCount</span>
+                                <span class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700;">Vehículos</span>
+                            </div>
+                            <div class="col-6 text-center">
+                                <span class="d-block h5 fw-bold mb-0 @(branch.PendingContracts > 0 ? "text-danger" : "text-success")">
+                                    @branch.PendingContracts
+                                </span>
+                                <span class="text-uppercase text-muted" style="font-size: 10px; font-weight: 700;">Pendientes</span>
+                            </div>
+                        </div>
+
+                        @* Botón de Acción *@
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold">
+                                Gestionar Sede <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Card Especial: Configuración de Tipos (Solo Admin) *@
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 bg-dark text-white branch-card"
+                 onclick="openGlobalConfig()">
+                <div class="card-body p-4 d-flex flex-column justify-content-center text-center">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-gears fa-3x text-info opacity-75"></i>
+                    </div>
+                    <h6 class="fw-bold mb-1">Configuración Maestra</h6>
+                    <p class="text-info small mb-0">Gestionar Tipos de Vehículos e Iconos Globales</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .branch-card {
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent !important;
+    }
+
+        .branch-card:hover {
+            transform: translateY(-10px);
+            border-color: #0d6efd !important;
+            box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+        }
+
+            .branch-card:hover .bg-primary {
+                background-color: #004a99 !important;
+                transform: scale(1.1);
+            }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff !important;
+    }
+</style>
+
+<script>
+        function openGlobalConfig() {
+        // Redirige a la vista de tipos de vehículos
+        location.href = '@Url.Action("VehicleTypes", "Transport")';
+    }
+</script>

@@ -1,3 +1,4 @@
+using System;
 using ContratosYReembolsos.Constants;
 using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
@@ -84,48 +85,19 @@ RotativaConfiguration.Setup(app.Environment.WebRootPath, "Rotativa");
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
     try
     {
+        var context = services.GetRequiredService<ApplicationDbContext>();
         var ubigeoService = services.GetRequiredService<IUbigeoService>();
-        await ubigeoService.SeedIfEmptyAsync();
+        var intermentService = services.GetRequiredService<IntermentService>();
 
-        if (!context.Filiales.Any(f => f.Code == "LIM1"))
-        {
-            var central = new Branch
-            {
-                Name = "Almacen Central - LIMA",
-                UbigeoId = "150108",
-                Code = "LIM1",
-                Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
-                Phone = "999999999",
-                Email = "lima@gmail.com",
-                IsActive = true
-            };
-            context.Filiales.Add(central);
-            await context.SaveChangesAsync();
-        }
-
-        if (!context.Filiales.Any(f => f.Code == "LIM2"))
-        {
-            var central = new Branch
-            {
-                Name = "Filial Av. Brasil - LIMA",
-                UbigeoId = "150120",
-                Code = "LIM2",
-                Address = "Av. Brasil 2905, Magdalena del Mar 15086",
-                Phone = "999999999",
-                Email = "avbrasil@gmail.com",
-                IsActive = true
-            };
-            context.Filiales.Add(central);
-            await context.SaveChangesAsync();
-        }
+        // Llamada al inicializador externo
+        await DbInitializer.SeedAsync(context, ubigeoService, intermentService);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocurrió un error al sembrar la data maestra de Ubigeos.");
+        logger.LogError(ex, "Ocurrió un error al sembrar los datos maestros.");
     }
 }
 

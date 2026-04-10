@@ -13,15 +13,15 @@ namespace ContratosYReembolsos.Models
         public string Type { get; set; } // Se copia del Template (PABELLON, COLUMBARIO, TUMBA)
 
         [Required]
-        public string Status { get; set; } = "ACTIVO"; // ACTIVO, LLENO, MANTENIMIENTO
+        public string Status { get; set; } = "ACTIVO";
 
         // Ubicación
         public int CemeteryId { get; set; } // FK a tu tabla de Sedes/Cementerios
         [ForeignKey("CemeteryId")]
-        public virtual Cemetery Cemetery { get; set; }
+        public virtual Cemetery? Cemetery { get; set; }
 
         public int? TemplateId { get; set; }
-        public virtual IntermentStructureTemplate Template { get; set; }
+        public virtual IntermentStructureTemplate? Template { get; set; }
 
         // Relación con los nichos individuales
         public virtual ICollection<IntermentSpace> Spaces { get; set; } = new List<IntermentSpace>();

@@ -1,0 +1,150 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.VehicleType>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Configuración de Movilidad";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5 animate__animated animate__fadeIn">
+        <div>
+            <a href="@Url.Action("Index", "Transport")" class="btn btn-link text-decoration-none p-0 mb-2">
+                <i class="fa-solid fa-arrow-left me-1"></i> Volver al selector de filiales
+            </a>
+            <h2 class="fw-bold mb-0">Catálogo de Tipos de Vehículo</h2>
+            <p class="text-muted">Gestione las categorías globales de transporte y sus iconos.</p>
+        </div>
+        <button class="btn btn-primary rounded-pill px-4 shadow" onclick="openCreateVehicleType()">
+            <i class="fa-solid fa-plus me-2"></i> Nuevo Tipo
+        </button>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var type in Model)
+        {
+            <div class="col-md-4 col-lg-3 animate__animated animate__zoomIn">
+                <div class="card border-0 shadow-sm rounded-4 h-100 text-center p-4 @(!type.IsActive ? "opacity-75 bg-light" : "")">
+                    @* Badge de Estado *@
+                    <div class="position-absolute top-0 end-0 m-3">
+                        @if (type.IsActive)
+                        {
+                            <span class="badge bg-success-subtle text-success rounded-pill px-2">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2">Inactivo</span>
+                        }
+                    </div>
+
+                    <div class="bg-white shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto"
+                         style="width: 80px; height: 80px; border: 2px solid @(type.IsActive ? "#0d6efd" : "#dee2e6")">
+                        <i class="fa-solid @type.Icon fa-2x @(type.IsActive ? "text-primary" : "text-muted")"></i>
+                    </div>
+
+                    <h5 class="fw-bold mb-1 text-uppercase @(!type.IsActive ? "text-muted" : "")">@type.Name</h5>
+                    <code class="small text-muted">@type.Icon</code>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-2">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openEditVehicleType(@type.Id)">
+                            <i class="fa-solid fa-pen me-1"></i> Editar
+                        </button>
+
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light rounded-circle shadow-sm" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-3">
+                                <li>
+                                    <a class="dropdown-item py-2" href="javascript:void(0)" onclick="toggleStatus(@type.Id)">
+                                        <i class="fa-solid @(type.IsActive ? "fa-eye-slash" : "fa-eye") me-2"></i>
+                                        @(type.IsActive ? "Desactivar" : "Activar")
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item py-2 text-danger" href="javascript:void(0)" onclick="deleteType(@type.Id)">
+                                        <i class="fa-solid fa-trash-can me-2"></i> Eliminar
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        // --- FUNCIONES DE APERTURA ---
+        async function openCreateVehicleType() {
+            const resp = await fetch('@Url.Action("GetCreateVehicleType")');
+            document.getElementById('modalContainer').innerHTML = await resp.text();
+            new bootstrap.Modal(document.getElementById('createVehicleTypeModal')).show();
+        }
+
+        async function openEditVehicleType(id) {
+            const resp = await fetch(`@Url.Action("GetEditVehicleType")?id=${id}`);
+            document.getElementById('modalContainer').innerHTML = await resp.text();
+            new bootstrap.Modal(document.getElementById('editVehicleTypeModal')).show();
+        }
+
+        // --- FUNCIONES DE ACCIÓN ---
+        async function saveVehicleType(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const resp = await fetch(form.action, { method: 'POST', body: formData });
+                const res = await resp.json();
+                if (res.success) {
+                    Swal.fire({ icon: 'success', title: 'Completado', text: res.message, timer: 1500, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (e) { Swal.fire('Error', 'Error de comunicación', 'error'); }
+        }
+
+        function toggleStatus(id) {
+            Swal.fire({
+                title: '¿Cambiar estado?',
+                text: "Esto afectará la visibilidad del tipo al crear nuevos vehículos.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cambiar',
+                confirmButtonColor: '#0d6efd'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const resp = await fetch(`@Url.Action("ToggleVehicleTypeStatus")?id=${id}`, { method: 'POST' });
+                    const res = await resp.json();
+                    if (res.success) location.reload();
+                }
+            });
+        }
+
+        function deleteType(id) {
+            Swal.fire({
+                title: '¿Eliminar permanentemente?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                confirmButtonColor: '#dc3545'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const resp = await fetch(`@Url.Action("DeleteVehicleType")?id=${id}`, { method: 'POST' });
+                    const res = await resp.json();
+                    if (res.success) {
+                        Swal.fire('Eliminado', res.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Atención', res.message, 'warning');
+                    }
+                }
+            });
+        }
+    </script>
+}

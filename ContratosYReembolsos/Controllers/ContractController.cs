@@ -21,13 +21,16 @@ namespace ContratosYReembolsos.Controllers
             _userManager = userManager;
         }
 
-        // 1. Carga la página principal (el cascarón del Stepper)
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var userId = _userManager.GetUserId(User);
+            var user = await _context.Users.FindAsync(userId);
+
+            ViewBag.UserBranchId = user?.BranchId ?? 0;
+
             return View();
         }
 
-        // 2. Función que devuelve el HTML del Paso 1
         [HttpGet]
         public IActionResult GetStep1()
         {
@@ -218,6 +221,20 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetBranchCapabilities(int branchId)
+        {
+            var branch = await _context.Filiales.FindAsync(branchId);
+            if (branch == null) return NotFound();
+
+            return Json(new
+            {
+                hasWake = branch.HasWakeService,
+                hasCem = branch.HasOwnCemetery,
+                branchName = branch.Name
+            });
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetWakes()
         {
             var wakes = await _limaContext.Velatorios
@@ -262,8 +279,6 @@ namespace ContratosYReembolsos.Controllers
             return PartialView("Partials/_NicheSelector");
         }
 
-        // Todo en ContractController.cs
-
         [HttpGet]
         public async Task<IActionResult> GetStructures(int cemeteryId, string type)
         {
@@ -307,10 +322,19 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAgencies(string ruc, string name, int branchId)
+        public async Task<IActionResult> GetAgencies(string ruc, string name, int? branchId)
         {
-            // Filtramos por Filial y que esté activa
-            var query = _context.Agencias.Where(a => a.BranchId == branchId && a.IsActive).AsQueryable();
+            if (branchId == null || branchId == 0)
+            {
+                return Json(new List<object>()); // Retorna lista vacía si no hay filial
+            }
+
+            var query = _context.Agencias
+                .Where(a => a.BranchId == branchId && a.IsActive)
+                .AsQueryable();
+
+            // Log para ver qué está buscando (puedes verlo en el Output de VS)
+            System.Diagnostics.Trace.WriteLine($"Buscando agencias para Filial ID: {branchId}");
 
             if (!string.IsNullOrEmpty(ruc))
                 query = query.Where(a => a.RUC.Contains(ruc));
@@ -331,6 +355,43 @@ namespace ContratosYReembolsos.Controllers
                 .ToListAsync();
 
             return Json(data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCoffinsByBranch(int branchId)
+        {
+            // Solo traemos ataúdes que tengan stock > 0 en esa filial específica
+            var stock = await _context.StockFilial
+                .Include(s => s.CoffinVariant)
+                .ThenInclude(v => v.Coffin)
+                .Where(s => s.BranchId == branchId && s.Quantity > 0)
+                .Select(s => new {
+                    id = s.CoffinVariantId,
+                    name = $"{s.CoffinVariant.Coffin.ModelName} - {s.CoffinVariant.Color}",
+                    stock = s.Quantity,
+                    image = s.CoffinVariant.ImageUrl
+                })
+                .ToListAsync();
+
+            return Json(stock);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableVehicleTypesByBranch(int branchId)
+        {
+            // Obtenemos los tipos de vehículos que realmente existen en esta filial
+            var availableTypes = await _context.Vehiculos
+                .Include(v => v.VehicleType)
+                .Where(v => v.BranchId == branchId && v.IsActive)
+                .Select(v => new {
+                    id = v.VehicleType.Id,
+                    name = v.VehicleType.Name,
+                    icon = v.VehicleType.Icon
+                })
+                .Distinct()
+                .ToListAsync();
+
+            return Json(availableTypes);
         }
 
         private string GetRegionPrefix(string regionName)

@@ -21,28 +21,20 @@
 		padding: 40px;
 		box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 		/* max-width: 1000px;  <-- ELIMINA O COMENTA ESTA LÍNEA */
-		width: 95%; /* Ocupa casi todo el ancho disponible */
-		margin: 30px auto; /* Centrado y con menos margen superior */
-		min-height: calc(100vh - 100px); /* Opcional: que casi llene el alto de la pantalla */
+		width: 95%;
+		margin: 30px auto;
+		min-height: calc(100vh - 100px);
 	}
 
-	/* .stepper-header {
-					display: flex;
-					justify-content: space-between;
-					margin-bottom: 40px;
-					position: relative;
-				} */
-
 	.stepper-header {
-		display: flex; /* Habilita flujo horizontal */
-		justify-content: space-between; /* Distribuye pasos equitativamente */
+		display: flex;
+		justify-content: space-between;
 		align-items: center;
 		position: relative;
 		margin-bottom: 50px;
 		padding: 0 40px;
 	}
 
-		/* La línea gris de fondo ahora se ajusta correctamente */
 		.stepper-header::before {
 			content: "";
 			position: absolute;
@@ -157,62 +149,6 @@
 		text-transform: uppercase;
 	}
 
-	/* 
-	.niche-item-pabellon {
-		width: 100%;
-		height: 40px;
-		min-width: 35px;
-		background-color: #ffffff;
-		border: 1px solid #dee2e6;
-		border-radius: 4px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 11px;
-		font-weight: 600;
-		color: #666;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-		.niche-item-pabellon:hover {
-			background-color: #e9ecef;
-			border-color: var(--pnp-blue);
-		}
-
-	.niche-item-tumba {
-		width: 100%;
-		height: 60px;
-		background-color: #9ccc65;
-		border: 2px solid #689f38;
-		border-radius: 8px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: white;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-		.niche-item-tumba:hover {
-			background-color: #8bc34a;
-			transform: translateY(-2px);
-		}
-
-	.bg-ocupado {
-		background-color: #ffc7ce !important;
-		border-color: #f1aeb5 !important;
-		color: #a41c1c !important;
-		cursor: not-allowed;
-	}
-
-	.bg-proceso {
-		background-color: #cfe2ff !important;
-		border-color: #9ec5fe !important;
-		color: #084298 !important;
-		cursor: wait;
-	} */
-
 	/* Estilo unificado de celdas (Igual a Details) */
 	.space-item-modal {
 		width: 34px;
@@ -231,11 +167,11 @@
 		color: white;
 	}
 
-	.space-item-modal:hover {
-		transform: scale(1.2);
-		z-index: 10;
-		box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-	}
+		.space-item-modal:hover {
+			transform: scale(1.2);
+			z-index: 10;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+		}
 
 	/* Colores de estado */
 	.st-disponible {
@@ -320,7 +256,6 @@
 		border-right: 2px solid #dee2e6 !important;
 	}
 
-	/* Efecto Hover para celdas disponibles */
 	.slot.slot-green:hover {
 		background-color: #218838 !important; /* Un verde más oscuro */
 		cursor: pointer;
@@ -331,7 +266,6 @@
 		transition: all 0.2s ease;
 	}
 
-	/* Evitar que las celdas rojas reaccionen */
 	.slot.slot-red {
 		cursor: not-allowed;
 	}
@@ -440,6 +374,7 @@
 			getRegions: '@Url.Action("GetRegions", "Contract")',
 			getProvinces: '@Url.Action("GetProvinces", "Contract")',
 			getDistricts: '@Url.Action("GetDistricts", "Contract")',
+			getBranchCapabilities: '@Url.Action("GetBranchCapabilities", "Contract")',
 			getWakes: '@Url.Action("GetWakes", "Contract")',
 			getCemeteryModal: '@Url.Action("GetSearchCemetery", "Contract")',
 			getCemeteriesAction: '@Url.Action("GetCemeteries", "Contract")',
@@ -457,8 +392,7 @@
 			downloadContract: '@Url.Action("DescargarContratoPDF", "Contract")',
 		};
 
-		let contractData =
-		{
+		let contractData = {
 			branchId: 0,
 			solicitor: { id: '', dni: '', name: '', cip: '', type: '' },
 			deceased: {
@@ -472,30 +406,83 @@
 				burialDetail: ''
 			},
 			agencyId: 0,
-			services: [],
+			coffin: null, 
+			requiredVehicles: [], 
 			totalAmount: 0
 		};
 
 		let searchTarget = 'Solicitor';
 
-		function handleStepInitialization(n) {
+		let branchCaps = { hasWake: false, hasCem: false };
+
+		async function handleStepInitialization(n) {
 			console.log("Inicializando paso:", n);
+
+			const container = document.getElementById('dynamic-content');
+
 			switch (n) {
 				case 1:
-					if (typeof toggleSolicitorType === 'function') toggleSolicitorType();
+					if (typeof toggleSolicitorType === 'function') {
+						toggleSolicitorType();
+					}
 					break;
+
 				case 2:
-					filterDeceasedOptions();
-					loadRegions();
-					loadWakes();
+					try {
+						const response = await fetch(`${urls.getBranchCapabilities}?branchId=${contractData.branchId}`);
+						if (response.ok) {
+							// Actualizamos la variable global branchCaps
+							branchCaps = await response.json();
+
+							// 1. Gestión de Velatorio
+							const $wakeSection = $('#sectionWakePlace');
+							if (branchCaps.hasWake) {
+								// Si la sede tiene velatorio, mostramos sección y cargamos locales
+								$wakeSection.fadeIn(300).removeClass('d-none');
+								if (typeof loadWakes === 'function') loadWakes();
+							} else {
+								$wakeSection.hide().addClass('d-none');
+								contractData.deceased.wakeId = "0";
+								contractData.deceased.wakeName = "Particular / Domicilio";
+							}
+
+							// 2. Gestión de Cementerio Propio (Inicialización)
+							// Ocultamos la sección de ubicación por defecto al entrar al paso.
+							// Solo se mostrará en selectCemetery() si el cementerio elegido coincide con la sede.
+							$('#sectionSpecificLocation').addClass('d-none');
+
+							// Si la sede ni siquiera tiene cementerio, nos aseguramos de limpiar datos previos
+							if (!branchCaps.hasCem) {
+								contractData.deceased.intermentSpaceId = null;
+							}
+						}
+					} catch (e) {
+						console.error("Error al validar capacidades de filial:", e);
+					}
+
+					if (typeof filterDeceasedOptions === 'function') filterDeceasedOptions();
 					if (typeof loadRegions === 'function') loadRegions();
-					if (typeof loadWakes === 'function') loadWakes();
 					break;
+
+				case 3:
+					if (typeof executeAgencySearch === 'function') {
+						executeAgencySearch(true);
+					}
+					break;
+
 				case 4:
-					// Aquí iría tu initStep4()
+					if (typeof renderCatalog === 'function') {
+						renderCatalog('Ataúdes');
+					}
+					if (typeof updateSelectionUI === 'function') {
+						updateSelectionUI();
+					}
 					break;
+
 				case 5:
-					// Aquí iría tu renderStep5()
+					if (typeof renderStep5 === 'function') {
+						await renderStep5();
+					}
 					break;
 			}
 		}
@@ -544,7 +531,9 @@
 		}
 
 		document.addEventListener('DOMContentLoaded', () => {
-			contractData.branchId = @(ViewBag.UserBranchId ?? 0);
+			const initialBranch = @(ViewBag.UserBranchId ?? 0);
+			contractData.branchId = initialBranch;
+			console.log("Filial cargada en contractData:", contractData.branchId);
 			loadStep(1);
 		});
 
@@ -1011,8 +1000,6 @@
 			}
 		}
 
-		const BRASIL_BRANCH_ID = 2;
-
 		function selectCemetery(c) {
 			contractData.deceased.cemeteryId = c.id;
 			contractData.deceased.cemeteryName = c.name;
@@ -1022,7 +1009,8 @@
 
 			const $specificSection = $('#sectionSpecificLocation');
 
-			if (c.branchId === BRASIL_BRANCH_ID) {
+			// Lógica Dinámica: Match de Sede + Capacidad de la Sede
+			if (c.branchId === contractData.branchId && branchCaps.hasCem) {
 				$specificSection.removeClass('d-none').addClass('animate__animated animate__fadeIn');
 				resetNicheSelection();
 			} else {
@@ -1253,7 +1241,7 @@
 			if (inei) {
 				contractData.deceased.inei = inei;
 				contractData.deceased.ubigeoFull = `${dept} - ${prov} - ${dist}`;
-			}	
+			}
 
 			// VALIDACIÓN DE INVENTARIO:
 			// Si es un cementerio propio (ej: General), el spaceId es OBLIGATORIO
@@ -1497,502 +1485,318 @@
 			resolveFunc({ id, name, plate });
 		}
 
-		function renderCatalog(category) {
-			const container = $('#catalogContainer');
-			if (!container.length) return;
+		async function renderCatalog(category) {
+			const container = document.getElementById('catalogContainer');
+			const branchId = contractData.branchId;
 
-			container.empty();
-
-			// 1. RESALTADO DE PESTAÑAS: Buscamos todos los botones de las tabs
-			// Asumiendo que tus botones tienen el texto de la categoría
-			$('#pills-tab button').each(function() {
-				const btnText = $(this).text().trim();
-				// Si el texto del botón coincide con la categoría (ej: "Ataúdes / Urnas" contiene "Ataúdes")
-				if (btnText.includes(category)) {
-					$(this).addClass('active bg-primary text-white');
-				} else {
-					$(this).removeClass('active bg-primary text-white');
-				}
-			});
-
-			// 2. FILTRADO DE SERVICIOS
-			const filtered = availableServices.filter(s => s.categoryName === category);
-
-			filtered.forEach(s => {
-				// 3. RESALTADO DE SELECCIONADOS: Verificamos si el ID está en contractData.services
-				const isSelected = contractData.services.some(x => x.serviceId === s.id);
-
-				const badgeClass = s.currentStock > 0 ? 'bg-success' : 'bg-info';
-				const badgeText = s.logicType === 'ATAUD' ? `Stock: ${s.currentStock}` : 'Servicio';
-
-				// Aplicamos clases dinámicas: si está seleccionado, borde azul y fondo suave
-				const cardClass = isSelected ? 'border-primary bg-light-subtle' : 'border-light';
-				const checkIcon = isSelected ? '<i class="fa-solid fa-circle-check text-primary shadow-sm animate__animated animate__bounceIn"></i>' : '';
-
-				container.append(`
-					<div class="col-md-4 mb-3">
-						<div class="card h-100 rounded-4 shadow-sm service-card ${cardClass}"
-							 onclick="handleSelection(${s.id})"
-							 style="cursor:pointer; transition: all 0.3s; border: 2px solid;">
-							<div class="card-body p-3">
-								<div class="d-flex justify-content-between align-items-start mb-2">
-									<span class="badge ${badgeClass} small">${badgeText}</span>
-									${checkIcon}
-								</div>
-								<h6 class="fw-bold mb-1 ${isSelected ? 'text-primary' : ''}">${s.name}</h6>
-								<p class="text-muted small mb-0" style="font-size: 0.75rem;">${s.description || ''}</p>
-							</div>
-						</div>
-					</div>
-				`);
-			});
-		}
-
-		async function handleSelection(serviceId) {
-			const service = availableServices.find(s => s.id === serviceId);
-
-			// 1. Toggle: Si ya está, lo quitamos
-			const existingIndex = contractData.services.findIndex(s => s.serviceId === serviceId);
-			if (existingIndex > -1) {
-				contractData.services.splice(existingIndex, 1);
-				renderCatalog(service.categoryName);
-				updateSelectionList();
+			if (!branchId || branchId === 0) {
+				container.innerHTML = '<div class="text-center py-5 w-100"><p>Seleccione una sede primero.</p></div>';
 				return;
 			}
 
-			// 2. Ejecutar Gestor según LogicType
-			switch (service.logicType) {
-				case 'MOVILIDAD':
-					openPhysicalUnitPicker(serviceId); // Tu agenda semanal
-					break;
+			// --- CORRECCIÓN DE RESALTADO DE PESTAÑAS ---
+			document.querySelectorAll('#pills-tab .nav-link').forEach(btn => {
+				// Si el texto del botón contiene la categoría, activarlo
+				if (btn.innerText.trim().includes(category)) {
+					btn.classList.add('active');
+				} else {
+					btn.classList.remove('active');
+				}
+			});
 
-				case 'ATAUD':
-					// Por ahora: Regla de negocio de solo 1 ataúd
-					contractData.services = contractData.services.filter(s => s.logicType !== 'ATAUD');
-					// Aquí llamarías a tu futuro gestor de series, por ahora asignamos directo
-					addServiceToContract(service, { stockItemId: null, serialNumber: 'Pendiente selección' });
-					Swal.fire('Seleccionado', `Se ha añadido: ${service.name}`, 'success');
-					break;
+			container.innerHTML = '<div class="text-center py-5 w-100"><div class="spinner-border text-primary"></div></div>';
 
-				// case 'REUTILIZABLE':
-				//     addServiceToContract(service);
-				//     break;
-
-				default:
-					// Lógica SIMPLE
-					addServiceToContract(service);
-					break;
+			try {
+				if (category === 'Ataúdes') {
+					const resp = await fetch(`/Contract/GetCoffinsByBranch?branchId=${branchId}`);
+					const data = await resp.json();
+					renderCoffinCards(data);
+				}
+				else if (category === 'Movilidad') {
+					const resp = await fetch(`/Contract/GetAvailableVehicleTypesByBranch?branchId=${branchId}`);
+					const data = await resp.json();
+					renderVehicleTypeCards(data);
+				}
+			} catch (error) {
+				console.error("Error cargando catálogo:", error);
+				container.innerHTML = '<div class="alert alert-danger">Error de conexión.</div>';
 			}
 		}
 
-		function addServiceToContract(service, extra = {}) {
-			contractData.services.push({
-				serviceId: service.id,
-				name: service.name,
-				price: service.price || 0,
-				logicType: service.logicType,
-				categoryName: service.categoryName,
-				extraData: extra
-			});
+		function renderCoffinCards(coffins) {
+			const container = document.getElementById('catalogContainer');
+			container.innerHTML = coffins.length ? '' : '<p class="text-center py-5">No hay stock disponible.</p>';
 
-			renderCatalog(service.categoryName);
-			updateSelectionList();
-		}
+			coffins.forEach(c => {
+				const isSelected = contractData.coffin?.id === c.id;
+				// Aseguramos que el objeto enviado tenga todas las propiedades
+				const coffinJson = JSON.stringify(c).replace(/"/g, '&quot;');
 
-		function updateCounter() {
-			$('#selectedCount').text(contractData.services.length);
-		}
-
-		async function loadUnitData(serviceId, date) {
-			try {
-				const resp = await fetch(`${urls.getDailyAvailability}?serviceId=${serviceId}&date=${date}`);
-				const data = await resp.json();
-				const $body = $('#unitGridBody').empty();
-
-				data.forEach(u => {
-					// Iniciamos la fila con la columna de la Unidad
-					let row = `<tr>
-						<td class="small fw-bold bg-light sticky-column">
-							${u.unitName}<br>
-							<small class="text-muted text-uppercase">${u.plate}</small>
-						</td>`;
-
-					// Iteramos sobre cada horario de esa unidad
-					u.schedule.forEach(slot => {
-						// Definimos las clases y etiquetas DENTRO del bucle de slots
-						const isLibre = slot.isAvailable;
-						const statusClass = isLibre ? 'available text-success' : 'occupied text-danger bg-light';
-						const icon = isLibre ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-ban"></i>';
-						const label = isLibre ? 'Libre' : 'Ocupado';
-
-						// Acción de clic solo si está disponible
-						const clickAction = isLibre
-							? `onclick="confirmSchedule(${u.unitId}, '${u.unitName}', '${slot.time}')"`
-							: '';
-
-						row += `
-							<td class="time-slot ${statusClass}" ${clickAction}>
-								<div class="py-2">
-									${icon}<br>
-									<span class="fw-bold">${slot.time}</span><br>
-									<small style="font-size: 0.65rem; display: block;">${label}</small>
+				container.innerHTML += `
+					<div class="col-md-6">
+						<div class="card h-100 border-2 ${isSelected ? 'border-primary bg-primary-subtle shadow' : ''} shadow-sm rounded-4 item-card"
+							 onclick="selectCoffin(${coffinJson})" style="cursor:pointer">
+							<div class="card-body p-3">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-box-archive fa-2x text-primary me-3"></i>
+									<div class="flex-grow-1">
+										<h6 class="fw-bold mb-0">${c.name}</h6>
+										<small class="text-success fw-bold">S/ ${(c.price || 0).toFixed(2)}</small>
+									</div>
 								</div>
-							</td>`;
-					});
-
-					row += `</tr>`;
-					$body.append(row);
-				});
-			} catch (e) {
-				console.error("Error al cargar la agenda:", e);
-				$('#unitGridBody').html('<tr><td colspan="7" class="text-danger p-4">Error al cargar la disponibilidad.</td></tr>');
-			}
-		}
-
-		function confirmSchedule(id, name, time) {
-			// Al elegir la hora aquí, actualizamos el contractData del Paso 2 también
-			contractData.deceased.burialTime = time;
-
-			// Cerramos y devolvemos la unidad al Paso 4
-			selectUnit(id, name, '', (res) => {
-				// Esta es la promesa del Paso 4
-				handleServiceSelectionSuccess(id, name, time);
-			});
-		}
-
-		function confirmSlotSelection(time, date) {
-			const service = availableServices.find(s => s.id === currentServiceId);
-			if (!service) return;
-
-			// 1. Lanzamos la alerta de confirmación PRIMERO
-			Swal.fire({
-				title: '¿Confirmar este horario?',
-				html: `Deseas asignar <b>${service.name}</b><br>para el día <b>${date}</b> a las <b>${time}:00</b>`,
-				icon: 'question',
-				showCancelButton: true,
-				confirmButtonColor: '#004a99',
-				cancelButtonColor: '#6c757d',
-				confirmButtonText: 'Sí, asignar',
-				cancelButtonText: 'Cancelar',
-				target: document.getElementById('modalOverlaySearch') // Para que salga sobre el modal
-			}).then((result) => {
-				// 2. Si el usuario confirma, recién ejecutamos los cambios
-				if (result.isConfirmed) {
-
-					// Actualizamos datos generales del difunto
-					contractData.deceased.burialDate = date;
-					contractData.deceased.burialTime = time + ":00";
-
-					// Sincronizamos con los campos del Paso 2 (por si acaso)
-					if($('#BurialDate').length) $('#BurialDate').val(date);
-					if($('#BurialTime').length) $('#BurialTime').val(time);
-
-					// Quitamos si ya existía este servicio para no duplicar
-					contractData.services = contractData.services.filter(s => s.serviceId !== currentServiceId);
-
-					// Agregamos con la nueva metadata
-					addServiceToContract(service, {
-						scheduledDate: date,
-						scheduledTime: time
-					});
-
-					// Cerramos el modal de la agenda
-					closeSearchModal();
-
-					// Notificación de éxito final
-					Swal.fire({
-						title: '¡Asignado!',
-						text: 'El servicio ha sido programado con éxito.',
-						icon: 'success',
-						timer: 1500,
-						showConfirmButton: false
-					});
-
-					// Refrescamos la lista lateral del Paso 4
-					updateSelectionList();
-				}
-			});
-		}
-
-		function renderSummary() {
-			const $container = $('#summaryServicesList'); // ID en tu _ContractStep5
-			$container.empty();
-
-			contractData.services.forEach(s => {
-				let detalleExtra = "";
-				if (s.logicType === 'MOVILIDAD') {
-					detalleExtra = `<small class="text-primary">Programado: ${s.extraData.scheduledDate} ${s.extraData.scheduledTime}</small>`;
-				} else if (s.logicType === 'ATAUD') {
-					detalleExtra = `<small class="text-muted">Serie: ${s.extraData.serialNumber}</small>`;
-				}
-
-				$container.append(`
-					<div class="d-flex justify-content-between border-bottom py-2">
-						<div>
-							<div class="fw-bold">${s.name}</div>
-							${detalleExtra}
+							</div>
 						</div>
-						<div class="text-end">S/ ${s.price.toFixed(2)}</div>
-					</div>
-				`);
+					</div>`;
 			});
 		}
 
-		function reloadWeeklyData() {
-			const fechaParaVer = $('#pickerFilterDate').val(); // Lo que el usuario quiere ver
-			const fechaRealSepelio = contractData.deceased.burialDate; // Lo que se puso en el Paso 2
-			const horaRealSepelio = contractData.deceased.burialTime; // Lo que se puso en el Paso 2
-
-			loadWeeklyData(currentServiceId, fechaParaVer, horaRealSepelio, fechaRealSepelio);
-		}
-
-		function getNombreDia(i) {
-			return ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][i];
-		}
-
-		// Esta función llena la tabla del modal
-		async function loadWeeklyData(unitId, baseDateStr, horaReferencial, fechaRealSepelio) {
-			const hoy = new Date().toISOString().split('T')[0];
-			const fechaFinal = baseDateStr || hoy;
-			const fechaReferenciaFinal = fechaRealSepelio || fechaFinal;
-
-			const $body = $('#weeklyGridBody').empty();
-
-
-			try {
-				const horaRefLimpia = horaReferencial ? horaReferencial.substring(0, 5) : null;
-
-				const partes = fechaFinal.split('-');
-				const fechaBase = new Date(partes[0], partes[1] - 1, partes[2]);
-
-				const diaSemana = fechaBase.getDay();
-				const diferencia = (diaSemana === 0 ? -6 : 1) - diaSemana;
-				const lunes = new Date(fechaBase);
-				lunes.setDate(fechaBase.getDate() + diferencia);
-
-				for(let i=0; i<7; i++) {
-					let d = new Date(lunes);
-					d.setDate(lunes.getDate() + i);
-					$(`#col-${i}`).html(`${getNombreDia(i)}<br><small class="text-muted">${d.getDate()}/${d.getMonth()+1}</small>`);
-				}
-
-				const resp = await fetch(`${urls.getWeeklyAvailability}?unitId=${unitId}&date=${fechaFinal}`);
-				const occupiedSlots = await resp.json();
-
-				const hours = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-
-				hours.forEach(h => {
-					let row = `<tr><td class="time-label">${h}:00</td>`;
-					for (let i = 0; i < 7; i++) {
-						let fechaCelda = new Date(lunes);
-						fechaCelda.setDate(lunes.getDate() + i);
-						const y = fechaCelda.getFullYear();
-						const m = String(fechaCelda.getMonth() + 1).padStart(2, '0');
-						const d = String(fechaCelda.getDate()).padStart(2, '0');
-						const fechaCeldaStr = `${y}-${m}-${d}`;
-
-						const isOccupied = occupiedSlots.some(s => s.dayIndex === i && s.time.startsWith(h));
-
-						// --- CAMBIO CLAVE AQUÍ ---
-						// El resaltado azul SOLO se compara contra la fechaRealSepelio (la del Paso 2)
-						const esLaFechaReal = (fechaCeldaStr === fechaReferenciaFinal);
-						const esLaHoraReal = (h === horaRefLimpia);
-						const resaltar = esLaFechaReal && esLaHoraReal;
-
-						// El color verde/rojo y la posibilidad de click están habilitados para TODO lo que se ve
-						// const colorClass = isOccupied ? 'slot-red' : 'slot-green';
-						// const action = isOccupied ? '' : `onclick="confirmSlotSelection('${h}', '${fechaCeldaStr}')"`;
-						const style = resaltar ? 'border: 4px solid #004a99 !important; box-shadow: inset 0 0 10px rgba(0,0,0,0.3);' : '';
-
-						// row += `<td class="slot ${colorClass}" style="${style}" ${action}>
-						//             ${resaltar ? '<i class="fa-solid fa-star text-white small"></i>' : ''}
-						//         </td>`;
-
-						const colorClass = isOccupied ? 'slot-red' : 'slot-green';
-						const action = isOccupied ? '' : `onclick="confirmSlotSelection('${h}', '${fechaCeldaStr}')"`;
-
-						row += `<td class="slot ${colorClass}" style="${style}" ${action}>
-									${resaltar ? '<i class="fa-solid fa-star text-white small"></i>' : ''}
-								</td>`;
-
-					}
-					row += `</tr>`;
-					$body.append(row);
-				});
-			} catch (e) {
-				console.error("Error cargando agenda:", e);
+		function selectCoffin(coffin) {
+			// Si ya estaba seleccionado, lo quitamos. Si no, lo asignamos.
+			if (contractData.coffin?.id === coffin.id) {
+				contractData.coffin = null;
+				contractData.totalAmount = 0;
+			} else {
+				contractData.coffin = coffin;
+				// CORRECCIÓN: Aseguramos que el precio se sume correctamente
+				contractData.totalAmount = parseFloat(coffin.price || 0);
 			}
+
+			renderCatalog('Ataúdes');
+			updateSelectionUI();
 		}
 
-		// Esta función maneja el clic en la celda verde
-		function selectTimeSlot(time, dayIndex, unitId) {
-			const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+		function renderVehicleTypeCards(types) {
+			const container = document.getElementById('catalogContainer');
+			container.innerHTML = types.length ? '' : '<p class="text-center py-5">No hay vehículos en esta sede.</p>';
 
-			Swal.fire({
-				title: 'Confirmar Horario',
-				html: `Desea reservar para el día <b>${days[dayIndex]}</b> a las <b>${time}</b>`,
-				icon: 'question',
-				showCancelButton: true,
-				confirmButtonColor: '#004a99',
-				cancelButtonColor: '#6c757d',
-				confirmButtonText: 'Sí, seleccionar',
-				cancelButtonText: 'Cancelar'
-			}).then((result) => {
-				if (result.isConfirmed) {
-					// 1. Guardamos la hora en el objeto global
-					contractData.deceased.burialTime = time;
+			types.forEach(t => {
+				// CORRECCIÓN: Referencia a la raíz
+				const isSelected = contractData.requiredVehicles.includes(t.id);
 
-					// 2. Calculamos la fecha real basándonos en el día de la semana actual
-					const hoy = new Date();
-					const lunes = new Date(hoy.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7)));
-					const fechaSeleccionada = new Date(lunes.setDate(lunes.getDate() + dayIndex));
-
-					contractData.deceased.burialDate = fechaSeleccionada.toISOString().split('T')[0];
-
-					// 3. Cerramos el modal
-					closeSearchModal();
-
-					// 4. Actualizamos visualmente el Paso 4 si es necesario
-					updateCounter();
-					Swal.fire('¡Asignado!', 'El horario ha sido reservado para este contrato.', 'success');
-				}
+				container.innerHTML += `
+					<div class="col-md-6">
+						<div class="card h-100 border-2 ${isSelected ? 'border-primary bg-primary-subtle shadow' : ''} shadow-sm rounded-4 item-card"
+							 data-id="${t.id}" data-name="${t.name}"
+							 onclick="toggleVehicleType(${t.id}, '${t.name}')" style="cursor:pointer">
+							<div class="card-body p-3">
+								<div class="d-flex align-items-center">
+									<div class="flex-shrink-0 bg-white border rounded-circle p-2 me-3 d-flex align-items-center justify-content-center shadow-sm" style="width:45px;height:45px">
+										<i class="fa-solid ${t.icon} text-primary"></i>
+									</div>
+									<div class="flex-grow-1">
+										<h6 class="fw-bold mb-0">${t.name}</h6>
+										<small class="text-muted">Requerimiento logístico</small>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>`;
 			});
 		}
+
+		function toggleVehicleType(id, name) {
+			const index = contractData.requiredVehicles.indexOf(id);
+
+			if (index === -1) {
+				contractData.requiredVehicles.push(id);
+			} else {
+				contractData.requiredVehicles.splice(index, 1);
+			}
+
+			// IMPORTANTE: Refrescar la vista para ver el resaltado
+			renderCatalog('Movilidad');
+			updateSelectionUI();
+		}
+
+		function updateSelectionUI() {
+			const list = document.getElementById('selectedServicesList');
+			const emptyMsg = document.getElementById('emptyCartMsg');
+			const totalDisplay = document.getElementById('totalAmountDisplay');
+
+			if (!list) return;
+			list.innerHTML = '';
+			let hasItems = false;
+
+			// --- SECCIÓN ATAÚD ---
+			if (contractData.coffin) {
+				hasItems = true;
+				// CORRECCIÓN: Validación de seguridad para toFixed
+				const price = parseFloat(contractData.coffin.price || 0);
+
+				list.innerHTML += `
+					<div class="bg-light rounded-3 p-3 mb-2 border-start border-primary border-4">
+						<div class="d-flex justify-content-between">
+							<div class="fw-bold small">${contractData.coffin.name}</div>
+							<button class="btn btn-sm text-danger p-0" onclick="removeCoffin()"><i class="fa-solid fa-xmark"></i></button>
+						</div>
+						<div class="text-primary fw-bold">S/ ${price.toFixed(2)}</div>
+					</div>`;
+			}
+
+			// --- SECCIÓN MOVILIDAD ---
+			contractData.requiredVehicles.forEach((id, index) => {
+				hasItems = true;
+				// Buscamos el nombre en el DOM si está disponible
+				const card = document.querySelector(`.item-card[data-id="${id}"]`);
+				const name = card ? card.getAttribute('data-name') : "Servicio Logístico";
+
+				list.innerHTML += `
+					<div class="bg-light rounded-3 p-3 mb-2 border-start border-dark border-4">
+						<div class="d-flex justify-content-between align-items-center">
+							<div class="fw-bold small">${name}</div>
+							<button class="btn btn-sm text-danger p-0" onclick="toggleVehicleType(${id})"><i class="fa-solid fa-xmark"></i></button>
+						</div>
+					</div>`;
+			});
+
+			if (emptyMsg) emptyMsg.classList.toggle('d-none', hasItems);
+			if (totalDisplay) totalDisplay.innerText = `S/ ${contractData.totalAmount.toFixed(2)}`;
+		}
+
+		function removeCoffin() {
+			contractData.coffin = null;
+			contractData.totalAmount = 0;
+			renderCatalog('Ataúdes');
+			updateSelectionUI();
+		}
+
+		function toggleVehicleType(id, name) {
+			const index = contractData.requiredVehicles.indexOf(id);
+
+			if (index === -1) {
+				contractData.requiredVehicles.push(id);
+			} else {
+				contractData.requiredVehicles.splice(index, 1);
+			}
+
+			// Solo refrescamos la UI
+			renderCatalog('Movilidad');
+			updateSelectionUI();
+		}
+
 
 		function validateStep4() {
-			// 1. Validación Básica: ¿Hay servicios seleccionados?
-			if (contractData.services.length === 0) {
+			// 1. Verificamos si hay un ataúd seleccionado (Propiedad de la raíz)
+			const tieneAtaud = contractData.coffin !== null;
+
+			// 2. Verificamos si hay vehículos seleccionados (Propiedad de la raíz)
+			const tieneMovilidad = contractData.requiredVehicles.length > 0;
+
+			// Lógica de validación: Al menos debe haber un ataúd
+			if (!tieneAtaud) {
 				Swal.fire({
-					title: 'Carrito vacío',
-					text: 'Debe seleccionar al menos un servicio (Ataúd, Movilidad, etc.) para continuar.',
+					title: 'Selección incompleta',
+					text: 'Debe seleccionar al menos un ataúd para continuar con el contrato.',
 					icon: 'warning',
 					confirmButtonColor: '#004a99'
 				});
 				return false;
 			}
 
-			// 2. Validación de Reglas de Negocio Críticas
-			const tieneAtaud = contractData.services.some(s => s.logicType === 'ATAUD');
-			const tieneMovilidad = contractData.services.some(s => s.logicType === 'MOVILIDAD');
-			const esCremacion = contractData.deceased.burialType === 'Cremacion';
-
-			// Regla: Si no es cremación, el ataúd es obligatorio (usualmente)
-			if (!tieneAtaud && !esCremacion) {
-				Swal.fire({
-					title: '¿Continuar sin Ataúd?',
-					text: "No ha seleccionado un cofre para el sepelio tradicional. ¿Está seguro de continuar?",
-					icon: 'question',
-					showCancelButton: true,
-					confirmButtonText: 'Sí, continuar',
-					cancelButtonText: 'Elegir Ataúd',
-					confirmButtonColor: '#004a99'
-				}).then((result) => {
-					if (result.isConfirmed) {
-						loadStep(5); // Forzamos el paso si el usuario confirma
-					}
-				});
-				return false;
+			// Opcional: Advertencia si no hay movilidad, pero permitimos pasar
+			if (!tieneMovilidad) {
+				console.log("Aviso: No se han seleccionado vehículos para este contrato.");
 			}
 
-			// 3. Validación de Integridad de Datos (Metadata)
-			// Verificamos que los servicios de movilidad tengan fecha y hora asignada
-			const movilidadIncompleta = contractData.services.find(s =>
-				s.logicType === 'MOVILIDAD' && (!s.extraData || !s.extraData.scheduledDate)
-			);
-
-			if (movilidadIncompleta) {
-				Swal.fire({
-					title: 'Horario pendiente',
-					text: `Debe asignar un horario en la agenda para: ${movilidadIncompleta.name}`,
-					icon: 'error',
-					confirmButtonColor: '#004a99'
-				});
-				return false;
-			}
-
-			// 4. Preparación para el Paso 5
-			// Si todo está bien, calculamos el total final antes de pasar
-			const total = contractData.services.reduce((sum, s) => sum + (s.price || 0), 0);
-			contractData.totalAmount = total;
-
-			console.log("Paso 4 validado. Datos listos para resumen:", contractData);
-			return true; // Permite el avance automático a loadStep(5)
+			console.log("Paso 4 validado con éxito. Datos:", contractData);
+			return true;
 		}
+		
 
-		//PASO 5
+		//PASO
+		//NUMERO
+		//5
 
 		async function renderStep5() {
-			console.log("Cargando resumen final...");
+			console.log("Generando resumen final con datos:", contractData);
 
-			// 1. Obtener Prefijo dinámico desde el Controller
+			// 1. Prefijo y Código de Contrato (Seguro)
 			let previewPrefix = "GEN";
-			const ubigeo = contractData.deceased.ubigeoFull || "";
-
-			if (ubigeo.includes('-')) {
-				const regionText = ubigeo.split('-')[0].trim();
-				try {
-					// Llamamos a la función GetPrefix que agregaste al Controller
+			try {
+				const ubigeo = contractData.deceased?.ubigeoFull || "";
+				if (ubigeo.includes('-')) {
+					const regionText = ubigeo.split('-')[0].trim();
 					const resp = await fetch(`/Contract/GetPrefix?region=${encodeURIComponent(regionText)}`);
 					const data = await resp.json();
-					previewPrefix = data.prefix;
-				} catch (e) {
-					console.error("Error al obtener prefijo:", e);
+					previewPrefix = data.prefix || "GEN";
 				}
-			}
+			} catch (e) { console.warn("No se pudo obtener el prefijo:", e); }
 
 			const year = new Date().getFullYear();
-			// Actualizamos el preview del código (asegúrate de tener este ID en tu HTML)
-			$('#resContractPreview').text(`${previewPrefix}${year}XXXXX`);
+			$('#resContractPreview').text(`${previewPrefix}${year}-XXXXX`);
 
-			// 2. Llenar datos de Personas
-			$('#resSolicitorName').text(contractData.solicitor.name || "---");
-			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor.dni || "---"}`);
+			// 2. Partes Interesadas
+			$('#resSolicitorName').text(contractData.solicitor?.name || "No identificado");
+			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor?.dni || "---"}`);
 
-			$('#resDeceasedName').text(contractData.deceased.name || "---");
-			$('#resDeceasedDni').text(`DNI: ${contractData.deceased.dni || "---"}`);
+			$('#resDeceasedName').text(contractData.deceased?.name || "No identificado");
+			$('#resDeceasedDni').text(`DNI: ${contractData.deceased?.dni || "---"}`);
 
-			// 3. Llenar Logística
-			$('#resBurialDateTime').text(`${contractData.deceased.burialDate || "---"} ${contractData.deceased.burialTime || ""}`);
-			$('#resWakePlace').text(contractData.deceased.wakeName || "---");
-			$('#resCemetery').text(contractData.deceased.cemeteryName || "---");
+			// 3. Logística
+			const d = contractData.deceased;
+			$('#resBurialDateTime').text(`${d?.burialDate || '---'} ${d?.burialTime || ''}`);
+			$('#resWakePlace').text(d?.wakeName || "Particular / Domicilio");
+			$('#resCemetery').text(d?.cemeteryName || "No seleccionado");
 
-			// Mostrar/Ocultar detalle de nicho
-			if (contractData.deceased.burialDetail) {
-				$('#resNicheRow').show();
-				$('#resNicheDetail').text(contractData.deceased.burialDetail);
+			if (d?.burialDetail) {
+				$('#resNicheRow').removeClass('d-none').show();
+				$('#resNicheDetail').text(d.burialDetail);
 			} else {
 				$('#resNicheRow').hide();
 			}
 
-			// 4. Llenar Tabla de Servicios (Sincronizado con tu div resServicesTable)
+			// 4. Detalle de Servicios (Ataúd y Movilidad) - AQUÍ ESTABA EL ERROR
 			const $container = $('#resServicesTable');
 			$container.empty();
 
-			if (contractData.services.length === 0) {
-				$container.append('<div class="text-center text-muted py-3 small">No hay servicios seleccionados.</div>');
-			} else {
-				contractData.services.forEach(s => {
-					let infoExtra = "";
-					if (s.logicType === 'MOVILIDAD' && s.extraData?.scheduledTime) {
-						infoExtra = `<small class="text-primary d-block">Hora: ${s.extraData.scheduledTime}</small>`;
-					} else if (s.logicType === 'ATAUD' && s.extraData?.serialNumber) {
-						infoExtra = `<small class="text-muted d-block">Serie: ${s.extraData.serialNumber}</small>`;
-					}
+			// --- ATAÚD ---
+			if (contractData.coffin) {
+				// Forzamos que el precio sea un número para evitar el error toFixed
+				const coffinPrice = parseFloat(contractData.coffin.price || 0);
+
+				$container.append(`
+					<div class="d-flex justify-content-between align-items-center py-3 border-bottom animate__animated animate__fadeIn">
+						<div class="d-flex align-items-center">
+							<div class="bg-primary-subtle p-2 rounded-3 me-3 text-primary">
+								<i class="fa-solid fa-box-archive"></i>
+							</div>
+							<div>
+								<span class="fw-bold d-block">${contractData.coffin.name || 'Ataúd seleccionado'}</span>
+								<small class="text-muted text-uppercase" style="font-size: 10px;">Suministro Principal</small>
+							</div>
+						</div>
+						<span class="fw-bold text-dark">S/ ${coffinPrice.toFixed(2)}</span>
+					</div>
+				`);
+			}
+
+			// --- MOVILIDAD ---
+			if (contractData.requiredVehicles && contractData.requiredVehicles.length > 0) {
+				contractData.requiredVehicles.forEach(id => {
+					// Intentamos recuperar el nombre desde el atributo data-name que pusimos en el paso 4
+					const card = document.querySelector(`.item-card[data-id="${id}"]`);
+					const name = card ? card.getAttribute('data-name') : "Requerimiento de Movilidad";
 
 					$container.append(`
-						<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-							<div>
-								<span class="fw-bold d-block small">${s.name}</span>
-								${infoExtra}
+						<div class="d-flex justify-content-between align-items-center py-3 border-bottom animate__animated animate__fadeIn">
+							<div class="d-flex align-items-center">
+								<div class="bg-dark-subtle p-2 rounded-3 me-3 text-dark">
+									<i class="fa-solid fa-truck-moving"></i>
+								</div>
+								<div>
+									<span class="fw-bold d-block">${name}</span>
+									<small class="text-primary text-uppercase" style="font-size: 10px;">Logística para el Sepelio</small>
+								</div>
 							</div>
-							<span class="fw-bold text-dark">S/ ${(s.price || 0).toFixed(2)}</span>
+							<span class="badge bg-light text-dark border px-3 rounded-pill">Incluido</span>
 						</div>
 					`);
 				});
 			}
 
-			// 5. Total Final
-			$('#resTotalAmount').text(`S/ ${(contractData.totalAmount || 0).toFixed(2)}`);
+			// 5. Total Final (Seguro)
+			const finalTotal = parseFloat(contractData.totalAmount || 0);
+			$('#resTotalAmount').text(`S/ ${finalTotal.toFixed(2)}`);
 		}
 
 		async function saveFinalContract() {

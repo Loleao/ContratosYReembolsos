@@ -1,0 +1,45 @@
+﻿@model ContratosYReembolsos.Models.VehicleType
+
+<div class="modal fade" id="editVehicleTypeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-action="EditVehicleType" onsubmit="saveVehicleType(event)">
+                @* Campos ocultos para mantener el ID y el estado actual *@
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="IsActive" />
+
+                <div class="modal-body py-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Nombre de la Categoría</label>
+                        <input type="text" asp-for="Name" class="form-control form-control-lg rounded-pill border-2 bg-light"
+                               required autocomplete="off">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Cambiar Icono</label>
+                        <select asp-for="Icon" class="form-select form-select-lg rounded-pill border-2 bg-light">
+                            <option value="fa-car-side">🚗 Carroza Estándar</option>
+                            <option value="fa-bus">🚌 Bus / Microbús</option>
+                            <option value="fa-truck-pickup">🛻 Camioneta de Flores</option>
+                            <option value="fa-van-shuttle">🚐 Van de Traslado</option>
+                            <option value="fa-car-rear">🚙 Vehículo Escolta</option>
+                            <option value="fa-motorcycle">🏍️ Motocicleta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 pb-4 justify-content-center">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold me-2" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow">
+                        Actualizar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

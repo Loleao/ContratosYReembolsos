@@ -22,16 +22,14 @@ namespace ContratosYReembolsos.Models
         public virtual Contract Contract { get; set; }
 
         [Required]
-        public DateTime DepartureTime { get; set; } // Hora de salida
-
-        public DateTime? ReturnTime { get; set; } // Nulo hasta que el carro regrese
+        public DateTime DepartureTime { get; set; }
+        public DateTime? ReturnTime { get; set; }
 
         // Estados del viaje: EN_RUTA, FINALIZADO, CANCELADO
         public string TripStatus { get; set; } = "EN_RUTA";
 
-        public string Observations { get; set; } // Ej: "Regresó con poco combustible"
+        public string? Observations { get; set; }
 
-        // Propiedad calculada para saber cuánto duró el servicio
         public TimeSpan? Duration => ReturnTime.HasValue ? ReturnTime - DepartureTime : null;
     }
 }
