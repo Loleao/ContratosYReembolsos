@@ -57,6 +57,7 @@ namespace ContratosYReembolsos.Data
                         RUC = "20123456789",
                         Name = "PEC SANTA ROSA",
                         BranchId = branchLim2.Id,
+                        UbigeoId = "150108",
                         Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
                         Phone = "999999999",
                         Email = "lima@gmail.com",
@@ -94,7 +95,6 @@ namespace ContratosYReembolsos.Data
                 await context.SaveChangesAsync();
             }
 
-            // 6. Estructuras y Construcción de Nichos
             // 6. Estructuras y Construcción de Nichos
             if (!context.SepulturasEstructura.Any())
             {

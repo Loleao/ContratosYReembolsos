@@ -1,5 +1,6 @@
 ﻿using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
+using ContratosYReembolsos.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -73,8 +74,23 @@ namespace ContratosYReembolsos.Controllers
         {
             var contracts = await _context.Contratos
                 .Include(c => c.MovilityDetails)
-                .Where(c => c.MovilityDetails.Any(m => !m.IsDispatched))
+                    .ThenInclude(m => m.VehicleType)
+                .Where(c => c.MovilityDetails.Any(detail =>
+                    !_context.VehiculosServicios.Any(vs => vs.ContractMovilityDetailId == detail.Id)))
                 .OrderBy(c => c.BurialDate)
+                .ThenBy(c => c.BurialTime)
+                .Select(c => new PendingContractViewModel
+                {
+                    Id = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    DeceasedName = c.DeceasedName,
+                    BurialDate = c.BurialDate,
+                    BurialTime = c.BurialTime,
+                    // Filtramos aquí mismo los detalles que no tienen servicio registrado
+                    PendingDetails = c.MovilityDetails
+                        .Where(detail => !_context.VehiculosServicios.Any(vs => vs.ContractMovilityDetailId == detail.Id))
+                        .ToList()
+                })
                 .ToListAsync();
 
             return PartialView("Partials/_PendingContracts", contracts);
@@ -96,21 +112,38 @@ namespace ContratosYReembolsos.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> GetDispatchVehicle(int contractId)
+        public async Task<IActionResult> GetDispatchVehicle(int contractId, int detailId)
         {
+            // 1. Buscamos el contrato con el detalle específico que se quiere despachar
             var contrato = await _context.Contratos
                 .Include(c => c.MovilityDetails)
+                    .ThenInclude(m => m.VehicleType)
                 .FirstOrDefaultAsync(c => c.Id == contractId);
 
             if (contrato == null) return NotFound();
 
-            ViewBag.PendingServices = contrato.MovilityDetails
-                .Where(m => !m.IsDispatched)
-                .ToList();
+            // 2. Buscamos el detalle específico para validar que no esté ya en ruta
+            var detail = contrato.MovilityDetails.FirstOrDefault(m => m.Id == detailId);
 
+            // Verificamos si ya existe un servicio activo o finalizado para este detalle
+            var yaDespachado = await _context.VehiculosServicios
+                .AnyAsync(vs => vs.ContractMovilityDetailId == detailId && vs.TripStatus != "CANCELADO");
+
+            if (yaDespachado)
+                return BadRequest("Este servicio de movilidad ya ha sido despachado o está en ruta.");
+
+            // 3. Pasamos la información necesaria a la vista mediante ViewBag
+            ViewBag.TargetDetail = detail; // El servicio específico: "Carroza", "Bus", etc.
             ViewBag.ContractId = contractId;
-            ViewBag.AvailableVehicles = await _context.Vehiculos.Where(v => v.CurrentStatus == "DISPONIBLE").ToListAsync();
-            ViewBag.AvailableDrivers = await _context.Conductores.Where(d => d.IsAvailable).ToListAsync();
+
+            // Solo vehículos disponibles y conductores libres
+            ViewBag.AvailableVehicles = await _context.Vehiculos
+                .Where(v => v.CurrentStatus == "DISPONIBLE" && v.IsActive)
+                .ToListAsync();
+
+            ViewBag.AvailableDrivers = await _context.Conductores
+                .Where(d => d.IsAvailable && d.IsActive)
+                .ToListAsync();
 
             return PartialView("Partials/_DispatchVehicle", contrato);
         }
@@ -129,55 +162,60 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> StartTrip(int contractId, int vehicleId, int driverId, string serviceType, string observations)
+        public async Task<IActionResult> StartTrip(int contractId, int contractMovilityDetailId, int vehicleId, int driverId, string observations)
         {
-            if (string.IsNullOrEmpty(serviceType))
-            {
-                return Json(new { success = false, message = "El tipo de servicio es obligatorio." });
-            }
-
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Registrar el viaje en el historial
+                // 1. Validar disponibilidad de Vehículo y Conductor (Doble verificación por seguridad)
+                var v = await _context.Vehiculos.FindAsync(vehicleId);
+                var d = await _context.Conductores.FindAsync(driverId);
+
+                if (v == null || v.CurrentStatus != "DISPONIBLE")
+                    return Json(new { success = false, message = "El vehículo ya no está disponible." });
+
+                if (d == null || !d.IsAvailable)
+                    return Json(new { success = false, message = "El conductor ya no está disponible." });
+
+                // 2. Obtener el detalle del contrato para vincularlo
+                var detalle = await _context.DetallesMovilidadContrato
+                    .Include(m => m.VehicleType)
+                    .FirstOrDefaultAsync(m => m.Id == contractMovilityDetailId);
+
+                if (detalle == null)
+                    return Json(new { success = false, message = "El requerimiento de movilidad no existe." });
+
+                // 3. Crear el registro de ejecución (VehicleService)
                 var trip = new VehicleService
                 {
                     ContractId = contractId,
+                    ContractMovilityDetailId = contractMovilityDetailId, // LA LLAVE MAESTRA
                     VehicleId = vehicleId,
                     DriverId = driverId,
-                    ServiceType = serviceType,
                     DepartureTime = DateTime.Now,
                     TripStatus = "EN_RUTA",
                     Observations = observations
                 };
 
-                // 2. BUSCAR EL DETALLE ESPECÍFICO Y MARCARLO COMO DESPACHADO
-                var detalle = await _context.DetallesMovilidadContrato
-                    .FirstOrDefaultAsync(d => d.ContractId == contractId &&
-                                             d.ServiceType == serviceType &&
-                                             !d.IsDispatched);
-
-                if (detalle != null)
-                {
-                    detalle.IsDispatched = true;
-                }
-
-                // 3. Bloquear Vehículo y Conductor
-                var v = await _context.Vehiculos.FindAsync(vehicleId);
-                var d = await _context.Conductores.FindAsync(driverId);
+                // 4. Actualizar estados de los activos (Bloqueo)
                 v.CurrentStatus = "EN_SERVICIO";
                 d.IsAvailable = false;
 
+                // 5. Guardar cambios
                 _context.VehiculosServicios.Add(trip);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Json(new { success = true, message = $"Unidad {v.Plate} enviada para {serviceType}." });
+                return Json(new
+                {
+                    success = true,
+                    message = $"Unidad {v.Plate} enviada con éxito para el servicio de {detalle.VehicleType.Name}."
+                });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return Json(new { success = false, message = "Error: " + ex.Message });
+                return Json(new { success = false, message = "Error interno: " + ex.Message });
             }
         }
 

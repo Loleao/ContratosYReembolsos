@@ -15,11 +15,11 @@ namespace ContratosYReembolsos.Models
         public int DriverId { get; set; }
         public virtual Driver Driver { get; set; }
 
-        [Required]
-        public string ServiceType { get; set; }
-
         public int ContractId { get; set; }
-        public virtual Contract Contract { get; set; }
+        public virtual Contract? Contract { get; set; }
+
+        public int? ContractMovilityDetailId { get; set; }
+        public virtual ContractMovilityDetail? ContractMovilityDetail { get; set; }
 
         [Required]
         public DateTime DepartureTime { get; set; }

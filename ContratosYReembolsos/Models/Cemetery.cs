@@ -17,6 +17,10 @@ namespace ContratosYReembolsos.Models
         [ForeignKey("BranchId")]
         public virtual Branch? Branch { get; set; }
 
+        public string UbigeoId { get; set; }
+        [ForeignKey("UbigeoId")]
+        public virtual Ubigeo? Ubigeo { get; set; }
+
         public string Address { get; set; }
         public string Phone { get; set; }
         public string Email { get; set; }

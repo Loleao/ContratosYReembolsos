@@ -258,20 +258,38 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCemeteries(string inei)
+        public async Task<IActionResult> GetCemeteries(string? inei, int? branchId)
         {
-            var cemeteries = await _context.Cementerios
-                .Where(c => c.Branch.UbigeoId == inei) // Usamos UbigeoId de tu modelo
-                .Select(c => new {
-                    id = c.Id,
-                    name = c.Name,
-                    ruc = c.RUC,
-                    branchId = c.BranchId // <-- Crucial: Enviamos el ID de la filial
-                })
-                .OrderBy(c => c.name)
-                .ToListAsync();
+            try
+            {
+                var query = _context.Cementerios.Where(c => c.IsActive);
 
-            return Json(cemeteries);
+                // Si viene INEI, filtramos por ubicación distrital
+                if (!string.IsNullOrEmpty(inei))
+                {
+                    query = query.Where(c => c.UbigeoId == inei);
+                }
+                // Si no hay INEI pero hay BranchId, mostramos los de esa sede
+                else if (branchId.HasValue && branchId > 0)
+                {
+                    query = query.Where(c => c.BranchId == branchId);
+                }
+
+                var cemeteries = await query
+                    .Select(c => new {
+                        id = c.Id,
+                        name = c.Name,
+                        ruc = c.RUC,
+                        branchId = c.BranchId
+                    })
+                    .ToListAsync();
+
+                return Json(cemeteries);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
 
         public IActionResult GetNicheSelector()
@@ -394,173 +412,171 @@ namespace ContratosYReembolsos.Controllers
             return Json(availableTypes);
         }
 
-        private string GetRegionPrefix(string regionName)
-        {
-            if (string.IsNullOrEmpty(regionName)) return "GEN";
-
-            var prefixes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Amazonas", "AMA" }, 
-                { "Ancash", "ANC" }, 
-                { "Apurimac", "APU" },
-                { "Arequipa", "ARE" }, 
-                { "Ayacucho", "AYA" }, 
-                { "Cajamarca", "CAJ" },
-                { "Callao", "CAL" }, 
-                { "Cusco", "CUS" }, 
-                { "Huancavelica", "HUV" },
-                { "Huanuco", "HUA" }, 
-                { "Ica", "ICA" }, 
-                { "Junin", "JUN" },
-                { "La Libertad", "LIB" }, 
-                { "Lambayeque", "LAM" }, 
-                { "Lima", "LIM" },
-                { "Loreto", "LOR" }, 
-                { "Madre de Dios", "MDD" }, 
-                { "Moquegua", "MOQ" },
-                { "Pasco", "PAS" }, 
-                { "Piura", "PIU" }, 
-                { "Puno", "PUN" },
-                { "San Martin", "SAM" }, 
-                { "Tacna", "TAC" }, 
-                { "Tumbes", "TUM" },
-                { "Ucayali", "UCA" }
-            };
-
-            // Buscamos el nombre de la región. Si no existe, devolvemos los 3 primeros caracteres en mayúsculas.
-            if (prefixes.TryGetValue(regionName, out string prefix))
-            {
-                return prefix;
-            }
-
-            return regionName.Length >= 3 ? regionName.Substring(0, 3).ToUpper() : "GEN";
-        }
-
         [HttpGet]
-        public IActionResult GetPrefix(string region)
+        public async Task<IActionResult> GetBranchPrefix(int branchId)
         {
-            if (string.IsNullOrEmpty(region)) return Json(new { prefix = "GEN" });
+            // Usamos la misma lógica que el Create para ser consistentes
+            var branch = await _context.Filiales
+                .FirstOrDefaultAsync(f => f.Id == branchId);
 
-            string prefix = GetRegionPrefix(region);
-            return Json(new { prefix });
+            if (string.IsNullOrEmpty(branch?.UbigeoId))
+                return Json(new { prefix = "GEN" });
+
+            string deptCode = branch.UbigeoId.Substring(0, 2);
+
+            // Buscamos el registro que tenga la abreviatura para ese departamento
+            var ubigeo = await _context.Ubigeos
+                .Where(u => u.Id.StartsWith(deptCode) && !string.IsNullOrEmpty(u.Abbreviation))
+                .OrderBy(u => u.Id)
+                .FirstOrDefaultAsync();
+
+            return Json(new { prefix = ubigeo?.Abbreviation ?? "GEN" });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ContractViewModel model) // Usamos tu nuevo ViewModel
+        public async Task<IActionResult> Create([FromBody] ContractViewModel model)
         {
-            if (model == null) return BadRequest(new { message = "Datos no recibidos correctamente." });
-
-            // Obtenemos el usuario para saber su filial
-            var user = await _userManager.GetUserAsync(User);
-            int branchId = user.BranchId ?? 0;
+            if (model == null) return BadRequest("Datos del contrato no recibidos.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Lógica de Prefijo y Correlativo (Mejorada para usar la filial del usuario)
-                var branch = await _context.Filiales.FindAsync(branchId);
-                string regionName = branch?.Ubigeo?.Region ?? "LIMA";
-                string prefix = GetRegionPrefix(regionName);
-                int currentYear = DateTime.Now.Year;
+                // 1. Obtener Prefijo Real (LIM, ARE, etc.)
+                string prefix = await GetBranchAbbreviation(model.BranchId);
+                int year = DateTime.Now.Year;
 
-                int regionCount = await _context.Contratos
-                    .CountAsync(c => c.ContractNumber.StartsWith(prefix) && c.CreatedAt.Year == currentYear);
+                // 2. Correlativo Independiente por Prefijo
+                // Contamos cuántos contratos hay en el año que EMPIECEN con ese prefijo
+                int count = await _context.Contratos
+                    .CountAsync(c => c.ContractNumber.StartsWith(prefix) && c.CreatedAt.Year == year) + 1;
 
-                string contractCode = $"{prefix}{currentYear}{(regionCount + 1).ToString("D5")}";
+                string contractNumber = $"{prefix}{year}-{count.ToString("D5")}";
 
-                // 2. Mapear Cabecera con las nuevas relaciones
+                // 3. Mapeo al Modelo Contract
                 var contract = new Contract
                 {
-                    ContractNumber = contractCode,
+                    ContractNumber = contractNumber,
                     CreatedAt = DateTime.Now,
-                    Status = "Finalizado",
-                    BranchId = branchId, // Vínculo con Filial
+                    Status = "ACTIVO",
+                    BranchId = model.BranchId,
 
-                    // Datos del Solicitante
-                    SolicitorDni = model.SolicitorDni,
-                    SolicitorName = model.SolicitorName,
-                    SolicitorCip = model.SolicitorCip,
-                    SolicitorType = model.SolicitorType,
+                    SolicitorDni = model.Solicitor.Dni,
+                    SolicitorName = model.Solicitor.Name,
+                    SolicitorType = model.Solicitor.Type,
 
-                    // Datos del Fallecido
-                    DeceasedDni = model.DeceasedDni,
-                    DeceasedName = model.DeceasedName,
-                    DeathDate = model.DeathDate,
-                    BurialDate = model.BurialDate,
-                    BurialTime = model.BurialTime,
-                    UbigeoFull = model.UbigeoFull,
+                    DeceasedDni = model.Deceased.Dni,
+                    DeceasedName = model.Deceased.Name,
+                    DeathDate = model.Deceased.DeathDate,
+                    BurialDate = model.Deceased.BurialDate,
+                    BurialTime = TimeSpan.Parse(model.Deceased.BurialTime),
+                    UbigeoId = model.Deceased.Inei,
 
-                    // Sepulturas (Relación Real)
-                    IntermentSpaceId = model.IntermentSpaceId,
-                    BurialDetail = model.BurialDetail,
+                    WakeId = model.Deceased.WakeId > 0 ? model.Deceased.WakeId : null,
+                    CemeteryId = model.Deceased.CemeteryId,
+                    IntermentStructureId = model.Deceased.StructureId > 0 ? model.Deceased.StructureId : null,
+                    IntermentSpaceId = model.Deceased.IntermentSpaceId > 0 ? model.Deceased.IntermentSpaceId : null,
 
-                    // Agencia (Relación Real)
+                    CoffinVariantId = model.CoffinVariantId,
                     AgencyId = model.AgencyId,
-
                     TotalAmount = model.TotalAmount
                 };
 
                 _context.Contratos.Add(contract);
                 await _context.SaveChangesAsync();
 
-                // 3. Actualizar estado del Nicho a "Ocupado"
-                if (contract.IntermentSpaceId.HasValue)
+                // 4. Guardar Movilidades (ContractMovilityDetail)
+                if (model.RequiredVehicles != null && model.RequiredVehicles.Any())
                 {
-                    var space = await _context.SepulturasNichos.FindAsync(contract.IntermentSpaceId);
-                    if (space != null) space.Status = "Ocupado";
-                }
-
-                // 4. Mapear Ataúd (ContractDetail) y Movilidades (ContractMovilityDetail)
-                // Aquí iteramos los detalles que vienen del Wizard...
-
-                // Ejemplo para el Ataúd:
-                if (model.SelectedStockItemId > 0)
-                {
-                    var stock = await _context.StockItems.FindAsync(model.SelectedStockItemId);
-                    if (stock != null)
+                    foreach (var vTypeId in model.RequiredVehicles)
                     {
-                        stock.Status = "Vendido";
-                        _context.DetallesContrato.Add(new ContractDetail
+                        // Asegúrate que el DbSet se llame ContractMovilityDetails
+                        _context.DetallesMovilidadContrato.Add(new ContractMovilityDetail
                         {
                             ContractId = contract.Id,
-                            ServiceId = 1, // Supongamos que 1 es 'Ataúd'
-                            StockItemId = stock.Id,
-                            Price = 0 // O el precio del stock
+                            VehicleTypeId = vTypeId,
+                            Status = "PENDIENTE"
                         });
                     }
                 }
 
-                // Ejemplo para Movilidades:
-                foreach (var type in model.SelectedMovilityTypes)
+                // 5. Actualizar Estado del Nicho (Si aplica)
+                if (contract.IntermentSpaceId.HasValue)
                 {
-                    _context.DetallesMovilidadContrato.Add(new ContractMovilityDetail
+                    var space = await _context.SepulturasNichos.FindAsync(contract.IntermentSpaceId);
+                    if (space != null)
                     {
-                        ContractId = contract.Id,
-                        ServiceType = type,
-                        IsDispatched = false,
-                        ScheduledDate = contract.BurialDate
-                    });
+                        // Actualizamos el estado y vinculamos el contrato al nicho si tienes el campo
+                        space.Status = "OCUPADO";
+                        space.ContractId = contract.Id; // Opcional según tu modelo
+                        _context.Update(space);
+                    }
                 }
+
+                // 6. Descontar Stock (Usando el DbSet correcto de tu migración)
+                var stock = await _context.StockFilial.FirstOrDefaultAsync(s =>
+                    s.BranchId == model.BranchId && s.CoffinVariantId == model.CoffinVariantId);
+
+                if (stock == null)
+                    throw new Exception("No se encontró registro de inventario para este ataúd en la sede.");
+
+                if (stock.Quantity <= 0)
+                    throw new Exception("No hay stock disponible del ataúd seleccionado.");
+
+                stock.Quantity--;
+                _context.Update(stock);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { success = true, id = contract.Id, contractNumber = contract.ContractNumber });
+                return Json(new { success = true, id = contract.Id, contractNumber = contractNumber });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { success = false, message = ex.Message });
+                // Log del error para depuración
+                System.Diagnostics.Debug.WriteLine($"ERROR CREATE: {ex.Message}");
+                return Json(new { success = false, message = "Error al guardar: " + ex.Message });
             }
+        }
+
+        private async Task<string> GetBranchAbbreviation(int branchId)
+        {
+            // 1. Cargamos la sede y su UbigeoId
+            var branch = await _context.Filiales
+                .FirstOrDefaultAsync(f => f.Id == branchId);
+
+            if (string.IsNullOrEmpty(branch?.UbigeoId)) return "GEN";
+
+            // 2. Obtenemos el prefijo del departamento (primeros 2 caracteres)
+            // Ejemplo: "150101" -> "15"
+            string deptCode = branch.UbigeoId.Substring(0, 2);
+
+            // 3. Buscamos en la tabla Ubigeos el registro que represente al Departamento
+            // Normalmente el departamento tiene Province y District vacíos o nulos
+            var ubigeoDept = await _context.Ubigeos
+                .Where(u => u.Id.StartsWith(deptCode) &&
+                           (u.Province == null || u.Province == ""))
+                .FirstOrDefaultAsync();
+
+            // 4. Si no tiene abreviatura el padre, intentamos buscar el primero que sí tenga del mismo grupo
+            if (ubigeoDept == null || string.IsNullOrEmpty(ubigeoDept.Abbreviation))
+            {
+                ubigeoDept = await _context.Ubigeos
+                    .Where(u => u.Id.StartsWith(deptCode) && u.Abbreviation != null && u.Abbreviation != "")
+                    .FirstOrDefaultAsync();
+            }
+
+            return ubigeoDept?.Abbreviation?.ToUpper() ?? "GEN";
         }
 
         [HttpGet]
         public async Task<IActionResult> DescargarContratoPDF(int id)
         {
-            // Buscamos el contrato con sus detalles y el nombre de los servicios
             var contrato = await _context.Contratos
-                .Include(c => c.Details)
-                    .ThenInclude(d => d.Service)
+                .Include(c => c.Branch)
+                .Include(c => c.CoffinVariant).ThenInclude(v => v.Coffin)
+                .Include(c => c.Cemetery)
+                .Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (contrato == null) return NotFound();
@@ -569,7 +585,6 @@ namespace ContratosYReembolsos.Controllers
             {
                 FileName = $"Contrato_{contrato.ContractNumber}.pdf",
                 PageSize = Rotativa.AspNetCore.Options.Size.A4,
-                PageMargins = new Rotativa.AspNetCore.Options.Margins(10, 10, 10, 10),
                 CustomSwitches = "--print-media-type --no-outline"
             };
         }

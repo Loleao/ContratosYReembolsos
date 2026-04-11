@@ -388,6 +388,7 @@
 			getUnitPickerModal: '@Url.Action("GetUnitPicker", "Service")',
 			getDailyAvailability: '@Url.Action("GetDailyAvailability", "Service")',
 			getWeeklyAvailability: '@Url.Action("GetWeeklyAvailability", "Service")',
+			getPrefix: '@Url.Action("GetPrefix", "Contract")',
 			saveContract: '@Url.Action("Create", "Contract")',
 			downloadContract: '@Url.Action("DescargarContratoPDF", "Contract")',
 		};
@@ -401,6 +402,7 @@
 				ubigeoFull: '', inei: '',
 				wakeId: '', wakeName: '',
 				cemeteryId: '', cemeteryName: '',
+				intermentStructureId: null,
 				intermentSpaceId: null,
 				burialType: '',
 				burialDetail: ''
@@ -431,13 +433,10 @@
 					try {
 						const response = await fetch(`${urls.getBranchCapabilities}?branchId=${contractData.branchId}`);
 						if (response.ok) {
-							// Actualizamos la variable global branchCaps
 							branchCaps = await response.json();
 
-							// 1. Gestión de Velatorio
 							const $wakeSection = $('#sectionWakePlace');
 							if (branchCaps.hasWake) {
-								// Si la sede tiene velatorio, mostramos sección y cargamos locales
 								$wakeSection.fadeIn(300).removeClass('d-none');
 								if (typeof loadWakes === 'function') loadWakes();
 							} else {
@@ -446,12 +445,8 @@
 								contractData.deceased.wakeName = "Particular / Domicilio";
 							}
 
-							// 2. Gestión de Cementerio Propio (Inicialización)
-							// Ocultamos la sección de ubicación por defecto al entrar al paso.
-							// Solo se mostrará en selectCemetery() si el cementerio elegido coincide con la sede.
 							$('#sectionSpecificLocation').addClass('d-none');
 
-							// Si la sede ni siquiera tiene cementerio, nos aseguramos de limpiar datos previos
 							if (!branchCaps.hasCem) {
 								contractData.deceased.intermentSpaceId = null;
 							}
@@ -931,9 +926,28 @@
 					$('#ajaxTargetSearch').html(html);
 					$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
 
+					// Cargar los combos de departamentos del modal
 					loadCemRegions();
+
+					// CARGA INICIAL: Buscar cementerios de la sede del contrato
+					loadInitialCemeteries();
 				}
 			});
+		}
+
+		async function loadInitialCemeteries() {
+			const $tbody = $('#resultsCemeteryTableBody');
+			$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Cargando cementerios de la sede...</td></tr>');
+
+			try {
+				// Consultamos usando el branchId que ya tenemos en contractData
+				const resp = await fetch(`${urls.getCemeteriesAction}?branchId=${contractData.branchId}`);
+				const data = await resp.json();
+
+				renderCemeteryTable(data);
+			} catch (e) {
+				$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al cargar cementerios iniciales.</td></tr>');
+			}
 		}
 
 		async function loadCemRegions() {
@@ -970,34 +984,46 @@
 			const inei = $('#CemFilterDistrict').val();
 			const $tbody = $('#resultsCemeteryTableBody');
 
-			if (!inei) { alert("Seleccione un distrito."); return; }
+			if (!inei) {
+				Swal.fire('Atención', 'Seleccione un distrito para buscar cementerios.', 'warning');
+				return;
+			}
 
 			$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
 
 			try {
 				const resp = await fetch(`${urls.getCemeteriesAction}?inei=${inei}`);
 				const data = await resp.json();
-				$tbody.empty();
 
-				if (data.length === 0) {
-					$tbody.html('<tr><td colspan="3" class="text-center py-4">No hay cementerios registrados en este distrito.</td></tr>');
-					return;
-				}
-
-				data.forEach(c => {
-					const tr = $(`
-						<tr style="cursor:pointer" class="align-middle">
-							<td>${c.ruc}</td>
-							<td class="fw-bold">${c.name}</td>
-							<td class="text-end"><button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button></td>
-						</tr>
-					`);
-					tr.click(() => selectCemetery(c));
-					$tbody.append(tr);
-				});
+				renderCemeteryTable(data);
 			} catch (e) {
 				$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error de comunicación.</td></tr>');
 			}
+		}
+
+		function renderCemeteryTable(data) {
+			const $tbody = $('#resultsCemeteryTableBody');
+			$tbody.empty();
+
+			if (!data || data.length === 0) {
+				$tbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No se encontraron cementerios.</td></tr>');
+				return;
+			}
+
+			data.forEach(c => {
+				const tr = $(`
+					<tr style="cursor:pointer" class="align-middle">
+						<td><span class="badge bg-light text-dark border">${c.ruc}</span></td>
+						<td class="fw-bold text-uppercase small">${c.name}</td>
+						<td class="text-end">
+							<button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button>
+						</td>
+					</tr>
+				`);
+				// Usamos la lógica que ya tienes para seleccionar
+				tr.click(() => selectCemetery(c));
+				$tbody.append(tr);
+			});
 		}
 
 		function selectCemetery(c) {
@@ -1230,6 +1256,7 @@
 			const dist = $('#DeathDist option:selected').text();
 			const inei = $('#DeathDist').val();
 			const cemeteryId = contractData.deceased.cemeteryId;
+			const intermentStructureId = $('#cboPavilion').val(); // Estructura seleccionada en el mapa
 			const spaceId = $('#IntermentSpaceId').val(); // Este viene del mapa de nichos
 
 			// 2. Validaciones Críticas
@@ -1264,6 +1291,7 @@
 
 			// GUARDAMOS EL ID REAL DEL NICHO
 			contractData.deceased.intermentSpaceId = spaceId ? parseInt(spaceId) : null;
+			contractData.deceased.intermentStructureId = intermentStructureId;
 			contractData.deceased.burialDetail = $('#txtNicheSelected').text();
 
 			return true;
@@ -1710,26 +1738,30 @@
 		async function renderStep5() {
 			console.log("Generando resumen final con datos:", contractData);
 
-			// 1. Prefijo y Código de Contrato (Seguro)
+			// Mostramos un spinner o texto de carga mientras obtenemos el prefijo
+			$('#resContractPreview').text("Cargando...");
+
 			let previewPrefix = "GEN";
 			try {
-				const ubigeo = contractData.deceased?.ubigeoFull || "";
-				if (ubigeo.includes('-')) {
-					const regionText = ubigeo.split('-')[0].trim();
-					const resp = await fetch(`/Contract/GetPrefix?region=${encodeURIComponent(regionText)}`);
+				// IMPORTANTE: Verifica que la ruta coincida con tu RouteConfig o atributos del controlador
+				const resp = await fetch(`/Contract/GetBranchPrefix?branchId=${contractData.branchId}`);
+
+				if (resp.ok) {
 					const data = await resp.json();
 					previewPrefix = data.prefix || "GEN";
 				}
-			} catch (e) { console.warn("No se pudo obtener el prefijo:", e); }
+			} catch (e) {
+				console.warn("Fallo al obtener prefijo de sede, usando GEN:", e);
+			}
 
 			const year = new Date().getFullYear();
+			// Actualizamos el texto con el prefijo real (ej: LIM2026-XXXXX)
 			$('#resContractPreview').text(`${previewPrefix}${year}-XXXXX`);
 
 			// 2. Partes Interesadas
-			$('#resSolicitorName').text(contractData.solicitor?.name || "No identificado");
+			$('#resSolicitorName').text(contractData.solicitor?.name || "---");
 			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor?.dni || "---"}`);
-
-			$('#resDeceasedName').text(contractData.deceased?.name || "No identificado");
+			$('#resDeceasedName').text(contractData.deceased?.name || "---");
 			$('#resDeceasedDni').text(`DNI: ${contractData.deceased?.dni || "---"}`);
 
 			// 3. Logística
@@ -1745,23 +1777,19 @@
 				$('#resNicheRow').hide();
 			}
 
-			// 4. Detalle de Servicios (Ataúd y Movilidad) - AQUÍ ESTABA EL ERROR
+			// 4. Detalle de Servicios
 			const $container = $('#resServicesTable');
 			$container.empty();
 
 			// --- ATAÚD ---
 			if (contractData.coffin) {
-				// Forzamos que el precio sea un número para evitar el error toFixed
 				const coffinPrice = parseFloat(contractData.coffin.price || 0);
-
 				$container.append(`
 					<div class="d-flex justify-content-between align-items-center py-3 border-bottom animate__animated animate__fadeIn">
 						<div class="d-flex align-items-center">
-							<div class="bg-primary-subtle p-2 rounded-3 me-3 text-primary">
-								<i class="fa-solid fa-box-archive"></i>
-							</div>
+							<div class="bg-primary-subtle p-2 rounded-3 me-3 text-primary"><i class="fa-solid fa-box-archive"></i></div>
 							<div>
-								<span class="fw-bold d-block">${contractData.coffin.name || 'Ataúd seleccionado'}</span>
+								<span class="fw-bold d-block">${contractData.coffin.name}</span>
 								<small class="text-muted text-uppercase" style="font-size: 10px;">Suministro Principal</small>
 							</div>
 						</div>
@@ -1770,21 +1798,18 @@
 				`);
 			}
 
-			// --- MOVILIDAD ---
 			if (contractData.requiredVehicles && contractData.requiredVehicles.length > 0) {
 				contractData.requiredVehicles.forEach(id => {
-					// Intentamos recuperar el nombre desde el atributo data-name que pusimos en el paso 4
+					// Buscamos la tarjeta en el Paso 4 para extraer el nombre del atributo data-name
 					const card = document.querySelector(`.item-card[data-id="${id}"]`);
-					const name = card ? card.getAttribute('data-name') : "Requerimiento de Movilidad";
+					const vehicleName = card ? card.getAttribute('data-name') : "SERVICIO DE MOVILIDAD";
 
 					$container.append(`
 						<div class="d-flex justify-content-between align-items-center py-3 border-bottom animate__animated animate__fadeIn">
 							<div class="d-flex align-items-center">
-								<div class="bg-dark-subtle p-2 rounded-3 me-3 text-dark">
-									<i class="fa-solid fa-truck-moving"></i>
-								</div>
+								<div class="bg-dark-subtle p-2 rounded-3 me-3 text-dark"><i class="fa-solid fa-truck-moving"></i></div>
 								<div>
-									<span class="fw-bold d-block">${name}</span>
+									<span class="fw-bold d-block">${vehicleName}</span>
 									<small class="text-primary text-uppercase" style="font-size: 10px;">Logística para el Sepelio</small>
 								</div>
 							</div>
@@ -1794,79 +1819,103 @@
 				});
 			}
 
-			// 5. Total Final (Seguro)
+			// 5. Total Final
 			const finalTotal = parseFloat(contractData.totalAmount || 0);
 			$('#resTotalAmount').text(`S/ ${finalTotal.toFixed(2)}`);
 		}
 
-		async function saveFinalContract() {
-			// 1. Validación de seguridad: ¿Hay servicios?
-			if (contractData.services.length === 0) {
-				Swal.fire('Atención', 'No puedes registrar un contrato sin servicios.', 'warning');
+		function saveFinalContract() {
+			// 1. Validaciones preventivas antes de intentar el guardado
+			if (!contractData.coffin || !contractData.coffin.id) {
+				Swal.fire('Atención', 'Debe seleccionar un ataúd del catálogo.', 'warning');
 				return;
 			}
 
-			// 2. Confirmación con el usuario
-			const result = await Swal.fire({
+			if (!contractData.agencyId) {
+				Swal.fire('Atención', 'Debe seleccionar una agencia funeraria.', 'warning');
+				return;
+			}
+
+			// 2. Construcción del Payload (Cuerpo de la petición)
+			// Alineamos los nombres de las propiedades con el ContractViewModel de C#
+			const payload = {
+				branchId: parseInt(contractData.branchId),
+				solicitor: {
+					dni: contractData.solicitor.dni,
+					name: contractData.solicitor.name,
+					type: contractData.solicitor.type
+				},
+				deceased: {
+					dni: contractData.deceased.dni,
+					name: contractData.deceased.name,
+					deathDate: contractData.deceased.deathDate,
+					burialDate: contractData.deceased.burialDate,
+					burialTime: contractData.deceased.burialTime, // Formato "HH:mm"
+					inei: contractData.deceased.inei,
+					wakeId: parseInt(contractData.deceased.wakeId) || null,
+					cemeteryId: parseInt(contractData.deceased.cemeteryId) || 0,
+					structureId: parseInt(contractData.deceased.structureId) || null,
+					intermentSpaceId: parseInt(contractData.deceased.intermentSpaceId) || null
+				},
+				agencyId: parseInt(contractData.agencyId),
+				coffinVariantId: parseInt(contractData.coffin.id),
+				requiredVehicles: contractData.requiredVehicles, // Array de Ints [1, 2, 3]
+				totalAmount: parseFloat(contractData.totalAmount)
+			};
+
+			// 3. Confirmación visual con el usuario
+			Swal.fire({
 				title: '¿Confirmar Registro?',
-				html: `Se generará un nuevo contrato oficial.<br><small class="text-muted">Esta acción descontará stock y agendará movilidades.</small>`,
+				text: `Se generará el contrato correlativo para ${contractData.deceased.name}. Esta acción descontará stock y ocupará espacios en el cementerio.`,
 				icon: 'question',
 				showCancelButton: true,
 				confirmButtonColor: '#004a99',
 				cancelButtonColor: '#6c757d',
-				confirmButtonText: 'Sí, registrar ahora',
-				cancelButtonText: 'Revisar datos'
-			});
+				confirmButtonText: '<i class="fa-solid fa-file-signature me-2"></i>Sí, Generar Contrato',
+				cancelButtonText: 'Revisar datos',
+				reverseButtons: true
+			}).then((result) => {
+				if (result.isConfirmed) {
 
-			if (!result.isConfirmed) return;
+					// 4. Llamada AJAX al Controller
+					$.ajax({
+						url: urls.saveContract, // Debe apuntar a /Contract/Create
+						type: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify(payload),
+						beforeSend: function() {
+							Swal.fire({
+								title: 'Procesando...',
+								text: 'Estamos registrando el contrato y actualizando inventarios.',
+								allowOutsideClick: false,
+								didOpen: () => { Swal.showLoading(); }
+							});
+						},
+						success: function (response) {
+							if (response.success) {
+								Swal.fire({
+									title: '¡Contrato Registrado!',
+									text: `Se ha generado el código: ${response.contractNumber}`,
+									icon: 'success',
+									confirmButtonText: 'Ver detalles / Imprimir'
+								}).then(() => {
+									// Redirección al detalle o descarga directa de PDF
+									window.location.href = urls.downloadContract + "?id=" + response.id;
+								});
+							} else {
+								Swal.fire('Error en el Registro', response.message, 'error');
+							}
+						},
+						error: function (xhr) {
+							let errorMsg = 'No se pudo comunicar con el servidor.';
+							if(xhr.responseJSON && xhr.responseJSON.message) errorMsg = xhr.responseJSON.message;
 
-			// 3. UI de carga (Bloquea la pantalla para evitar dobles clics)
-			Swal.fire({
-				title: 'Procesando registro...',
-				text: 'Por favor, no cierre la ventana.',
-				allowOutsideClick: false,
-				didOpen: () => { Swal.showLoading(); }
-			});
-
-			try {
-				// 4. EL ENVÍO (Asegúrate que la URL sea correcta según tu Route)
-				const response = await fetch(`${urls.saveContract}`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-						// Si usas Anti-Forgery Tokens en .NET, añade aquí el header:
-						// 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-					},
-					body: JSON.stringify(contractData)
-				});
-
-				const data = await response.json();
-
-				if (data.success) {
-					// 5. ÉXITO: Mostramos el código real generado por el Controller (Ej: JUN202600001)
-					await Swal.fire({
-						title: '¡Contrato Registrado!',
-						html: `El código oficial es: <b class="fs-4 text-primary">${data.contractNumber}</b>`,
-						icon: 'success',
-						confirmButtonText: 'Ir al Listado'
-					}).then((result) => {
-						window.open(`${urls.downloadContract}?id=${data.id}`, '_blank');
-						if (!result.isConfirmed) {
-							window.location.href = '/Contract/Index';
+							Swal.fire('Error Crítico', errorMsg, 'error');
+							console.error("Detalle del error:", xhr.responseText);
 						}
 					});
-
-					// Redirección al listado de contratos o ver detalle
-					window.location.href = '/Contract/Index';
-				} else {
-					// ERROR DE NEGOCIO (Ej: No hay stock, error de base de datos)
-					Swal.fire('Error al guardar', data.message || 'Ocurrió un error inesperado.', 'error');
 				}
-			} catch (error) {
-				// ERROR DE RED O SERVIDOR CAÍDO
-				console.error("Error en Fetch:", error);
-				Swal.fire('Error de Conexión', 'No se pudo comunicar con el servidor. Intente nuevamente.', 'error');
-			}
+			});
 		}
 
 	</script>

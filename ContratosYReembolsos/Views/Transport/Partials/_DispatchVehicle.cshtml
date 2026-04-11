@@ -1,83 +1,59 @@
 ﻿@model ContratosYReembolsos.Models.Contract
+@{
+    var detail = ViewBag.TargetDetail as ContractMovilityDetail;
+}
 
-<div class="modal fade" id="dispatchModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-primary text-white rounded-top-4">
-                <h5 class="modal-title small fw-bold text-uppercase">
-                    <i class="fa-solid fa-truck-fast me-2"></i>Orden de Despacho
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <i class="fa-solid fa-truck-ramp-box me-2"></i>
+        Despacho de Unidad: @detail?.VehicleType?.Name
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form id="formDispatchVehicle">
+    <div class="modal-body">
+        <input type="hidden" name="ContractId" value="@Model.Id" />
+        <input type="hidden" name="ContractMovilityDetailId" value="@detail?.Id" />
+
+        <div class="alert alert-info py-2">
+            <small class="d-block"><strong>Contrato:</strong> @Model.ContractNumber</small>
+            <small class="d-block"><strong>Difunto:</strong> @Model.DeceasedName</small>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-12">
+                <label class="form-label fw-bold">1. Seleccionar Vehículo (Placa)</label>
+                <select name="VehicleId" class="form-select select2-dispatch" required>
+                    <option value="">-- Seleccione una unidad disponible --</option>
+                    @foreach (var v in ViewBag.AvailableVehicles)
+                    {
+                        <option value="@v.Id">@v.Plate - @v.Model (@v.Brand)</option>
+                    }
+                </select>
             </div>
-            <div class="modal-body p-4">
-                @* Info del Contrato *@
-                <div class="mb-4">
-                    <label class="form-label x-small fw-bold text-muted text-uppercase mb-1">Servicio de Sepelio para:</label>
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="fw-bold text-primary">@ViewBag.ContractInfo</div>
-                        <div class="x-small text-muted"><i class="fa-solid fa-location-dot me-1"></i>Destino: @Model.IntermentSpace.Structure.Cemetery.Name</div>
-                    </div>
-                </div>
 
-                <form id="dispatchForm">
-                    <input type="hidden" name="contractId" value="@ViewBag.ContractId" />
-
-                    @* --- NUEVO: Selección del Tipo de Servicio --- *@
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-primary">1. ¿Qué servicio sale ahora?</label>
-                        <select name="serviceType" id="modalServiceType" class="form-select border-2 border-primary shadow-sm" required>
-                            <option value="">-- Seleccionar Servicio Pendiente --</option>
-                            @if (ViewBag.PendingServices != null)
-                            {
-                                foreach (var opt in (IEnumerable<ContratosYReembolsos.Models.ContractMovilityDetail>)ViewBag.PendingServices)
-                                {
-                                    <option value="@opt.ServiceType">@opt.ServiceType</option>
-                                }
-                            }
-                        </select>
-                        <div class="x-small text-muted mt-1">Solo aparecen los servicios contratados aún no despachados.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">2. Seleccionar Vehículo</label>
-                        <select name="vehicleId" id="modalVehicleId" class="form-select border-2 shadow-sm" required>
-                            <option value="">-- Unidades Disponibles --</option>
-                            @if (ViewBag.AvailableVehicles != null)
-                            {
-                                foreach (var v in (IEnumerable<ContratosYReembolsos.Models.Vehicle>)ViewBag.AvailableVehicles)
-                                {
-                                    <option value="@v.Id">@v.Plate - @v.Brand @v.Model</option>
-                                }
-                            }
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">3. Seleccionar Conductor</label>
-                        <select name="driverId" id="modalDriverId" class="form-select border-2 shadow-sm" required>
-                            <option value="">-- Choferes Libres --</option>
-                            @if (ViewBag.AvailableDrivers != null)
-                            {
-                                foreach (var d in (IEnumerable<ContratosYReembolsos.Models.Driver>)ViewBag.AvailableDrivers)
-                                {
-                                    <option value="@d.Id">@d.FullName (@d.Category)</option>
-                                }
-                            }
-                        </select>
-                    </div>
-
-                    <div class="mb-0">
-                        <label class="form-label fw-bold small">Observaciones de Salida</label>
-                        <textarea name="observations" id="modalObservations" class="form-control border-2" rows="2" placeholder="Ej: Vehículo limpio, tanque lleno..."></textarea>
-                    </div>
-                </form>
+            <div class="col-md-12">
+                <label class="form-label fw-bold">2. Seleccionar Conductor</label>
+                <select name="DriverId" class="form-select select2-dispatch" required>
+                    <option value="">-- Seleccione un conductor disponible --</option>
+                    @foreach (var d in ViewBag.AvailableDrivers)
+                    {
+                        <option value="@d.Id">@d.FullName - Lic. @d.LicenseNumber</option>
+                    }
+                </select>
             </div>
-            <div class="modal-footer border-0 bg-light p-3 rounded-bottom-4">
-                <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="executeDispatch()">
-                    Confirmar Salida <i class="fa-solid fa-paper-plane ms-2"></i>
-                </button>
+
+            <div class="col-md-12">
+                <label class="form-label fw-bold">3. Observaciones de Salida</label>
+                <textarea name="Observations" class="form-control" rows="2" placeholder="Ej: Vehículo con tanque lleno, sale con arreglos florales..."></textarea>
             </div>
         </div>
     </div>
-</div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="fa-solid fa-paper-plane me-2"></i>Registrar Salida
+        </button>
+    </div>
+</form>

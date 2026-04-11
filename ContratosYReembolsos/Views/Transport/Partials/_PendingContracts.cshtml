@@ -1,37 +1,35 @@
-﻿@using ContratosYReembolsos.Models.ValueObjects
-@model IEnumerable<ContratosYReembolsos.Models.Contract>
+﻿@model IEnumerable<ContratosYReembolsos.Models.ViewModels.PendingContractViewModel>
 
-<table class="table align-middle">
-    <thead>
-        <tr class="x-small text-muted">
-            <th>CONTRATO / FALLECIDO</th>
-            <th>SERVICIOS REQUERIDOS</th>
-            <th class="text-center">GESTIÓN</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var c in Model)
-        {
-            <tr>
-                <td>
-                    <div class="fw-bold">#@c.ContractNumber</div>
-                    <div class="small text-uppercase">@c.DeceasedName</div>
-                </td>
-                <td>
-                    @foreach (var m in c.MovilityDetails)
-                    {
-                        <span class="badge @(m.IsDispatched ? "bg-success-subtle text-success" : "bg-warning-subtle text-dark") border x-small">
-                            <i class="fa-solid @TipoMovilidad.GetIcon(m.ServiceType) me-1"></i>
-                            @m.ServiceType
-                        </span>
-                    }
-                </td>
-                <td class="text-center">
-                    <button class="btn btn-primary btn-sm rounded-pill fw-bold" onclick="openDispatchModal(@c.Id)">
-                        Despachar Unidad
-                    </button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="list-group">
+    @foreach (var contrato in Model)
+    {
+        <div class="list-group-item mb-3 border-start border-4 border-primary shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-1 text-primary">@contrato.ContractNumber</h5>
+                <span class="badge bg-info text-dark">
+                    <i class="fa-regular fa-calendar me-1"></i> @contrato.BurialDate.ToShortDateString()
+                    <i class="fa-regular fa-clock ms-2 me-1"></i> @contrato.BurialTime.ToString(@"hh\:mm")
+                </span>
+            </div>
+            <p class="mb-2 text-muted">Difunto: <strong>@contrato.DeceasedName</strong></p>
+
+            <div class="mt-2 border-top pt-2">
+                <h6 class="small fw-bold text-uppercase text-secondary">Vehículos por Despachar:</h6>
+
+                @foreach (var detail in contrato.PendingDetails)
+                {
+                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded mb-2 border">
+                        <div>
+                            <i class="@detail.VehicleType.Icon text-primary me-2"></i>
+                            <span class="fw-bold">@detail.VehicleType.Name</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3"
+                                onclick="openDispatchModal(@contrato.Id, @detail.Id)">
+                            <i class="fa-solid fa-truck-fast me-1"></i> Despachar
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

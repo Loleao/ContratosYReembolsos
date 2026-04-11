@@ -25,7 +25,7 @@ namespace ContratosYReembolsos.Models
 
         // Relación con el Contrato (quién ocupa el espacio)
         public int? ContractId { get; set; }
-        public virtual Contract Contract { get; set; }
+        public virtual Contract? Contract { get; set; }
 
         // Datos de Inhumación (Opcional pero recomendado)
         public DateTime? InhumationDate { get; set; }

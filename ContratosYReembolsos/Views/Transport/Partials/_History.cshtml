@@ -24,8 +24,8 @@
         </div>
 
         <div class="tab-pane fade" id="finalizados" role="tabpanel">
-            @{ 
-                renderServiceList(Model.Where(s => s.TripStatus == "FINALIZADO"), false); 
+            @{
+                renderServiceList(Model.Where(s => s.TripStatus == "FINALIZADO"), false);
             }
         </div>
     </div>
@@ -65,17 +65,26 @@
                                             <span class="x-small text-muted fw-bold">@item.DepartureTime.ToString("HH:mm")</span>
                                         </div>
 
-                                        <div class="fw-bold text-primary">
-                                            <span class="x-small fw-bold text-primary">Tipo: @item.ServiceType</span>
+                                        <div class="mb-1">
+                                            @* Cambio clave: Acceso a través de la relación *@
+                                            <span class="x-small fw-bold text-primary">
+                                                <i class="fa-solid fa-tag me-1"></i>
+                                                Servicio: @(item.ContractMovilityDetail?.VehicleType?.Name ?? "Servicio General")
+                                            </span>
                                         </div>
 
                                         <h6 class="fw-bold mb-1 text-uppercase" style="font-size: 0.85rem;">@item.Contract?.DeceasedName</h6>
-                                        <p class="x-small text-muted mb-3"><i class="fa-solid fa-location-dot me-1"></i>@item.Contract?.IntermentSpace.Structure.Cemetery.Name</p>
+
+                                        @* Acceso corregido al nombre del cementerio *@
+                                        <p class="x-small text-muted mb-3">
+                                            <i class="fa-solid fa-location-dot me-1"></i>
+                                            @(item.Contract?.Cemetery?.Name ?? "Ubicación externa")
+                                        </p>
 
                                         <div class="p-2 bg-light rounded-3 mb-3 small border-0">
                                             <div class="d-flex align-items-center mb-1">
                                                 <i class="fa-solid fa-van-shuttle text-secondary me-2" style="width: 15px;"></i>
-                                                <span>@item.Vehicle?.Plate</span>
+                                                <span class="fw-bold">@item.Vehicle?.Plate</span>
                                             </div>
                                             <div class="d-flex align-items-center">
                                                 <i class="fa-solid fa-user-circle text-secondary me-2" style="width: 15px;"></i>
@@ -85,7 +94,7 @@
 
                                         @if (isActive)
                                         {
-                                            <button class="btn btn-success btn-sm w-100 rounded-pill fw-bold shadow-sm" onclick="prepareReturn(@item.VehicleId)">
+                                            <button class="btn btn-success btn-sm w-100 rounded-pill fw-bold shadow-sm" onclick="prepareReturn(@item.Id)">
                                                 Confirmar Retorno <i class="fa-solid fa-check-circle ms-1"></i>
                                             </button>
                                         }
