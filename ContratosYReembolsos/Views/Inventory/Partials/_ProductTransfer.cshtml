@@ -1,0 +1,202 @@
+﻿@* @model ContratosYReembolsos.Models.ViewModels.TransferFormViewModel
+
+<div class="modal fade" id="modalTransferContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-truck-fast me-2"></i>Nueva Transferencia de Recursos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formProductTransfer">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+
+                   
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                        <div class="col-md-5">
+                            <label class="form-label x-small fw-bold text-primary text-uppercase">Sede Origen</label>
+                            @if (Model.IsAdmin)
+                            {
+                                <select name="OriginBranchId" id="select-origin-branch" class="form-select border-2 shadow-sm" onchange="onOriginBranchChange(this.value)" required>
+                                    <option value="">-- Seleccione Origen --</option>
+                                    @foreach (var b in Model.AllBranches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="hidden" name="OriginBranchId" value="@Model.UserBranchId" id="select-origin-branch" />
+                                <input type="text" class="form-control bg-white border-2 fw-bold" value="@Model.UserBranchName" readonly />
+                            }
+                        </div>
+
+                        <div class="col-md-2 d-flex align-items-center justify-content-center pt-3">
+                            <i class="fa-solid fa-arrow-right-long fa-2x text-muted animate__animated animate__pulse animate__infinite"></i>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label x-small fw-bold text-danger text-uppercase">Sede Destino</label>
+                            <select name="TargetBranchId" class="form-select border-2 shadow-sm" required>
+                                <option value="">-- Seleccione Destino --</option>
+                                @foreach (var b in Model.AllBranches)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0">Detalle de Mercadería a Trasladar</h6>
+                        <button type="button" onclick="addTransferRow()" class="btn btn-outline-warning btn-sm rounded-pill px-3 text-dark fw-bold" id="btn-add-row" disabled>
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Producto
+                        </button>
+                    </div>
+
+                    <div class="table-responsive" style="min-height: 200px;">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-dark x-small">
+                                <tr>
+                                    <th style="width: 150px;">Tipo</th>
+                                    <th>Producto (Disponible en Origen)</th>
+                                    <th style="width: 150px;">Cantidad</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="transferTableBody">
+                                
+                            </tbody>
+                        </table>
+                        <div id="empty-state-transfer" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-box-open fa-3x mb-2 opacity-25"></i>
+                            <p>Seleccione una sede de origen para cargar los productos disponibles.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label x-small fw-bold text-muted">OBSERVACIONES DEL DESPACHO</label>
+                        <textarea name="Observation" class="form-control border-2" rows="2" placeholder="Ej: Transportado por unidad externa, fragil, etc."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold shadow text-dark">
+                        <i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> *@
+
+                @model ContratosYReembolsos.Models.ViewModels.TransferFormViewModel
+
+<div class="modal fade" id="modalTransferContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-warning text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-truck-fast me-2"></i>Nueva Transferencia de Recursos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formProductTransfer">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+
+                    @* --- CABECERA DE CONTROL Y SEDES --- *@
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                        @* Nuevo campo: Número de Transferencia (Solo lectura) *@
+                        <div class="col-md-3">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">N° Transferencia</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-hashtag text-warning"></i></span>
+                                <input type="text" name="InternalControlNumber" value="@ViewBag.NextTransferCode"
+                                       class="form-control bg-white border-start-0 fw-bold text-dark" readonly />
+                            </div>
+                            <small class="x-small text-muted">Autogenerado por sistema</small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-primary text-uppercase">Sede Origen</label>
+                            @if (Model.IsAdmin)
+                            {
+                                <select name="OriginBranchId" id="select-origin-branch" class="form-select border-2 shadow-sm" onchange="onOriginBranchChange(this.value)" required>
+                                    <option value="">-- Seleccione Origen --</option>
+                                    @foreach (var b in Model.AllBranches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="hidden" name="OriginBranchId" value="@Model.UserBranchId" id="select-origin-branch" />
+                                <input type="text" class="form-control bg-white border-2 fw-bold" value="@Model.UserBranchName" readonly />
+                            }
+                        </div>
+
+                        <div class="col-md-1 d-flex align-items-center justify-content-center pt-3">
+                            <i class="fa-solid fa-arrow-right-long fa-xl text-muted opacity-50"></i>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-danger text-uppercase">Sede Destino</label>
+                            <select name="TargetBranchId" class="form-select border-2 shadow-sm" required>
+                                <option value="">-- Seleccione Destino --</option>
+                                @foreach (var b in Model.AllBranches)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    @* --- TABLA DINÁMICA --- *@
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0">Detalle de Mercadería a Trasladar</h6>
+                        <button type="button" onclick="addTransferRow()" class="btn btn-outline-warning btn-sm rounded-pill px-3 text-dark fw-bold" id="btn-add-row" disabled>
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Producto
+                        </button>
+                    </div>
+
+                    <div class="table-responsive" style="min-height: 200px;">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-dark x-small">
+                                <tr>
+                                    <th style="width: 150px;">Tipo</th>
+                                    <th>Producto (Disponible en Origen)</th>
+                                    <th style="width: 150px;">Cantidad</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="transferTableBody">
+                                @* Las filas se cargan aquí *@
+                            </tbody>
+                        </table>
+                        <div id="empty-state-transfer" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-box-open fa-3x mb-2 opacity-25"></i>
+                            <p>Seleccione una sede de origen para cargar los productos disponibles.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Observaciones del Despacho</label>
+                        <textarea name="Observation" class="form-control border-2" rows="2" placeholder="Ej: Transportado por unidad externa, frágil, etc."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold shadow text-dark">
+                        <i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

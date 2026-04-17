@@ -1,0 +1,400 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Branch>
+
+<div class="container py-4 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark">Supervisión de Sedes</h3>
+            <p class="text-muted small">Gestión global de recursos <span class="text-primary fw-bold">FONAFUN</span>.</p>
+        </div>
+        <div class="btn-group shadow-sm rounded-pill overflow-hidden">
+            <button class="btn btn-success px-4 fw-bold" onclick="openEntryModal()">
+                <i class="fa-solid fa-plus me-2"></i>Ingreso Central
+            </button>
+            <button class="btn btn-warning px-4 fw-bold text-dark" onclick="openTransferModal()">
+                <i class="fa-solid fa-truck-fast me-2"></i>Transferir a Sede
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var branch in Model)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm hover-card border-top border-primary border-4 rounded-4">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-primary-subtle p-3 rounded-circle d-inline-block mb-3">
+                            <i class="fa-solid fa-hotel text-primary fa-2xl"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">@branch.Name</h5>
+                        <p class="small text-muted mb-4"><i class="fa-solid fa-map-pin me-2 text-danger"></i>@branch.Address</p>
+                        <div class="d-grid gap-2">
+                            <a asp-action="Inventory" asp-route-branchId="@branch.Id" class="btn btn-primary rounded-pill fw-bold">
+                                <i class="fa-solid fa-warehouse me-2"></i>Gestionar Sede
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        let globalStockProducts = [];
+        let globalAssetProducts = [];
+
+        // Función para precargar los datos al iniciar la página
+        async function preloadProductData() {
+            try {
+                const res = await fetch('@Url.Action("GetProductData", "Inventory")');
+                const data = await res.json();
+                globalStockProducts = data.stock;
+                globalAssetProducts = data.assets;
+            } catch (e) {
+                console.error("Error cargando catálogos:", e);
+            }
+        }
+
+        // Ejecutar precarga al cargar la página
+        document.addEventListener("DOMContentLoaded", preloadProductData);
+
+        // --- Lógica del Modal ---
+
+        async function openEntryModal() {
+            const res = await fetch('@Url.Action("GetStockEntry", "Inventory")');
+            document.getElementById('modalContainer').innerHTML = await res.text();
+
+            entryRowIndex = 0;
+            addNewEntryRow(); // Primera fila
+
+            new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
+        }
+
+        function addNewEntryRow() {
+            const idx = entryRowIndex;
+
+            // Generar opciones desde las variables globales
+            const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            const html = `
+                <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
+                    <td>
+                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm border-0 bg-light fw-bold" onchange="toggleRowType(${idx}, this.value)">
+                            <option value="false">CONSUMIBLE</option>
+                            <option value="true">ACTIVO FIJO</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div id="wrapper-stock-${idx}">
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm" required>
+                                <option value="">-- Seleccione Producto --</option>
+                                ${stockOptions}
+                            </select>
+                        </div>
+                        <div id="wrapper-asset-${idx}" style="display:none;">
+                            <select name="Items[${idx}].ProductIdAsset" class="form-select form-select-sm">
+                                <option value="">-- Seleccione Activo --</option>
+                                ${assetOptions}
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="number" name="Items[${idx}].Quantity" class="form-control form-control-sm text-center fw-bold" value="1" min="1" required />
+                    </td>
+                    <td>
+                        <input type="text" name="Items[${idx}].SerialNumber" id="serial-${idx}" class="form-control form-control-sm border-0 bg-light" placeholder="N/A" disabled />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" onclick="removeEntryRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+
+            $('#bulkEntryTableBody').append(html);
+            entryRowIndex++;
+        }
+
+        // 3. CAMBIAR TIPO (PRODUCTO VS ASSET) DENTRO DE LA FILA
+        function toggleRowType(idx, isAsset) {
+            const assetBool = isAsset === 'true';
+            $(`#wrapper-stock-${idx}`).toggle(!assetBool);
+            $(`#wrapper-asset-${idx}`).toggle(assetBool);
+
+            const $serial = $(`#serial-${idx}`);
+            if(assetBool) {
+                $serial.prop('disabled', false).removeClass('bg-light').addClass('border-warning');
+                $(`#wrapper-stock-${idx} select`).prop('disabled', true);
+                $(`#wrapper-asset-${idx} select`).prop('disabled', false).prop('required', true);
+            } else {
+                $serial.prop('disabled', true).addClass('bg-light').removeClass('border-warning').val('');
+                $(`#wrapper-stock-${idx} select`).prop('disabled', false).prop('required', true);
+                $(`#wrapper-asset-${idx} select`).prop('disabled', true);
+            }
+        }
+
+        function removeEntryRow(idx) {
+            $(`#row-entry-${idx}`).remove();
+        }
+
+        // Helper para llenar los selects (puedes pasar estos datos desde el ViewModel inicial al JS)
+        function renderProductOptions(isAsset) {
+            // Estas variables las puedes llenar con un JSON enviado desde el controlador al cargar la vista
+            const products = isAsset ? window.assetProductsList : window.stockProductsList;
+            return products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        }
+
+        $(document).on('submit', '#formBulkEntry', async function (e) {
+            e.preventDefault();
+
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
+
+            try {
+                const formData = new FormData(this);
+
+                const response = await fetch('@Url.Action("ProcessBulkEntry", "Inventory")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Logrado!', result.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).text('CONFIRMAR TODO EL INGRESO');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo de comunicación con el servidor', 'error');
+                $btn.prop('disabled', false).text('CONFIRMAR TODO EL INGRESO');
+            }
+        });
+
+
+        // --- LÓGICA DE TRASLADOS ---
+        let transferRowIndex = 0;
+        let availableStock = []; // Stock consumible de la sede origen
+        let availableAssets = []; // Activos disponibles de la sede origen
+
+        // 1. ABRIR MODAL
+        async function openTransferModal() {
+            const res = await fetch('@Url.Action("GetProductTransfer", "Inventory")');
+            document.getElementById('modalContainer').innerHTML = await res.text();
+
+            transferRowIndex = 0;
+            const originId = $('#select-origin-branch').val();
+
+            if (originId) {
+                onOriginBranchChange(originId);
+            }
+
+            new bootstrap.Modal(document.getElementById('modalTransferContainer')).show();
+        }
+
+        // 2. CARGAR PRODUCTOS AL CAMBIAR SEDE DE ORIGEN
+        async function onOriginBranchChange(branchId) {
+            if (!branchId) {
+                $('#btn-add-row').prop('disabled', true);
+                $('#transferTableBody').empty();
+                $('#empty-state-transfer').show();
+                return;
+            }
+
+            // Bloquear UI mientras carga
+            $('#btn-add-row').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            try {
+                const res = await fetch(`@Url.Action("GetAvailableItemsByBranch", "Inventory")?branchId=${branchId}`);
+                const data = await res.json();
+
+                availableStock = data.stock;
+                availableAssets = data.assets;
+
+                $('#empty-state-transfer').hide();
+                $('#transferTableBody').empty();
+                transferRowIndex = 0;
+
+                $('#btn-add-row').prop('disabled', false).html('<i class="fa-solid fa-plus me-1"></i> Agregar Producto');
+
+                // Agregar la primera fila automáticamente
+                addTransferRow();
+            } catch (e) {
+                Swal.fire('Error', 'No se pudo obtener el inventario de la sede.', 'error');
+            }
+        }
+
+        // 3. AGREGAR FILA DINÁMICA
+        function addTransferRow() {
+            const idx = transferRowIndex;
+
+            const stockOptions = availableStock.map(s =>
+                `<option value="${s.productId}" data-max="${s.quantity}">${s.name} (Disp: ${s.quantity})</option>`
+            ).join('');
+
+            const assetOptions = availableAssets.map(a =>
+                `<option value="${a.productId}" data-assetid="${a.id}">${a.productName} [SN: ${a.serialNumber}]</option>`
+            ).join('');
+
+            const html = `
+                <tr id="row-transfer-${idx}" class="animate__animated animate__fadeIn">
+                    <td>
+                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm fw-bold border-0 bg-light" onchange="toggleTransferRowType(${idx}, this.value)">
+                            <option value="false">MERCADERÍA</option>
+                            <option value="true">ACTIVO</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div id="wrapper-t-stock-${idx}">
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm shadow-sm border-warning" onchange="updateMaxQty(${idx}, this)" required>
+                                <option value="">-- Seleccione Producto --</option>
+                                ${stockOptions}
+                            </select>
+                        </div>
+                        <div id="wrapper-t-asset-${idx}" style="display:none;">
+                            <select name="Items[${idx}].FixedAssetId" class="form-select form-select-sm shadow-sm border-primary">
+                                <option value="">-- Seleccione Activo --</option>
+                                ${assetOptions}
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="1" required />
+                            <span class="input-group-text x-small bg-white" id="max-label-${idx}">/ -</span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" onclick="removeTransferRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+
+            $('#transferTableBody').append(html);
+            transferRowIndex++;
+        }
+
+        // 4. HELPERS DE INTERFAZ
+        function toggleTransferRowType(idx, isAsset) {
+            const assetBool = isAsset === 'true';
+            $(`#wrapper-t-stock-${idx}`).toggle(!assetBool);
+            $(`#wrapper-t-asset-${idx}`).toggle(assetBool);
+
+            const $qty = $(`#qty-transfer-${idx}`);
+            const $stockSelect = $(`#wrapper-t-stock-${idx} select`);
+            const $assetSelect = $(`#wrapper-t-asset-${idx} select`);
+
+            if(assetBool) {
+                $qty.val(1).prop('readonly', true);
+                $stockSelect.prop('disabled', true).prop('required', false);
+                $assetSelect.prop('disabled', false).prop('required', true);
+                $(`#max-label-${idx}`).text('/ 1');
+            } else {
+                $qty.prop('readonly', false);
+                $stockSelect.prop('disabled', false).prop('required', true);
+                $assetSelect.prop('disabled', true).prop('required', false);
+                updateMaxQty(idx, $stockSelect[0]);
+            }
+        }
+
+        function updateMaxQty(idx, select) {
+            const max = $(select).find(':selected').data('max') || '-';
+            $(`#max-label-${idx}`).text('/ ' + max);
+            $(`#qty-transfer-${idx}`).attr('max', max);
+        }
+
+        function removeTransferRow(idx) {
+            $(`#row-transfer-${idx}`).remove();
+            if ($('#transferTableBody tr').length === 0) $('#empty-state-transfer').show();
+        }
+
+        $(document).on('submit', '#formProductTransfer', async function (e) {
+            e.preventDefault();
+
+            const $btn = $(this).find('button[type="submit"]');
+            const originBranchId = $('#select-origin-branch').val();
+            const targetBranchId = $('select[name="TargetBranchId"]').val();
+
+            // Validaciones básicas
+            if (originBranchId === targetBranchId) {
+                return Swal.fire('Atención', 'La sede de origen y destino no pueden ser la misma.', 'warning');
+            }
+
+            // 1. Recolectar Items de la tabla dinámica
+            let items = [];
+            $('#transferTableBody tr').each(function () {
+                const rowId = $(this).attr('id').replace('row-transfer-', '');
+                const isAsset = $(this).find(`select[name="Items[${rowId}].IsAsset"]`).val() === 'true';
+
+                const item = {
+                    isAsset: isAsset,
+                    quantity: parseInt($(this).find(`input[name="Items[${rowId}].Quantity"]`).val()),
+                    productId: isAsset ? null : $(this).find(`select[name="Items[${rowId}].ProductId"]`).val(),
+                    fixedAssetId: isAsset ? $(this).find(`select[name="Items[${rowId}].FixedAssetId"]`).val() : null
+                };
+
+                // Validar que se haya seleccionado un producto/activo
+                if ((isAsset && !item.fixedAssetId) || (!isAsset && !item.productId)) {
+                    return; // O podrías lanzar una alerta
+                }
+                items.push(item);
+            });
+
+            if (items.length === 0) {
+                return Swal.fire('Atención', 'Debe agregar al menos un producto válido al traslado.', 'warning');
+            }
+
+            // 2. Preparar el objeto final (ViewModel)
+                    // Dentro del evento submit del formulario
+            const payload = {
+                internalControlNumber: $('input[name="InternalControlNumber"]').val(), // <--- Agregar esto
+                originBranchId: parseInt(originBranchId),
+                targetBranchId: parseInt(targetBranchId),
+                observation: $('textarea[name="Observation"]').val(),
+                items: items
+            };
+
+            // 3. Enviar al Servidor
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Procesando...');
+
+            try {
+                const response = await fetch('@Url.Action("ProcessTransfer", "Inventory")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        title: '¡Traslado Iniciado!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 2500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload(); // O recargar solo la pestaña de pendientes si prefieres
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO');
+            }
+        });
+
+    </script>
+}

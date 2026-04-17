@@ -1,0 +1,240 @@
+﻿@model ContratosYReembolsos.Models.ViewModels.AdminDashboardViewModel
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-1">Panel de Control de Inventario</h2>
+            <p class="text-muted mb-0">Gestión global de recursos <span class="fw-bold text-primary">FONAFUN PERÚ</span></p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-white text-dark shadow-sm p-2 px-3 border rounded-pill">
+                <i class="fa-solid fa-calendar-day me-2 text-primary"></i> @DateTime.Now.ToString("dd MMM yyyy")
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm card-gradient-primary h-100 hover-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Productos Master</p>
+                            <h2 class="text-white fw-bold mb-0">@Model.TotalProducts</h2>
+                        </div>
+                        <div class="icon-shape bg-white-20 rounded-3 p-3">
+                            <i class="fa-solid fa-boxes-stacked fa-xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm card-gradient-dark h-100 hover-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Activos Fijos</p>
+                            <h2 class="text-white fw-bold mb-0">@Model.TotalAssets</h2>
+                        </div>
+                        <div class="icon-shape bg-white-20 rounded-3 p-3">
+                            <i class="fa-solid fa-laptop-file fa-xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm card-gradient-warning h-100 hover-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-dark-50 text-uppercase fw-bold x-small mb-1">En Tránsito</p>
+                            <h2 class="text-dark fw-bold mb-0">@Model.PendingTransfers</h2>
+                        </div>
+                        <div class="icon-shape bg-dark-10 rounded-3 p-3">
+                            <i class="fa-solid fa-truck-fast fa-xl text-dark"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm card-gradient-danger h-100 hover-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Stock Crítico</p>
+                            <h2 class="text-white fw-bold mb-0">@Model.LowStockItems</h2>
+                        </div>
+                        <div class="icon-shape bg-white-20 rounded-3 p-3">
+                            <i class="fa-solid fa-triangle-exclamation fa-xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2 g-4">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-dark d-flex align-items-center">
+                        <span class="p-2 bg-primary-light rounded-circle me-3">
+                            <i class="fa-solid fa-gears text-primary"></i>
+                        </span>
+                        Configuración Maestra
+                    </h5>
+
+                    <div class="vstack gap-2">
+                        <a asp-action="Catalog" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
+                            <div class="icon-box bg-primary-soft me-3">
+                                <i class="fa-solid fa-boxes-stacked text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">Catálogo Maestro</h6>
+                                <small class="text-muted">Gestión de ataúdes y activos.</small>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-light"></i>
+                        </a>
+
+                        <a asp-action="Categories" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
+                            <div class="icon-box bg-info-soft me-3">
+                                <i class="fa-solid fa-folder-tree text-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">Categorización</h6>
+                                <small class="text-muted">Nivel superior de inventario.</small>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-light"></i>
+                        </a>
+
+                        <a asp-action="Subcategories" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
+                            <div class="icon-box bg-info-soft me-3">
+                                <i class="fa-solid fa-folder-tree text-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">Subcategorización</h6>
+                                <small class="text-muted">Nivel secundario de inventario.</small>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-light"></i>
+                        </a>
+
+                        <a asp-action="Kardex" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
+                            <div class="icon-box bg-secondary-soft me-3">
+                                <i class="fa-solid fa-clock-rotate-left text-secondary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">Auditoría Global</h6>
+                                <small class="text-muted">Kardex centralizado.</small>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-light"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm bg-dark rounded-4 text-white position-relative overflow-hidden h-100" style="min-height: 300px;">
+                <div class="position-absolute top-0 end-0 opacity-10 p-4">
+                    <i class="fa-solid fa-city fa-10x"></i>
+                </div>
+
+                <div class="card-body p-5 d-flex flex-column justify-content-center position-relative z-1">
+                    <h2 class="fw-bold mb-3">Gestión de Sedes</h2>
+                    <p class="fs-5 opacity-75 mb-4" style="max-width: 80%;">
+                        Controle el stock local, verifique ingresos y supervise activos fijos de todas las sucursales a nivel nacional.
+                    </p>
+                    <div>
+                        <a asp-action="BranchSelection" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-lg border-0">
+                            Ir al Panel de Sedes <i class="fa-solid fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Gradientes Personalizados */
+    .card-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .card-gradient-dark {
+        background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
+    }
+
+    .card-gradient-warning {
+        background: linear-gradient(135deg, #f6e58d 0%, #f9ca24 100%);
+    }
+
+    .card-gradient-danger {
+        background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+    }
+
+    /* Estilos de Iconos Soft */
+    .bg-white-20 {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .bg-dark-10 {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .bg-primary-light {
+        background: #eef2ff;
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .bg-primary-soft {
+        background: #e0e7ff;
+    }
+
+    .bg-info-soft {
+        background: #e0f2fe;
+    }
+
+    .bg-secondary-soft {
+        background: #f1f5f9;
+    }
+
+    /* Items de Acción */
+    .action-item {
+        background: #fff;
+        transition: all 0.2s ease;
+        border-color: #f1f5f9 !important;
+    }
+
+        .action-item:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1 !important;
+            transform: translateX(5px);
+        }
+
+    /* Utilidades */
+    .hover-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+
+    .x-small {
+        font-size: 0.7rem;
+    }
+
+    .z-1 {
+        z-index: 1;
+    }
+</style>

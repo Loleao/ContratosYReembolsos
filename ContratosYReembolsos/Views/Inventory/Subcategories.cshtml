@@ -1,0 +1,60 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.ProductSubcategory>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold">Subcategorías</h3>
+            <p class="text-muted small">Organización detallada del inventario.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openSubcategoryModal(0)">
+            <i class="fa-solid fa-plus me-2"></i>Nueva Subcategoría
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Subcategoría</th>
+                        <th>Categoría Padre</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold">@item.Name</td>
+                            <td><span class="badge bg-secondary">@item.Category?.Name</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light border" onclick="openSubcategoryModal(@item.Id)">
+                                    <i class="fa-solid fa-pen text-primary"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        async function openSubcategoryModal(id) {
+            const response = await fetch(`@Url.Action("GetCreateSubcategory")?id=${id}`);
+            document.getElementById('modalContainer').innerHTML = await response.text();
+            new bootstrap.Modal(document.getElementById('modalSubcategoryContainer')).show();
+        }
+
+        $(document).on('submit', '#formSubcategorySave', async function(e) {
+            e.preventDefault();
+            const response = await fetch('@Url.Action("SaveSubcategory")', { method: 'POST', body: new FormData(this) });
+            const res = await response.json();
+            if(res.success) location.reload();
+        });
+    </script>
+}

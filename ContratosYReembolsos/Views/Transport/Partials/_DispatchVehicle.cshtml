@@ -3,57 +3,64 @@
     var detail = ViewBag.TargetDetail as ContractMovilityDetail;
 }
 
-<div class="modal-header bg-primary text-white">
-    <h5 class="modal-title">
-        <i class="fa-solid fa-truck-ramp-box me-2"></i>
-        Despacho de Unidad: @detail?.VehicleType?.Name
-    </h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="dispatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-truck-ramp-box me-2"></i>
+                    Despacho de Unidad: @(detail?.VehicleType?.Name ?? "Servicio")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formDispatchVehicle">
+                <div class="modal-body">
+                    <input type="hidden" name="ContractId" value="@Model.Id" />
+                    <input type="hidden" name="ContractMovilityDetailId" value="@detail?.Id" />
+
+                    <div class="alert alert-info py-2 border-0 bg-info-subtle">
+                        <small class="d-block text-uppercase fw-bold text-muted" style="font-size: 10px;">Referencia Operativa</small>
+                        <small class="d-block"><strong>Contrato:</strong> @Model.ContractNumber</small>
+                        <small class="d-block"><strong>Difunto:</strong> @Model.DeceasedName</small>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">1. Seleccionar Vehículo (Placa)</label>
+                            <select name="VehicleId" class="form-select" required>
+                                <option value="">-- Seleccione una unidad disponible --</option>
+                                @foreach (var v in ViewBag.AvailableVehicles)
+                                {
+                                    <option value="@v.Id">@v.Plate - @v.Model (@v.Brand)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">2. Seleccionar Conductor</label>
+                            <select name="DriverId" class="form-select" required>
+                                <option value="">-- Seleccione un conductor disponible --</option>
+                                @foreach (var d in ViewBag.AvailableDrivers)
+                                {
+                                    <option value="@d.Id">@d.FullName - Lic. @d.LicenseNumber</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small">3. Observaciones de Salida</label>
+                            <textarea name="Observations" class="form-control" rows="2" placeholder="Estado del vehículo, combustible, etc..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                        <i class="fa-solid fa-paper-plane me-2"></i>Registrar Salida
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
-
-<form id="formDispatchVehicle">
-    <div class="modal-body">
-        <input type="hidden" name="ContractId" value="@Model.Id" />
-        <input type="hidden" name="ContractMovilityDetailId" value="@detail?.Id" />
-
-        <div class="alert alert-info py-2">
-            <small class="d-block"><strong>Contrato:</strong> @Model.ContractNumber</small>
-            <small class="d-block"><strong>Difunto:</strong> @Model.DeceasedName</small>
-        </div>
-
-        <div class="row g-3">
-            <div class="col-md-12">
-                <label class="form-label fw-bold">1. Seleccionar Vehículo (Placa)</label>
-                <select name="VehicleId" class="form-select select2-dispatch" required>
-                    <option value="">-- Seleccione una unidad disponible --</option>
-                    @foreach (var v in ViewBag.AvailableVehicles)
-                    {
-                        <option value="@v.Id">@v.Plate - @v.Model (@v.Brand)</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label fw-bold">2. Seleccionar Conductor</label>
-                <select name="DriverId" class="form-select select2-dispatch" required>
-                    <option value="">-- Seleccione un conductor disponible --</option>
-                    @foreach (var d in ViewBag.AvailableDrivers)
-                    {
-                        <option value="@d.Id">@d.FullName - Lic. @d.LicenseNumber</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label fw-bold">3. Observaciones de Salida</label>
-                <textarea name="Observations" class="form-control" rows="2" placeholder="Ej: Vehículo con tanque lleno, sale con arreglos florales..."></textarea>
-            </div>
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="submit" class="btn btn-primary px-4">
-            <i class="fa-solid fa-paper-plane me-2"></i>Registrar Salida
-        </button>
-    </div>
-</form>

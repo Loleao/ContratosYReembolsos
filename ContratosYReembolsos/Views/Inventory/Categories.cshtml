@@ -1,0 +1,60 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.ProductCategory>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold">Categorías Maestras</h3>
+            <p class="text-muted small">Defina los grupos principales de productos.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCategoryModal(0)">
+            <i class="fa-solid fa-plus me-2"></i>Nueva Categoría
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light small text-uppercase">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Nombre de Categoría</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted">#@item.Id</td>
+                            <td class="fw-bold">@item.Name</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light border" onclick="openCategoryModal(@item.Id)">
+                                    <i class="fa-solid fa-pen text-primary"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        async function openCategoryModal(id) {
+            const response = await fetch(`@Url.Action("GetCreateCategory")?id=${id}`);
+            document.getElementById('modalContainer').innerHTML = await response.text();
+            new bootstrap.Modal(document.getElementById('modalCategoryContainer')).show();
+        }
+
+        $(document).on('submit', '#formCategorySave', async function(e) {
+            e.preventDefault();
+            const response = await fetch('@Url.Action("SaveCategory")', { method: 'POST', body: new FormData(this) });
+            const res = await response.json();
+            if(res.success) location.reload();
+        });
+    </script>
+}

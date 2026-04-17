@@ -106,14 +106,21 @@
             });
         }
 
-        async function openDispatchModal(contractId) {
-            const url = `@Url.Action("GetDispatchVehicle", "Transport")?contractId=${contractId}`;
+        async function openDispatchModal(contractId, detailId) {
+            // IMPORTANTE: Enviamos ambos parámetros en la URL
+            const url = `@Url.Action("GetDispatchVehicle", "Transport")?contractId=${contractId}&detailId=${detailId}`;
 
             try {
                 const response = await fetch(url);
+
+                // Si el controlador devuelve un error (BadRequest, NotFound, etc.)
+                if (!response.ok) {
+                    const errorMsg = await response.text();
+                    throw new Error(errorMsg || 'Error en el servidor');
+                }
+
                 const html = await response.text();
 
-                // Crear un contenedor temporal para el modal si no existe
                 let modalContainer = document.getElementById('modalContainer');
                 if (!modalContainer) {
                     modalContainer = document.createElement('div');
@@ -122,32 +129,33 @@
                 }
 
                 modalContainer.innerHTML = html;
-                const myModal = new bootstrap.Modal(document.getElementById('dispatchModal'));
-                myModal.show();
+
+                // Asegúrate de que el ID del modal en el PartialView sea 'dispatchModal'
+                const modalElement = document.getElementById('dispatchModal');
+                if (modalElement) {
+                    const myModal = new bootstrap.Modal(modalElement);
+                    myModal.show();
+                } else {
+                    console.error("No se encontró el elemento 'dispatchModal' en el HTML cargado.");
+                }
+
             } catch (error) {
-                Swal.fire('Error', 'No se pudo cargar el formulario de despacho.', 'error');
+                console.error("Error al cargar modal:", error);
+                Swal.fire('Error', error.message || 'No se pudo cargar el formulario de despacho.', 'error');
             }
         }
 
-        async function executeDispatch() {
-            const contractId = document.querySelector('input[name="contractId"]').value;
-            const vehicleId = document.getElementById('modalVehicleId').value;
-            const driverId = document.getElementById('modalDriverId').value;
-            const serviceType = document.getElementById('modalServiceType').value;
-            const observations = document.getElementById('modalObservations').value;
+        $(document).on('submit', '#formDispatchVehicle', async function (e) {
+            e.preventDefault(); // <--- CRITICO: Evita que la página se recargue
 
-            if (!serviceType || !vehicleId || !driverId) {
-                Swal.fire('Atención', 'Debe completar todos los campos obligatorios.', 'warning');
-                return;
-            }
+            const $form = $(this);
+            const $btn = $form.find('button[type="submit"]');
 
-            // Usamos FormData para enviar como POST
-            const formData = new FormData();
-            formData.append('contractId', contractId);
-            formData.append('vehicleId', vehicleId);
-            formData.append('driverId', driverId);
-			formData.append('serviceType', serviceType);
-            formData.append('observations', observations);
+            // Bloqueo visual del botón
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Despachando...');
+
+            // Recolectamos los datos (usa los atributos 'name' del form)
+            const formData = new FormData(this);
 
             try {
                 const response = await fetch('@Url.Action("StartTrip", "Transport")', {
@@ -158,28 +166,32 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // Cerrar modal
+                    // 1. Cerrar el modal
                     const modalElement = document.getElementById('dispatchModal');
                     const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                    modalInstance.hide();
+                    if (modalInstance) modalInstance.hide();
 
+                    // 2. Alerta de éxito
                     Swal.fire({
-                        title: '¡Buen Viaje!',
-                        text: result.message,
                         icon: 'success',
+                        title: '¡Unidad en Ruta!',
+                        text: result.message,
                         timer: 2000,
                         showConfirmButton: false
-                    }).then(() => {
-                        // Recargar la vista de contratos para que desaparezca el que acabamos de asignar
-                        switchTransportView('getPendingContractsModal');
                     });
+
+                    // 3. Refrescar la vista de contratos pendientes
+                    switchTransportView('getPendingContractsModal');
                 } else {
                     Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-2"></i>Registrar Salida');
                 }
             } catch (error) {
-                Swal.fire('Error', 'Error crítico en el servidor.', 'error');
+                console.error(error);
+                Swal.fire('Error', 'No se pudo procesar el despacho.', 'error');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-2"></i>Registrar Salida');
             }
-        }
+        });
 
         async function prepareReturn(vehicleId) {
             const { value: observations } = await Swal.fire({

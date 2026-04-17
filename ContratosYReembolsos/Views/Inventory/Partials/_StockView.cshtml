@@ -1,0 +1,55 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.ProductStock>
+
+<div id="stock-display-container" class="display-grid">
+
+    <div class="row g-4 grid-mode">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-3">
+                <div class="inventory-card p-3 position-relative">
+                    <span class="stock-badge">@item.Quantity Und.</span>
+                    <div class="img-placeholder mb-2"><i class="fa-solid fa-box"></i></div>
+                    <h6 class="fw-bold mb-0">@item.Product.Name</h6>
+                    <small class="text-muted">SKU: @item.Product.Sku</small>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 table-mode d-none">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="bg-light x-small fw-bold text-muted">
+                    <tr>
+                        <th class="ps-4">PRODUCTO / MODELO</th>
+                        <th>SKU</th>
+                        <th class="text-center">STOCK ACTUAL</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">@item.Product.Name</td>
+                            <td><span class="badge bg-light text-dark border">@item.Product.Sku</span></td>
+                            <td class="text-center">
+                                <span class="fw-bold @(item.Quantity <= 5 ? "text-danger" : "text-dark")">@item.Quantity</span>
+                            </td>
+                            <td>
+                                @if (item.Quantity > 5)
+                                {
+                                    <span class="text-success small"><i class="fa-solid fa-circle me-1"></i> Óptimo</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning small"><i class="fa-solid fa-triangle-exclamation me-1"></i> Bajo</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

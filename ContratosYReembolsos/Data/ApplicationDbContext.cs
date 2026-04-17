@@ -71,6 +71,15 @@ namespace ContratosYReembolsos.Data
         public DbSet<Branch> Filiales { get; set; }
         public DbSet<Ubigeo> Ubigeos { get; set; }
 
+        public DbSet<Product> Productos { get; set; } 
+        public DbSet<ProductCategory> ProductosCategorias { get; set; } 
+        public DbSet<ProductSubcategory> ProductosSubcategorias { get; set; }
+        public DbSet<ProductStock> ProductosStock { get; set; } 
+        public DbSet<ProductTransfer> ProductosTransferencias { get; set; } 
+        public DbSet<ProductTransferDetail> ProductosTransferenciasDetalles { get; set; } 
+        public DbSet<FixedAsset> ActivosFijos { get; set; } 
+        public DbSet<InventoryMovement> MovimientosInventario { get; set; } 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -129,6 +138,19 @@ namespace ContratosYReembolsos.Data
                 .HasForeignKey(c => c.IntermentSpaceId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany() // O .WithMany(c => c.Products) si tienes la colección
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict); // <--- ESTO SOLUCIONA EL ERROR
+
+            // También es recomendable para la Subcategoría por seguridad
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.SubCategory)
+                .WithMany()
+                .HasForeignKey(p => p.SubCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Si tu clase IntermentSpace tiene un campo "ContractId" para saber quién lo ocupa:
             modelBuilder.Entity<IntermentSpace>()
                 .HasOne<Contract>()
@@ -136,6 +158,30 @@ namespace ContratosYReembolsos.Data
                 .HasForeignKey(n => n.ContractId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.NoAction);
+
+
+            modelBuilder.Entity<ProductStock>()
+                .HasIndex(ps => new { ps.ProductId, ps.BranchId })
+                .IsUnique();
+
+            // Configuración de Traslados: Evitar cascada múltiple
+            modelBuilder.Entity<ProductTransfer>()
+                .HasOne(t => t.OriginBranch)
+                .WithMany()
+                .HasForeignKey(t => t.OriginBranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProductTransfer>()
+                .HasOne(t => t.TargetBranch)
+                .WithMany()
+                .HasForeignKey(t => t.TargetBranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Código Patrimonial Único para Activos Fijos
+            modelBuilder.Entity<FixedAsset>()
+                .HasIndex(fa => fa.PatrimonialCode)
+                .IsUnique();
+
         }
     }
 }

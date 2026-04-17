@@ -1,0 +1,66 @@
+﻿@model ContratosYReembolsos.Models.Product
+
+<div class="modal fade" id="modalProductContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <form id="formProductSave" asp-action="SaveProduct" asp-controller="Inventory" method="post">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid @(Model.Id == 0 ? "fa-plus-circle" : "fa-pen-to-square") me-2"></i>
+                        @(Model.Id == 0 ? "Registrar Nuevo Producto" : "Editar Producto")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Nombre del Producto</label>
+                            <input asp-for="Name" class="form-control" required placeholder="Ej: Ataúd Roble Imperial" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">SKU / Código</label>
+                            <input asp-for="Sku" class="form-control" placeholder="REF-001" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Tipo de Control</label>
+                            <select asp-for="ControlType" class="form-select" required>
+                                <option value="0">Inventario (Stock)</option>
+                                <option value="1">Activo Fijo (Asset)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Categoría</label>
+                            <select asp-for="CategoryId" class="form-select" id="ddlCategory" required
+                                    asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name"))">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Subcategoría</label>
+                            <select asp-for="SubCategoryId" class="form-select" id="ddlSubCategory" required
+                                    asp-items="@(new SelectList(ViewBag.SubCategories, "Id", "Name"))">
+                                <option value="">-- Primero elija categoría --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

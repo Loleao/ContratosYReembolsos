@@ -1,0 +1,250 @@
+﻿@model (List<ContratosYReembolsos.Models.ProductStock> Stock, List<ContratosYReembolsos.Models.FixedAsset> Assets)
+
+@{
+    ViewData["Title"] = "Gestión de Sede - " + ViewBag.BranchName;
+}
+
+<style>
+    .inventory-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        background: #fff;
+    }
+
+        .inventory-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+    .stock-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        background: #212529;
+        color: #fff;
+    }
+
+    .img-placeholder {
+        height: 140px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #dee2e6;
+    }
+
+    .btn-toggle-group {
+        background: #f1f3f5;
+        padding: 4px;
+        border-radius: 50px;
+        display: inline-flex;
+    }
+
+        .btn-toggle-group .btn {
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: 600;
+            border: none;
+            color: #6c757d;
+        }
+
+            .btn-toggle-group .btn.active {
+                background: #fff;
+                color: #0d6efd;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a asp-action="BranchSelection" class="text-decoration-none text-muted">Sedes</a></li>
+                    <li class="breadcrumb-item active fw-bold text-primary">@ViewBag.BranchName</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-warehouse me-2 text-primary"></i>Panel de Inventario
+            </h3>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openEntryModal()">
+                <i class="fa-solid fa-plus-circle me-1"></i> Nuevo Ingreso
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border shadow-sm">
+            <button class="btn btn-white rounded-pill px-3 active shadow-sm" id="view-grid-btn" onclick="toggleDisplayMode('grid')">
+                <i class="fa-solid fa-grip me-1"></i>
+            </button>
+            <button class="btn btn-white rounded-pill px-3" id="view-list-btn" onclick="toggleDisplayMode('list')">
+                <i class="fa-solid fa-list me-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <div class="btn-toggle-group shadow-sm">
+            <button id="btnStock" class="btn active" onclick="switchView('stock')">
+                <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Consumible
+            </button>
+            <button id="btnAssets" class="btn" onclick="switchView('assets')">
+                <i class="fa-solid fa-laptop-medical me-2"></i>Activos Fijos
+            </button>
+            <button id="btnPending" class="btn position-relative" onclick="switchView('pending')">
+                <i class="fa-solid fa-truck-ramp-box me-2"></i>Transferencias
+                @if (ViewBag.TotalPendientes > 0)
+                {
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        @ViewBag.TotalPendientes
+                    </span>
+                }
+            </button>
+            <button id="btnKardex" class="btn" onclick="switchView('kardex')">
+                <i class="fa-solid fa-file-text-o me-2"></i>Kardex
+            </button>
+        </div>
+    </div>
+
+    <div id="inventoryContent" class="position-relative">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const branchId = '@ViewBag.BranchId';
+
+        // Rutas de las acciones en el controlador
+        const urls = {
+            stock: '@Url.Action("GetStockView", "Inventory")',
+            assets: '@Url.Action("GetAssetsView", "Inventory")',
+            pending: '@Url.Action("GetPendingView", "Inventory")',
+            confirm: '@Url.Action("ConfirmReceipt", "Inventory")',
+            kardex: '@Url.Action("GetKardexView", "Inventory")',
+        };
+
+        // Carga inicial
+        document.addEventListener("DOMContentLoaded", () => switchView('stock'));
+
+        async function switchView(view) {
+            const container = document.getElementById('inventoryContent');
+
+            // Actualizar botones UI
+            document.querySelectorAll('.btn-toggle-group .btn').forEach(b => b.classList.remove('active'));
+            if(view === 'stock') document.getElementById('btnStock').classList.add('active');
+            if(view === 'assets') document.getElementById('btnAssets').classList.add('active');
+            if(view === 'pending') document.getElementById('btnPending').classList.add('active');
+            if(view === 'kardex') document.getElementById('btnKardex').classList.add('active');
+
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await fetch(`${urls[view]}?branchId=${branchId}`);
+                if (!response.ok) throw new Error();
+                container.innerHTML = await response.text();
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger rounded-4">Error al conectar con el servidor.</div>';
+            }
+        }
+
+        function toggleDisplayMode(mode) {
+            const gridBtn = document.getElementById('view-grid-btn');
+            const listBtn = document.getElementById('view-list-btn');
+
+            // Guardar preferencia en localStorage
+            localStorage.setItem('inventory-view-mode', mode);
+
+            if (mode === 'list') {
+                gridBtn.classList.remove('active', 'shadow-sm');
+                listBtn.classList.add('active', 'shadow-sm');
+                $('.grid-mode').addClass('d-none');
+                $('.table-mode').removeClass('d-none');
+            } else {
+                listBtn.classList.remove('active', 'shadow-sm');
+                gridBtn.classList.add('active', 'shadow-sm');
+                $('.table-mode').addClass('d-none');
+                $('.grid-mode').removeClass('d-none');
+            }
+        }
+
+        $(document).ajaxComplete(function() {
+            const savedMode = localStorage.getItem('inventory-view-mode') || 'grid';
+            toggleDisplayMode(savedMode);
+        });
+
+        async function showReceiveModal(id, code) {
+            const { value: text, isConfirmed } = await Swal.fire({
+                title: 'Confirmar Recepción',
+                text: `¿Está seguro de recibir la transferencia ${code}?`,
+                input: 'textarea',
+                inputPlaceholder: 'Ingrese una observación de recepción (opcional)...',
+                inputAttributes: {
+                    'aria-label': 'Observación de recepción'
+                },
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754', // verde success
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, recibir todo',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (isConfirmed) {
+                processReceipt(id, text);
+            }
+        }
+
+        async function processReceipt(id, observation) {
+            // Bloquear pantalla
+            Swal.fire({
+                title: 'Procesando...',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const formData = new FormData();
+                formData.append('transferId', id);
+                formData.append('receptionObservation', observation || "");
+
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                const response = await fetch('@Url.Action("ConfirmTransferReceipt", "Inventory")', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': token
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Recibido!', result.message, 'success').then(() => {
+                        location.reload(); // Recarga para ver los nuevos stocks
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+            }
+        }
+
+    </script>
+}

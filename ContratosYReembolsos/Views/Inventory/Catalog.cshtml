@@ -1,0 +1,206 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Product>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark">Catálogo Maestro de Productos</h3>
+            <p class="text-muted small">Gestión centralizada de existencias y activos fijos para todas las sedes.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-2"></i>Panel Admin
+            </a>
+            <button class="btn btn-primary" onclick="openProductModal(0)">
+                <i class="fa-solid fa-plus me-2"></i>Nuevo Producto
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" id="tableSearch" class="form-control border-start-0" placeholder="Buscar por nombre o SKU...">
+                    </div>
+                </div>
+                <div class="col-md-8 text-end">
+                    <span class="badge bg-light text-dark border me-2">Total: @Model.Count()</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle">Stock: @Model.Count(p => p.ControlType == ControlType.Stock)</span>
+                    <span class="badge bg-dark-subtle text-dark border border-dark-subtle">Activos: @Model.Count(p => p.ControlType == ControlType.Asset)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="productTable">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Producto</th>
+                        <th>Categoría / Sub</th>
+                        <th>SKU</th>
+                        <th>Control</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary-subtle p-2 rounded me-3 text-primary">
+                                        <i class="fa-solid @(item.ControlType == ControlType.Stock ? "fa-box-open" : "fa-laptop")"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">@item.Name</div>
+                                        <small class="text-muted">ID: #@item.Id</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-block fw-semibold" style="font-size: 0.85rem;">@item.SubCategory?.Category?.Name</span>
+                                <span class="text-muted small">@item.SubCategory?.Name</span>
+                            </td>
+                            <td><code>@item.Sku</code></td>
+                            <td>
+                                @if (item.ControlType == ControlType.Stock)
+                                {
+                                    <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-3">Inventario</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill bg-dark-subtle text-dark border border-dark-subtle px-3">Activo Fijo</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-light border" onclick="editProduct(@item.Id)" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square text-primary"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light border text-danger" onclick="deleteProduct(@item.Id)" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        // 1. Buscador en tiempo real
+        document.getElementById('tableSearch').addEventListener('keyup', function() {
+            let value = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#productTable tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(value) ? '' : 'none';
+            });
+        });
+
+        // 2. Lógica de Cascada Categoría -> Subcategoría (Delegación con document)
+        $(document).on('change', '#ddlCategory', function () {
+            const categoryId = $(this).val();
+            const $subDdl = $('#ddlSubCategory');
+
+            $subDdl.empty().append('<option value="">-- Seleccione --</option>');
+
+            if (categoryId) {
+                $.getJSON('@Url.Action("GetSubcategoriesByCategory", "Inventory")', { categoryId: categoryId }, function (data) {
+                    $.each(data, function (i, item) {
+                        $subDdl.append($('<option>', {
+                            value: item.id,
+                            text: item.name
+                        }));
+                    });
+
+                    // Si hay un valor guardado en el hidden (para edición), lo seleccionamos
+                    const savedSubId = $('#hdnSubCategoryId').val();
+                    if (savedSubId && savedSubId !== "0") {
+                        $subDdl.val(savedSubId);
+                    }
+                });
+            }
+        });
+
+        // 3. Abrir Modal de Producto
+        async function openProductModal(id = 0) {
+            const url = `@Url.Action("GetCreateProduct", "Inventory")?id=${id}`;
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+
+                document.getElementById('modalContainer').innerHTML = html;
+
+                const myModal = new bootstrap.Modal(document.getElementById('modalProductContainer'));
+                myModal.show();
+
+                // Si es edición, disparamos el cambio para cargar las subcategorías
+                if (id !== 0) {
+                    setTimeout(() => { $('#ddlCategory').trigger('change'); }, 150);
+                }
+
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+            }
+        }
+
+        function editProduct(id) { openProductModal(id); }
+
+        // 4. Guardado Centralizado
+        $(document).on('submit', '#formProductSave', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('@Url.Action("SaveProduct", "Inventory")', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Error crítico en el servidor.', 'error');
+            }
+        });
+
+        // 5. Eliminar Producto (Siguiendo tu lógica de Agencias)
+        async function deleteProduct(id) {
+            const result = await Swal.fire({
+                title: '¿Eliminar Producto?',
+                text: "Esto afectará el historial de inventario. ¿Deseas continuar?",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar permanentemente',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`@Url.Action("DeleteProduct", "Inventory")?id=${id}`, { method: 'POST' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Eliminado', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Atención', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'No se pudo procesar la eliminación.', 'error');
+                }
+            }
+        }
+    </script>
+}

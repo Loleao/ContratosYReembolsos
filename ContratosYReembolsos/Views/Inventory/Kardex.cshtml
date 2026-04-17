@@ -1,0 +1,197 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.InventoryMovement>
+
+@{
+    ViewData["Title"] = "Kardex Global";
+    var sedes = ViewBag.Sedes as List<Branch>;
+    var productos = ViewBag.Productos as List<Product>;
+}
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    @* --- ENCABEZADO --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Inventario</a></li>
+                    <li class="breadcrumb-item active">Kardex de Movimientos</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-dark m-0"><i class="fa-solid fa-list-check text-primary me-2"></i>Kardex Global</h2>
+            <p class="text-muted small">Trazabilidad total de ingresos, traslados y activos fijos.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-white border shadow-sm rounded-pill px-4">
+                <i class="fa-solid fa-print me-2 text-primary"></i>Imprimir
+            </button>
+            @* Botón extra para exportar si decides hacerlo luego *@
+            <button class="btn btn-success border-0 shadow-sm rounded-pill px-4">
+                <i class="fa-solid fa-file-excel me-2"></i>Excel
+            </button>
+        </div>
+    </div>
+
+    @* --- FILTROS --- *@
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-header bg-white border-0 pt-4 px-4">
+            <h6 class="fw-bold m-0"><i class="fa-solid fa-filter me-2 text-muted"></i>Filtros de Auditoría</h6>
+        </div>
+        <div class="card-body p-4">
+            <form method="get" asp-action="Kardex" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold x-small text-muted text-uppercase">Ubicación</label>
+                    <select name="branchId" class="form-select border-2 shadow-none rounded-3 select2">
+                        <option value="">Todas las sedes</option>
+                        @foreach (var s in sedes)
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold x-small text-muted text-uppercase">Artículo</label>
+                    <select name="productId" class="form-select border-2 shadow-none rounded-3 select2">
+                        <option value="">Todos los artículos</option>
+                        @foreach (var p in productos)
+                        {
+                            <option value="@p.Id">@p.Name (@p.Sku)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold x-small text-muted text-uppercase">Rango Desde</label>
+                    <input type="date" name="start" class="form-control border-2 shadow-none rounded-3" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold x-small text-muted text-uppercase">Rango Hasta</label>
+                    <input type="date" name="end" class="form-control border-2 shadow-none rounded-3" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-3 fw-bold py-2 shadow">
+                        <i class="fa-solid fa-sync me-2"></i>Actualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* --- TABLA DE MOVIMIENTOS --- *@
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-dark text-white">
+                    <tr class="x-small text-uppercase">
+                        <th class="ps-4">Timestamp / Ref</th>
+                        <th>Sede / Ruta</th>
+                        <th>Producto</th>
+                        <th class="text-center">Movimiento</th>
+                        <th class="text-center">Balance (Stock)</th>
+                        <th class="pe-4">Usuario</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    @foreach (var m in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold small">@m.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                <div class="badge bg-light text-muted border fw-normal">@m.InternalControlNumber</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill x-small">
+                                    <i class="fa-solid fa-location-dot me-1"></i> @m.Branch.Name
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold small">@m.Product.Name</div>
+                                <div class="x-small text-muted">@m.Description</div>
+                            </td>
+                            <td class="text-center">
+                                <div class="@(m.MovementType == MovementType.Entry ? "text-success" : "text-danger") fw-bold">
+                                    <i class="fa-solid @(m.MovementType == MovementType.Entry ? "fa-plus-circle" : "fa-minus-circle")"></i>
+                                    @m.Quantity
+                                </div>
+                                <div class="x-small text-uppercase opacity-75">@m.Concept</div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex align-items-center bg-light border rounded-pill px-3 py-1">
+                                    <span class="text-muted small">@m.PreviousQuantity</span>
+                                    <i class="fa-solid fa-right-long mx-2 text-muted x-small"></i>
+                                    <span class="fw-bold text-dark">@m.NewQuantity</span>
+                                </div>
+                            </td>
+                            <td class="pe-4">
+                                <div class="x-small fw-bold">@m.UserId</div>
+                                <div class="x-small text-muted">@m.CreatedAt.ToShortDateString()</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.72rem;
+    }
+
+    .avatar-circle-sm {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .table thead th {
+        font-weight: 700;
+        border: none;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f8fafc !important;
+            transform: scale(1.002);
+        }
+
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 2px solid #dee2e6 !important;
+    }
+
+    @@media print {
+        .btn, form, nav, .breadcrumb, .card-header {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .container-fluid {
+            padding: 0 !important;
+        }
+
+        .table {
+            width: 100% !important;
+            font-size: 8pt !important;
+        }
+
+        .badge {
+            border: 1px solid #000 !important;
+            color: #000 !important;
+        }
+    }
+</style>

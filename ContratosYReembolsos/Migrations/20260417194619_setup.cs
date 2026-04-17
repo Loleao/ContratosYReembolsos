@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ContratosYReembolsos.Migrations
 {
     /// <inheritdoc />
-    public partial class Setup : Migration
+    public partial class setup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -68,6 +68,19 @@ namespace ContratosYReembolsos.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Pabellones", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductosCategorias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductosCategorias", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -229,6 +242,26 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProductosSubcategorias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductosSubcategorias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductosSubcategorias_ProductosCategorias_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "ProductosCategorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Filiales",
                 columns: table => new
                 {
@@ -274,6 +307,35 @@ namespace ContratosYReembolsos.Migrations
                         principalTable: "Servicios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Productos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ControlType = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false),
+                    SubCategoryId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Productos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Productos_ProductosCategorias_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "ProductosCategorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Productos_ProductosSubcategorias_SubCategoryId",
+                        column: x => x.SubCategoryId,
+                        principalTable: "ProductosSubcategorias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -426,6 +488,40 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ProductosTransferencias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InternalControlNumber = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    OriginBranchId = table.Column<int>(type: "int", nullable: false),
+                    TargetBranchId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceivedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    SentByUserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ReceivedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Observation = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReceptionObservation = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductosTransferencias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductosTransferencias_Filiales_OriginBranchId",
+                        column: x => x.OriginBranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProductosTransferencias_Filiales_TargetBranchId",
+                        column: x => x.TargetBranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StockFilial",
                 columns: table => new
                 {
@@ -482,6 +578,51 @@ namespace ContratosYReembolsos.Migrations
                         name: "FK_Vehiculos_TiposVehiculo_VehicleTypeId",
                         column: x => x.VehicleTypeId,
                         principalTable: "TiposVehiculo",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActivosFijos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    PatrimonialCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    SerialNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivosFijos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActivosFijos_Productos_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductosStock",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductosStock", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductosStock_Productos_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Productos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -649,6 +790,86 @@ namespace ContratosYReembolsos.Migrations
                         column: x => x.DepartureMovementId,
                         principalTable: "MovimientosAtaudes",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductosTransferenciasDetalles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransferId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    FixedAssetId = table.Column<int>(type: "int", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductosTransferenciasDetalles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductosTransferenciasDetalles_ActivosFijos_FixedAssetId",
+                        column: x => x.FixedAssetId,
+                        principalTable: "ActivosFijos",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductosTransferenciasDetalles_ProductosTransferencias_TransferId",
+                        column: x => x.TransferId,
+                        principalTable: "ProductosTransferencias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductosTransferenciasDetalles_Productos_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MovimientosInventario",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    FixedAssetId = table.Column<int>(type: "int", nullable: true),
+                    ProductStockId = table.Column<int>(type: "int", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Concept = table.Column<int>(type: "int", nullable: false),
+                    MovementType = table.Column<int>(type: "int", nullable: false),
+                    TransferId = table.Column<int>(type: "int", nullable: true),
+                    InternalControlNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExternalDocumentNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MovimientosInventario", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MovimientosInventario_ActivosFijos_FixedAssetId",
+                        column: x => x.FixedAssetId,
+                        principalTable: "ActivosFijos",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MovimientosInventario_Filiales_BranchId",
+                        column: x => x.BranchId,
+                        principalTable: "Filiales",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MovimientosInventario_ProductosStock_ProductStockId",
+                        column: x => x.ProductStockId,
+                        principalTable: "ProductosStock",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MovimientosInventario_Productos_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -827,6 +1048,17 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ActivosFijos_PatrimonialCode",
+                table: "ActivosFijos",
+                column: "PatrimonialCode",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivosFijos_ProductId",
+                table: "ActivosFijos",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Agencias_BranchId",
                 table: "Agencias",
                 column: "BranchId");
@@ -981,9 +1213,81 @@ namespace ContratosYReembolsos.Migrations
                 column: "CoffinVariantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MovimientosInventario_BranchId",
+                table: "MovimientosInventario",
+                column: "BranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MovimientosInventario_FixedAssetId",
+                table: "MovimientosInventario",
+                column: "FixedAssetId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MovimientosInventario_ProductId",
+                table: "MovimientosInventario",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MovimientosInventario_ProductStockId",
+                table: "MovimientosInventario",
+                column: "ProductStockId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Nichos_PavilionId",
                 table: "Nichos",
                 column: "PavilionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Productos_CategoryId",
+                table: "Productos",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Productos_SubCategoryId",
+                table: "Productos",
+                column: "SubCategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosStock_ProductId_BranchId",
+                table: "ProductosStock",
+                columns: new[] { "ProductId", "BranchId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosSubcategorias_CategoryId",
+                table: "ProductosSubcategorias",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferencias_InternalControlNumber",
+                table: "ProductosTransferencias",
+                column: "InternalControlNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferencias_OriginBranchId",
+                table: "ProductosTransferencias",
+                column: "OriginBranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferencias_TargetBranchId",
+                table: "ProductosTransferencias",
+                column: "TargetBranchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferenciasDetalles_FixedAssetId",
+                table: "ProductosTransferenciasDetalles",
+                column: "FixedAssetId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferenciasDetalles_ProductId",
+                table: "ProductosTransferenciasDetalles",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductosTransferenciasDetalles_TransferId",
+                table: "ProductosTransferenciasDetalles",
+                column: "TransferId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SepulturasEstructura_CemeteryId",
@@ -1139,7 +1443,13 @@ namespace ContratosYReembolsos.Migrations
                 name: "AtaudTransferencias");
 
             migrationBuilder.DropTable(
+                name: "MovimientosInventario");
+
+            migrationBuilder.DropTable(
                 name: "Nichos");
+
+            migrationBuilder.DropTable(
+                name: "ProductosTransferenciasDetalles");
 
             migrationBuilder.DropTable(
                 name: "StockFilial");
@@ -1163,7 +1473,16 @@ namespace ContratosYReembolsos.Migrations
                 name: "MovimientosAtaudes");
 
             migrationBuilder.DropTable(
+                name: "ProductosStock");
+
+            migrationBuilder.DropTable(
                 name: "Pabellones");
+
+            migrationBuilder.DropTable(
+                name: "ActivosFijos");
+
+            migrationBuilder.DropTable(
+                name: "ProductosTransferencias");
 
             migrationBuilder.DropTable(
                 name: "Servicios");
@@ -1178,10 +1497,19 @@ namespace ContratosYReembolsos.Migrations
                 name: "Vehiculos");
 
             migrationBuilder.DropTable(
+                name: "Productos");
+
+            migrationBuilder.DropTable(
                 name: "CategoriasServicios");
 
             migrationBuilder.DropTable(
                 name: "TiposVehiculo");
+
+            migrationBuilder.DropTable(
+                name: "ProductosSubcategorias");
+
+            migrationBuilder.DropTable(
+                name: "ProductosCategorias");
 
             migrationBuilder.DropTable(
                 name: "Filiales");

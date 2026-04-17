@@ -1,0 +1,89 @@
+﻿@model ContratosYReembolsos.Models.ViewModels.StockEntryFormViewModel
+
+<div class="modal fade" id="modalStockEntryContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-file-import me-2 text-success"></i>Registro de Ingreso de Mercadería
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formBulkEntry">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+
+                    @* --- SECCIÓN DE CABECERA Y CONTROL --- *@
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">N° Ingreso Interno</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-hashtag text-success"></i></span>
+                                <input type="text" name="InternalControlNumber" value="@ViewBag.NextInternalCode"
+                                       class="form-control bg-white border-start-0 fw-bold text-primary" readonly />
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">N° Guía Proveedor / Factura</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-file-invoice"></i></span>
+                                <input type="text" name="ExternalDocumentNumber" class="form-control border-start-0"
+                                       placeholder="Ej: F001-000456" required />
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Sede de Destino</label>
+                            <select name="BranchId" class="form-select border-2 shadow-sm" required>
+                                <option value="">-- Seleccione Sede --</option>
+                                @foreach (var b in Model.Branches)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    @* --- TABLA DINÁMICA DE ITEMS --- *@
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0">Detalle de Productos</h6>
+                        <button type="button" onclick="addNewEntryRow()" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Fila
+                        </button>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-bordered align-middle" id="tableBulkEntry">
+                            <thead class="table-dark x-small">
+                                <tr>
+                                    <th style="width: 150px;">Tipo</th>
+                                    <th>Producto / Activo</th>
+                                    <th style="width: 120px;">Cantidad</th>
+                                    <th style="width: 250px;">N° Serie (Solo Activos)</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkEntryTableBody">
+                                @* Aquí se insertarán las filas mediante JS *@
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label x-small fw-bold text-muted">OBSERVACIONES GENERALES</label>
+                        <textarea name="Description" class="form-control border-2" rows="2" placeholder="Notas adicionales sobre este ingreso..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted me-auto text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow">
+                        <i class="fa-solid fa-cloud-arrow-up me-2"></i>CONFIRMAR TODO EL INGRESO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

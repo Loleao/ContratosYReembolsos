@@ -1,0 +1,32 @@
+﻿@model ContratosYReembolsos.Models.ProductSubcategory
+
+<div class="modal fade" id="modalSubcategoryContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="formSubcategorySave">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h5 class="modal-title fw-bold small">@(Model.Id == 0 ? "Nueva Subcategoría" : "Editar Subcategoría")</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Categoría Padre</label>
+                        <select asp-for="CategoryId" class="form-select form-select-sm" required
+                                asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name"))">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nombre Subcategoría</label>
+                        <input asp-for="Name" class="form-control form-control-sm" required placeholder="Ej: Madera Roble" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Guardar Subcategoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

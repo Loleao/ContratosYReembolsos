@@ -4,6 +4,7 @@ using ContratosYReembolsos.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417194619_setup")]
+    partial class setup
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -795,12 +798,6 @@ namespace ContratosYReembolsos.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MovementType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("NewQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PreviousQuantity")
                         .HasColumnType("int");
 
                     b.Property<int>("ProductId")

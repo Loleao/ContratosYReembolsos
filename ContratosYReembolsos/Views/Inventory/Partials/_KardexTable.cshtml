@@ -1,0 +1,93 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.InventoryMovement>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden animate__animated animate__fadeIn">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Historial de Movimientos Locales</h6>
+        <span class="badge bg-primary-subtle text-primary rounded-pill">@Model.Count() Registros</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr class="x-small text-muted text-uppercase">
+                    <th class="ps-4">Fecha / Ref</th>
+                    <th>Producto / Detalle</th>
+                    <th class="text-center">Operación</th>
+                    <th class="text-center">Balance de Stock</th>
+                    <th class="pe-4">Usuario</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                            <p>No se encontraron movimientos registrados en esta sede.</p>
+                        </td>
+                    </tr>
+                }
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark small">@m.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                            <span class="badge bg-light text-primary border x-small mt-1">@m.InternalControlNumber</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold small">@m.Product.Name</div>
+                            @if (m.FixedAsset != null)
+                            {
+                                <div class="x-small">
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                        SN: @m.FixedAsset.SerialNumber
+                                    </span>
+                                </div>
+                            }
+                            <div class="x-small text-muted text-truncate" style="max-width: 200px;" title="@m.Description">
+                                @m.Description
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="fw-bold @(m.MovementType == MovementType.Entry ? "text-success" : "text-danger")">
+                                    @(m.MovementType == MovementType.Entry ? "+" : "-") @m.Quantity
+                                </span>
+                                <span class="badge bg-light text-muted border x-small text-uppercase" style="font-size: 0.55rem;">@m.Concept</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-inline-flex align-items-center bg-light border rounded-pill px-3 py-1">
+                                <div class="text-center" style="min-width: 30px;">
+                                    <div class="x-small text-muted" style="font-size: 0.5rem;">ANT.</div>
+                                    <div class="small">@m.PreviousQuantity</div>
+                                </div>
+                                <i class="fa-solid fa-arrow-right-long mx-2 text-muted opacity-50 x-small"></i>
+                                <div class="text-center" style="min-width: 30px;">
+                                    <div class="x-small text-muted" style="font-size: 0.5rem;">NUEVO</div>
+                                    <div class="small fw-bold">@m.NewQuantity</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="pe-4">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <div class="text-end me-2">
+                                    <div class="x-small fw-bold">@m.UserId</div>
+                                    <div class="x-small text-muted">Responsable</div>
+                                </div>
+                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; font-size: 0.7rem;">
+                                    @m.UserId.Substring(0, 1).ToUpper()
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.7rem;
+    }
+</style>

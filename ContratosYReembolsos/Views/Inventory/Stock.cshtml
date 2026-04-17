@@ -1,0 +1,29 @@
+﻿<table class="table align-middle">
+    <thead class="bg-light">
+        <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>SKU</th>
+            <th class="text-center">Stock Físico</th>
+            <th class="text-center">En Tránsito</th>
+            <th class="text-center">Total Virtual</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><strong>@item.ProductName</strong></td>
+                <td><span class="badge bg-secondary">@item.Category</span></td>
+                <td><code>@item.Sku</code></td>
+                <td class="text-center fw-bold">@item.PhysicalStock</td>
+                <td class="text-center text-primary">+ @item.InTransit</td>
+                <td class="text-center bg-light">@(item.PhysicalStock + item.InTransit)</td>
+                <td>
+                    <button class="btn btn-sm btn-light border"><i class="fa-solid fa-truck-arrow-right"></i> Trasladar</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
