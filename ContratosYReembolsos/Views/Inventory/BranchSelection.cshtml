@@ -80,6 +80,7 @@
             const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
             const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
+
             const html = `
                 <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
                     <td>
@@ -238,8 +239,12 @@
                 `<option value="${s.productId}" data-max="${s.quantity}">${s.name} (Disp: ${s.quantity})</option>`
             ).join('');
 
+            // const assetOptions = availableAssets.map(a =>
+            //     `<option value="${a.productId}" data-assetid="${a.id}">${a.productName} [SN: ${a.serialNumber}]</option>`
+            // ).join('');
+
             const assetOptions = availableAssets.map(a =>
-                `<option value="${a.productId}" data-assetid="${a.id}">${a.productName} [SN: ${a.serialNumber}]</option>`
+                `<option value="${a.id}" data-productid="${a.productId}">${a.productName} [SN: ${a.serialNumber}]</option>`
             ).join('');
 
             const html = `
@@ -332,17 +337,27 @@
                 const rowId = $(this).attr('id').replace('row-transfer-', '');
                 const isAsset = $(this).find(`select[name="Items[${rowId}].IsAsset"]`).val() === 'true';
 
+                const $stockSelect = $(this).find(`select[name="Items[${rowId}].ProductId"]`);
+                const $assetSelect = $(this).find(`select[name="Items[${rowId}].FixedAssetId"]`);
+
+                let pIdRaw = null;
+                let faIdRaw = null;
+
+                if (isAsset) {
+                    faIdRaw = $assetSelect.val();
+                    pIdRaw = $assetSelect.find(':selected').data('productid');
+                } else {
+                    pIdRaw = $stockSelect.val();
+                }
+
                 const item = {
                     isAsset: isAsset,
-                    quantity: parseInt($(this).find(`input[name="Items[${rowId}].Quantity"]`).val()),
-                    productId: isAsset ? null : $(this).find(`select[name="Items[${rowId}].ProductId"]`).val(),
-                    fixedAssetId: isAsset ? $(this).find(`select[name="Items[${rowId}].FixedAssetId"]`).val() : null
+                    quantity: parseInt($(this).find(`input[name="Items[${rowId}].Quantity"]`).val()) || 0,
+                    productId: pIdRaw ? parseInt(pIdRaw) : null,
+                    fixedAssetId: isAsset && faIdRaw ? parseInt(faIdRaw) : null
                 };
 
-                // Validar que se haya seleccionado un producto/activo
-                if ((isAsset && !item.fixedAssetId) || (!isAsset && !item.productId)) {
-                    return; // O podrías lanzar una alerta
-                }
+                if ((isAsset && !item.fixedAssetId) || (!isAsset && !item.productId)) return;
                 items.push(item);
             });
 
@@ -351,7 +366,6 @@
             }
 
             // 2. Preparar el objeto final (ViewModel)
-                    // Dentro del evento submit del formulario
             const payload = {
                 internalControlNumber: $('input[name="InternalControlNumber"]').val(), // <--- Agregar esto
                 originBranchId: parseInt(originBranchId),

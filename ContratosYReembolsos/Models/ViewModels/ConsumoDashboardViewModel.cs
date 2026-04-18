@@ -18,14 +18,4 @@
         public List<LineaConsumoViewModel> DetalleItems { get; set; }
     }
 
-    public class LineaConsumoViewModel
-    {
-        public string ProductName { get; set; }
-        public string Sku { get; set; }
-        public int StockInicial { get; set; }
-        public int TotalCompras { get; set; }
-        public int TotalTraslados { get; set; }
-        public int TotalConsumo { get; set; }
-        public int StockFinal { get; set; }
-    }
 }

@@ -1,4 +1,5 @@
-﻿using ContratosYReembolsos.Data;
+﻿using System.Globalization;
+using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Models.ValueObjects;
 using ContratosYReembolsos.Models.ViewModels;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace ContratosYReembolsos.Controllers
@@ -349,6 +351,116 @@ namespace ContratosYReembolsos.Controllers
             return Json(new { stock = stockProds, assets = assetProds });
         }
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> ProcessBulkEntry(BulkEntryViewModel model)
+        //{
+        //    if (model.Items == null || !model.Items.Any())
+        //        return Json(new { success = false, message = "No hay ítems para ingresar." });
+
+        //    using var transaction = await _context.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        string currentUserId = User.Identity?.Name ?? "Sistema";
+
+        //        foreach (var item in model.Items)
+        //        {
+        //            int finalProductId = item.IsAsset ? item.ProductIdAsset.Value : item.ProductId;
+
+        //            if (item.IsAsset)
+        //            {
+        //                // --- CASO ACTIVO FIJO ---
+        //                for (int i = 0; i < item.Quantity; i++)
+        //                {
+        //                    var newAsset = new FixedAsset
+        //                    {
+        //                        ProductId = finalProductId,
+        //                        BranchId = model.BranchId,
+        //                        SerialNumber = item.SerialNumber ?? "S/N",
+        //                        Status = "Available",
+        //                        CreatedAt = DateTime.Now
+        //                    };
+        //                    _context.ActivosFijos.Add(newAsset);
+        //                    await _context.SaveChangesAsync();
+
+        //                    // En activos nuevos, el balance siempre es de 0 a 1 unidad
+        //                    _context.MovimientosInventario.Add(new InventoryMovement
+        //                    {
+        //                        ProductId = finalProductId,
+        //                        BranchId = model.BranchId,
+        //                        FixedAssetId = newAsset.Id,
+        //                        Quantity = 1,
+        //                        PreviousQuantity = 0, // No existía antes
+        //                        NewQuantity = 1,      // Ahora existe 1
+        //                        Concept = Concept.Buy,
+        //                        MovementType = MovementType.Entry,
+        //                        InternalControlNumber = model.InternalControlNumber,
+        //                        ExternalDocumentNumber = model.ExternalDocumentNumber,
+        //                        Description = model.Description,
+        //                        UserId = currentUserId,
+        //                        CreatedAt = DateTime.Now
+        //                    });
+        //                }
+        //            }
+        //            else
+        //            {
+        //                // --- CASO STOCK CONSUMIBLE ---
+        //                var stock = await _context.ProductosStock
+        //                    .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == finalProductId);
+
+        //                // Capturamos el estado inicial
+        //                int cantAnterior = stock?.Quantity ?? 0;
+        //                int cantNueva = cantAnterior + item.Quantity;
+
+        //                if (stock == null)
+        //                {
+        //                    stock = new ProductStock
+        //                    {
+        //                        BranchId = model.BranchId,
+        //                        ProductId = finalProductId,
+        //                        Quantity = item.Quantity
+        //                    };
+        //                    _context.ProductosStock.Add(stock);
+        //                }
+        //                else
+        //                {
+        //                    stock.Quantity = cantNueva;
+        //                }
+
+        //                // Guardamos para asegurar el ProductStockId
+        //                await _context.SaveChangesAsync();
+
+        //                _context.MovimientosInventario.Add(new InventoryMovement
+        //                {
+        //                    ProductId = finalProductId,
+        //                    BranchId = model.BranchId,
+        //                    ProductStockId = stock.Id,
+        //                    Quantity = item.Quantity,
+        //                    PreviousQuantity = cantAnterior, // <--- Aplicado
+        //                    NewQuantity = cantNueva,         // <--- Aplicado
+        //                    Concept = Concept.Buy,
+        //                    MovementType = MovementType.Entry,
+        //                    InternalControlNumber = model.InternalControlNumber,
+        //                    ExternalDocumentNumber = model.ExternalDocumentNumber,
+        //                    Description = model.Description,
+        //                    UserId = currentUserId,
+        //                    CreatedAt = DateTime.Now
+        //                });
+        //            }
+        //        }
+
+        //        await _context.SaveChangesAsync();
+        //        await transaction.CommitAsync();
+
+        //        return Json(new { success = true, message = $"Ingreso {model.InternalControlNumber} procesado correctamente." });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        return Json(new { success = false, message = "Error interno: " + ex.Message });
+        //    }
+        //}
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessBulkEntry(BulkEntryViewModel model)
@@ -360,6 +472,7 @@ namespace ContratosYReembolsos.Controllers
             try
             {
                 string currentUserId = User.Identity?.Name ?? "Sistema";
+                int currentYear = DateTime.Now.Year;
 
                 foreach (var item in model.Items)
                 {
@@ -368,56 +481,90 @@ namespace ContratosYReembolsos.Controllers
                     if (item.IsAsset)
                     {
                         // --- CASO ACTIVO FIJO ---
+
+                        // 1. Obtener datos del Producto, Categoría y Subcategoría para armar el prefijo
+                        var product = await _context.Productos
+                            .Include(p => p.SubCategory)
+                            .ThenInclude(sc => sc.Category)
+                            .FirstOrDefaultAsync(p => p.Id == finalProductId);
+
+                        if (product == null) throw new Exception($"Producto ID {finalProductId} no encontrado.");
+
+                        // Extraemos siglas (3 primeros caracteres) y IDs
+                        string catPart = $"{(product.SubCategory.Category.Name.Length >= 3 ? product.SubCategory.Category.Name.Substring(0, 3) : product.SubCategory.Category.Name).ToUpper()}{product.SubCategory.Category.Id}";
+                        string subPart = $"{(product.SubCategory.Name.Length >= 3 ? product.SubCategory.Name.Substring(0, 3) : product.SubCategory.Name).ToUpper()}{product.SubCategory.Id}";
+
+                        // Prefijo: FON-2026-CAT1-SUB4-
+                        string prefixFilter = $"FON-{currentYear}-{catPart}-{subPart}-";
+
+                        // 2. Buscar el último correlativo en la BD para este patrón específico
+                        var lastAsset = await _context.ActivosFijos
+                            .Where(a => a.PatrimonialCode.StartsWith(prefixFilter))
+                            .OrderByDescending(a => a.PatrimonialCode)
+                            .FirstOrDefaultAsync();
+
+                        int nextNumber = 1;
+                        if (lastAsset != null)
+                        {
+                            // Extraer los últimos 5 dígitos del string
+                            string lastPart = lastAsset.PatrimonialCode.Split('-').Last();
+                            if (int.TryParse(lastPart, out int lastNum))
+                            {
+                                nextNumber = lastNum + 1;
+                            }
+                        }
+
                         for (int i = 0; i < item.Quantity; i++)
                         {
+                            // 3. Generar el código final: FON-2026-CAT1-SUB4-00001
+                            string newPatrimonialCode = $"{prefixFilter}{nextNumber:D5}";
+
                             var newAsset = new FixedAsset
                             {
                                 ProductId = finalProductId,
                                 BranchId = model.BranchId,
                                 SerialNumber = item.SerialNumber ?? "S/N",
+                                PatrimonialCode = newPatrimonialCode, // Asignación automática
                                 Status = "Available",
                                 CreatedAt = DateTime.Now
                             };
+
                             _context.ActivosFijos.Add(newAsset);
                             await _context.SaveChangesAsync();
 
-                            // En activos nuevos, el balance siempre es de 0 a 1 unidad
+                            // Registrar movimiento en Kardex
                             _context.MovimientosInventario.Add(new InventoryMovement
                             {
                                 ProductId = finalProductId,
                                 BranchId = model.BranchId,
                                 FixedAssetId = newAsset.Id,
                                 Quantity = 1,
-                                PreviousQuantity = 0, // No existía antes
-                                NewQuantity = 1,      // Ahora existe 1
+                                PreviousQuantity = 0,
+                                NewQuantity = 1,
                                 Concept = Concept.Buy,
                                 MovementType = MovementType.Entry,
                                 InternalControlNumber = model.InternalControlNumber,
                                 ExternalDocumentNumber = model.ExternalDocumentNumber,
-                                Description = model.Description,
+                                Description = $"{model.Description} (Cód: {newPatrimonialCode})",
                                 UserId = currentUserId,
                                 CreatedAt = DateTime.Now
                             });
+
+                            nextNumber++; // Incrementar para el siguiente activo del mismo grupo
                         }
                     }
                     else
                     {
-                        // --- CASO STOCK CONSUMIBLE ---
+                        // --- CASO STOCK CONSUMIBLE (Mantenemos tu lógica original) ---
                         var stock = await _context.ProductosStock
                             .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == finalProductId);
 
-                        // Capturamos el estado inicial
                         int cantAnterior = stock?.Quantity ?? 0;
                         int cantNueva = cantAnterior + item.Quantity;
 
                         if (stock == null)
                         {
-                            stock = new ProductStock
-                            {
-                                BranchId = model.BranchId,
-                                ProductId = finalProductId,
-                                Quantity = item.Quantity
-                            };
+                            stock = new ProductStock { BranchId = model.BranchId, ProductId = finalProductId, Quantity = item.Quantity };
                             _context.ProductosStock.Add(stock);
                         }
                         else
@@ -425,7 +572,6 @@ namespace ContratosYReembolsos.Controllers
                             stock.Quantity = cantNueva;
                         }
 
-                        // Guardamos para asegurar el ProductStockId
                         await _context.SaveChangesAsync();
 
                         _context.MovimientosInventario.Add(new InventoryMovement
@@ -434,8 +580,8 @@ namespace ContratosYReembolsos.Controllers
                             BranchId = model.BranchId,
                             ProductStockId = stock.Id,
                             Quantity = item.Quantity,
-                            PreviousQuantity = cantAnterior, // <--- Aplicado
-                            NewQuantity = cantNueva,         // <--- Aplicado
+                            PreviousQuantity = cantAnterior,
+                            NewQuantity = cantNueva,
                             Concept = Concept.Buy,
                             MovementType = MovementType.Entry,
                             InternalControlNumber = model.InternalControlNumber,
@@ -587,111 +733,6 @@ namespace ContratosYReembolsos.Controllers
             }
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> RegisterBulkEntry(BulkEntryViewModel model)
-        //{
-        //    if (model.Items == null || !model.Items.Any())
-        //        return Json(new { success = false, message = "No hay ítems para procesar." });
-
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        string currentUserId = User.Identity?.Name ?? "Sistema";
-
-        //        foreach (var item in model.Items)
-        //        {
-        //            var product = await _context.Productos.FindAsync(item.ProductId);
-        //            if (product == null) continue;
-
-        //            if (product.ControlType == ControlType.Stock)
-        //            {
-        //                var stock = await _context.ProductosStock
-        //                    .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.BranchId == model.BranchId);
-
-        //                // --- LÓGICA DE SALDOS ---
-        //                int cantidadAnterior = stock?.Quantity ?? 0;
-        //                int cantidadNueva = cantidadAnterior + item.Quantity;
-
-        //                if (stock == null)
-        //                {
-        //                    stock = new ProductStock
-        //                    {
-        //                        ProductId = item.ProductId,
-        //                        BranchId = model.BranchId,
-        //                        Quantity = item.Quantity
-        //                    };
-        //                    _context.ProductosStock.Add(stock);
-        //                }
-        //                else
-        //                {
-        //                    stock.Quantity = cantidadNueva;
-        //                }
-
-        //                // Guardamos para asegurar que el ID del stock exista
-        //                await _context.SaveChangesAsync();
-
-        //                _context.MovimientosInventario.Add(new InventoryMovement
-        //                {
-        //                    ProductId = item.ProductId,
-        //                    BranchId = model.BranchId,
-        //                    ProductStockId = stock.Id,
-        //                    Quantity = item.Quantity,
-        //                    // Registro de Balance
-        //                    PreviousQuantity = cantidadAnterior,
-        //                    NewQuantity = cantidadNueva,
-        //                    MovementType = MovementType.Entry,
-        //                    Concept = Concept.Buy, // O el concepto que aplique
-        //                    InternalControlNumber = model.InternalControlNumber, // NI-XXXX
-        //                    Description = "Ingreso masivo de stock",
-        //                    UserId = currentUserId
-        //                });
-        //            }
-        //            else // Caso Asset (Activos Fijos)
-        //            {
-        //                // En activos, el saldo anterior siempre es 0 para ese activo específico
-        //                // ya que cada registro de FixedAsset es único.
-        //                for (int i = 0; i < item.Quantity; i++)
-        //                {
-        //                    var newAsset = new FixedAsset
-        //                    {
-        //                        ProductId = item.ProductId,
-        //                        BranchId = model.BranchId,
-        //                        SerialNumber = item.SerialNumber ?? "S/N",
-        //                        PatrimonialCode = await GeneratePatrimonialCode(item.ProductId),
-        //                        Status = AssetStatus.Available.ToString()
-        //                    };
-        //                    _context.ActivosFijos.Add(newAsset);
-        //                    await _context.SaveChangesAsync();
-
-        //                    _context.MovimientosInventario.Add(new InventoryMovement
-        //                    {
-        //                        ProductId = item.ProductId,
-        //                        BranchId = model.BranchId,
-        //                        FixedAssetId = newAsset.Id,
-        //                        Quantity = 1,
-        //                        PreviousQuantity = 0,
-        //                        NewQuantity = 1,
-        //                        MovementType = MovementType.Entry,
-        //                        Concept = Concept.Buy,
-        //                        InternalControlNumber = model.InternalControlNumber,
-        //                        Description = "Alta masiva de activo",
-        //                        UserId = currentUserId
-        //                    });
-        //                }
-        //            }
-        //        }
-        //        await _context.SaveChangesAsync();
-        //        await transaction.CommitAsync();
-        //        return Json(new { success = true, message = "Se procesaron todos los ingresos correctamente." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        return Json(new { success = false, message = ex.Message });
-        //    }
-        //}
-
         // GET: Cargar estructura del modal
 
         [HttpGet]
@@ -751,6 +792,11 @@ namespace ContratosYReembolsos.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessTransfer([FromBody] TransferEntryViewModel model)
         {
+            if (model == null)
+            {
+                return Json(new { success = false, message = "Los datos de la transferencia no llegaron correctamente al servidor." });
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -1006,87 +1052,166 @@ namespace ContratosYReembolsos.Controllers
             return View(results);
         }
 
-
+        // Métodos de Acción actualizados
         [HttpGet]
-        public async Task<IActionResult> ConsumoReport(int? branchId, string period = "monthly", DateTime? date = null)
+        public async Task<IActionResult> InventoryDashboard(int? branchId, int? productId, string period = "monthly", string date = null)
         {
-            DateTime refDate = date ?? DateTime.Now;
-            DateTime startDate, endDate;
-            List<string> labels = new List<string>();
-            List<int> valores = new List<int>();
+            var model = new InventoryDashboardViewModel
+            {
+                SelectedBranchId = branchId,
+                SelectedProductId = productId,
+                SelectedPeriod = period ?? "monthly"
+            };
 
-            // 1. Configuración de Tiempos y Etiquetas del Eje X
-            switch (period.ToLower())
+            DateTime refDate = DateTime.Now;
+            DateTime startDate, endDate;
+
+            // 1. Procesamiento de Fecha (Soporte HTML5 Week/Month/Year)
+            if (!string.IsNullOrEmpty(date))
+            {
+                try
+                {
+                    if (period == "weekly" && date.Contains("-W"))
+                    {
+                        var parts = date.Split("-W");
+                        refDate = System.Globalization.ISOWeek.ToDateTime(int.Parse(parts[0]), int.Parse(parts[1]), DayOfWeek.Monday);
+                    }
+                    else if (period == "monthly" && date.Length == 7)
+                    {
+                        refDate = DateTime.ParseExact(date, "yyyy-MM", null);
+                    }
+                    else if (period == "yearly")
+                    {
+                        refDate = new DateTime(int.Parse(date), 1, 1);
+                    }
+                    else { DateTime.TryParse(date, out refDate); }
+                }
+                catch { refDate = DateTime.Now; }
+            }
+            model.DateValue = date ?? (period == "monthly" ? refDate.ToString("yyyy-MM") : refDate.ToString("yyyy-MM-dd"));
+
+            // 2. Configuración de Rangos y Etiquetas
+            List<string> labels = new List<string>();
+            switch (model.SelectedPeriod.ToLower())
             {
                 case "daily":
-                    startDate = refDate.Date;
-                    endDate = startDate.AddDays(1).AddTicks(-1);
+                    startDate = refDate.Date; endDate = startDate.AddDays(1).AddTicks(-1);
                     labels = Enumerable.Range(0, 24).Select(h => $"{h:00}:00").ToList();
                     break;
                 case "weekly":
                     int diff = (7 + (refDate.DayOfWeek - DayOfWeek.Monday)) % 7;
-                    startDate = refDate.AddDays(-1 * diff).Date;
-                    endDate = startDate.AddDays(7).AddTicks(-1);
+                    startDate = refDate.AddDays(-1 * diff).Date; endDate = startDate.AddDays(7).AddTicks(-1);
                     labels = new List<string> { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" };
                     break;
                 case "yearly":
-                    startDate = new DateTime(refDate.Year, 1, 1);
-                    endDate = startDate.AddYears(1).AddDays(-1);
-                    labels = System.Globalization.DateTimeFormatInfo.CurrentInfo.AbbreviatedMonthNames.Take(12).Select(m => m.ToUpper()).ToList();
+                    startDate = new DateTime(refDate.Year, 1, 1); endDate = startDate.AddYears(1).AddDays(-1);
+                    labels = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames.Take(12).Select(m => m.ToUpper()).ToList();
                     break;
-                default: // monthly
-                    startDate = new DateTime(refDate.Year, refDate.Month, 1);
-                    endDate = startDate.AddMonths(1).AddDays(-1);
+                default:
+                    startDate = new DateTime(refDate.Year, refDate.Month, 1); endDate = startDate.AddMonths(1).AddTicks(-1);
                     labels = Enumerable.Range(1, DateTime.DaysInMonth(refDate.Year, refDate.Month)).Select(d => $"Día {d}").ToList();
                     break;
             }
 
-            // 2. Carga de datos base
-            ViewBag.Sedes = await _context.Filiales.OrderBy(b => b.Name).ToListAsync();
-            ViewBag.SelectedBranch = branchId;
-            ViewBag.Period = period;
-            ViewBag.RefDate = refDate.ToString("yyyy-MM-dd");
+            // 3. Catálogos Dinámicos (Filtro por Sede)
+            model.Sedes = await _context.Filiales.OrderBy(b => b.Name).ToListAsync();
+            var productosQuery = _context.Productos.Where(p => p.ControlType == ControlType.Stock);
+            if (branchId.HasValue)
+            {
+                var idsEnSede = await _context.ProductosStock.Where(s => s.BranchId == branchId).Select(s => s.ProductId).Distinct().ToListAsync();
+                productosQuery = productosQuery.Where(p => idsEnSede.Contains(p.Id));
+            }
+            model.Productos = await productosQuery.OrderBy(p => p.Name).ToListAsync();
 
-            var query = _context.MovimientosInventario
-                .Include(m => m.Product)
-                .Where(m => m.CreatedAt >= startDate && m.CreatedAt <= endDate);
+            // 4. Consulta de Movimientos
+            var query = _context.MovimientosInventario.Include(m => m.Product)
+                .Where(m => m.CreatedAt >= startDate && m.CreatedAt <= endDate && m.Product.ControlType == ControlType.Stock);
 
             if (branchId.HasValue) query = query.Where(m => m.BranchId == branchId.Value);
+            if (productId.HasValue) query = query.Where(m => m.ProductId == productId.Value);
 
             var movimientos = await query.ToListAsync();
 
-            // 3. Lógica del Gráfico (Rellenar valores para que no haya huecos)
-            var consumosRealizados = movimientos.Where(m => m.MovementType == MovementType.Exit && m.Concept != Concept.Transfer);
+            // 5. Gráfico: Sumarizamos por Tipo de Movimiento
+            List<int> valoresConsumo = new List<int>();
+            List<int> valoresIngreso = new List<int>();
 
             for (int i = 0; i < labels.Count; i++)
             {
-                int total = 0;
-                if (period == "daily") total = consumosRealizados.Where(m => m.CreatedAt.Hour == i).Sum(x => x.Quantity);
-                else if (period == "weekly") total = consumosRealizados.Where(m => ((int)m.CreatedAt.DayOfWeek + 6) % 7 == i).Sum(x => x.Quantity);
-                else if (period == "yearly") total = consumosRealizados.Where(m => m.CreatedAt.Month == (i + 1)).Sum(x => x.Quantity);
-                else total = consumosRealizados.Where(m => m.CreatedAt.Day == (i + 1)).Sum(x => x.Quantity);
-                valores.Add(total);
+                var temp = movimientos.Where(m =>
+                    (period == "daily" && m.CreatedAt.Hour == i) ||
+                    (period == "weekly" && ((int)m.CreatedAt.DayOfWeek + 6) % 7 == i) ||
+                    (period == "yearly" && m.CreatedAt.Month == (i + 1)) ||
+                    (period == "monthly" && m.CreatedAt.Day == (i + 1)));
+
+                valoresConsumo.Add(temp.Where(m => m.MovementType == MovementType.Exit).Sum(x => x.Quantity));
+                valoresIngreso.Add(temp.Where(m => m.MovementType == MovementType.Entry).Sum(x => x.Quantity));
             }
 
-            ViewBag.GraficoLabels = Newtonsoft.Json.JsonConvert.SerializeObject(labels);
-            ViewBag.GraficoValoresArray = valores; // Enviamos la lista directamente
-            ViewBag.SumaTotalConsumo = valores.Sum(); // Calculamos aquí para evitar el error en la vista
+            model.GraficoLabelsJson = Newtonsoft.Json.JsonConvert.SerializeObject(labels);
+            model.ValoresConsumoJson = Newtonsoft.Json.JsonConvert.SerializeObject(valoresConsumo);
+            model.ValoresIngresoJson = Newtonsoft.Json.JsonConvert.SerializeObject(valoresIngreso);
+            model.TotalConsumo = valoresConsumo.Sum();
+            model.TotalIngreso = valoresIngreso.Sum();
 
-            // 4. Reporte de Tabla
-            var reporte = movimientos
-                .GroupBy(m => new { m.ProductId, m.Product.Name, m.Product.Sku })
+            // 6. Tabla Simplificada
+            model.DetalleMovimientos = movimientos.GroupBy(m => new { m.ProductId, m.Product.Name, m.Product.Sku })
                 .Select(g => new LineaConsumoViewModel
                 {
                     ProductName = g.Key.Name,
                     Sku = g.Key.Sku,
-                    StockInicial = g.OrderBy(x => x.CreatedAt).First().PreviousQuantity,
-                    StockFinal = g.OrderByDescending(x => x.CreatedAt).First().NewQuantity,
-                    TotalCompras = g.Where(x => x.Concept == Concept.Buy).Sum(x => x.Quantity),
-                    TotalTraslados = g.Where(x => x.Concept == Concept.Transfer).Sum(x => x.MovementType == MovementType.Entry ? x.Quantity : -x.Quantity),
-                    TotalConsumo = g.Where(x => x.MovementType == MovementType.Exit && x.Concept != Concept.Transfer).Sum(x => x.Quantity)
+                    StockInicial = g.OrderBy(m => m.CreatedAt).First().PreviousQuantity,
+                    StockFinal = g.OrderByDescending(m => m.CreatedAt).First().NewQuantity,
+                    TotalIngresos = g.Where(m => m.MovementType == MovementType.Entry).Sum(m => m.Quantity),
+                    TotalConsumo = g.Where(m => m.MovementType == MovementType.Exit).Sum(m => m.Quantity)
                 }).ToList();
 
-            return View(reporte);
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AssetDashboard(int? branchId, string period = "monthly", string date = null)
+        {
+            var model = new AssetDashboardViewModel
+            {
+                SelectedBranchId = branchId,
+                SelectedPeriod = period ?? "monthly"
+            };
+
+            // 1. Lógica de Fechas (Reutilizamos la misma del InventoryDashboard)
+            DateTime refDate = DateTime.Now;
+            if (!string.IsNullOrEmpty(date)) { /* ... lógica de parseo idéntica al dashboard anterior ... */ }
+            model.DateValue = date ?? (period == "monthly" ? refDate.ToString("yyyy-MM") : refDate.ToString("yyyy-MM-dd"));
+
+            // 2. Gráfico Circular: Estados de los Activos Fijos
+            var assetsQuery = _context.ActivosFijos.AsQueryable();
+            if (branchId.HasValue) assetsQuery = assetsQuery.Where(a => a.BranchId == branchId);
+
+            var estados = await assetsQuery.GroupBy(a => a.Status)
+                .Select(g => new { Estado = g.Key, Cantidad = g.Count() }).ToListAsync();
+
+            model.EstadosLabelsJson = JsonConvert.SerializeObject(estados.Select(e => e.Estado));
+            model.EstadosValoresJson = JsonConvert.SerializeObject(estados.Select(e => e.Cantidad));
+
+            // 3. Tabla de Resumen por Tipo de Producto
+            model.ResumenActivos = await assetsQuery.Include(a => a.Product)
+                .GroupBy(a => a.Product.Name)
+                .Select(g => new ResumenActivoViewModel
+                {
+                    ProductName = g.Key,
+                    Total = g.Count(),
+                    Disponibles = g.Count(x => x.Status == "Available"),
+                    Asignados = g.Count(x => x.Status == "Assigned"),
+                    EnMantenimiento = g.Count(x => x.Status == "Maintenance")
+                }).ToListAsync();
+
+            // 4. Catálogos y Datos Generales
+            model.Sedes = await _context.Filiales.OrderBy(b => b.Name).ToListAsync();
+
+            // Aquí podrías replicar la lógica de movimientos para ver cuántos activos 
+            // entraron (altas) vs salieron (bajas/asignaciones) en el gráfico de líneas.
+
+            return View(model);
         }
     }
 }
