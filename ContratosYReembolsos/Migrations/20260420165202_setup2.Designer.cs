@@ -4,6 +4,7 @@ using ContratosYReembolsos.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260420165202_setup2")]
+    partial class setup2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -797,11 +800,11 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("MovementType")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("NewQuantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("NewQuantity")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("PreviousQuantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("PreviousQuantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -809,8 +812,8 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int?>("ProductStockId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<int?>("TransferId")
                         .HasColumnType("int");
@@ -871,48 +874,6 @@ namespace ContratosYReembolsos.Migrations
                     b.HasIndex("PavilionId");
 
                     b.ToTable("Nichos");
-                });
-
-            modelBuilder.Entity("ContratosYReembolsos.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("BranchId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("IconClass")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RequiredPermission")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TargetUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BranchId");
-
-                    b.ToTable("Notificaciones");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Pavilion", b =>
@@ -1045,8 +1006,8 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1147,8 +1108,8 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("TransferId")
                         .HasColumnType("int");
@@ -1836,15 +1797,6 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired();
 
                     b.Navigation("Pavilion");
-                });
-
-            modelBuilder.Entity("ContratosYReembolsos.Models.Notification", b =>
-                {
-                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId");
-
-                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Product", b =>

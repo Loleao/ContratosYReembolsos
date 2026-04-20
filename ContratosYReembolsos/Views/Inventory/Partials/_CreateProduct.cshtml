@@ -1,63 +1,89 @@
-﻿@model ContratosYReembolsos.Models.Product
+﻿@using ContratosYReembolsos.Models @* Asegúrate de tener el namespace de tus Enums *@
+@model ContratosYReembolsos.Models.Product
 
 <div class="modal fade" id="modalProductContainer" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <form id="formProductSave" asp-action="SaveProduct" asp-controller="Inventory" method="post">
-                <div class="modal-header bg-primary text-white border-0">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form id="formProductSave">
+                <div class="modal-header bg-primary text-white border-0 py-3">
                     <h5 class="modal-title fw-bold">
-                        <i class="fa-solid @(Model.Id == 0 ? "fa-plus-circle" : "fa-pen-to-square") me-2"></i>
+                        <i class="fa-solid @(Model.Id == 0 ? "fa-circle-plus" : "fa-pen-to-square") me-2"></i>
                         @(Model.Id == 0 ? "Registrar Nuevo Producto" : "Editar Producto")
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body p-4">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
+                    <input type="hidden" id="hdnSubCategoryId" value="@Model.SubCategoryId" />
 
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Nombre del Producto</label>
-                            <input asp-for="Name" class="form-control" required placeholder="Ej: Ataúd Roble Imperial" />
-                            <span asp-validation-for="Name" class="text-danger small"></span>
+                            <label class="form-label fw-bold small text-muted">NOMBRE DEL PRODUCTO</label>
+                            <input asp-for="Name" id="txtProductName" class="form-control shadow-none" required placeholder="Ej: Ataúd Madera Cedro" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">SKU / CÓDIGO GENERADO</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-barcode"></i></span>
+                                <input asp-for="Sku" id="txtProductSku" class="form-control bg-light border-start-0 shadow-none fw-mono"
+                                       readonly placeholder="Se generará automáticamente..."
+                                       style="cursor: not-allowed; font-family: monospace; letter-spacing: 1px;" />
+                            </div>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">SKU / Código</label>
-                            <input asp-for="Sku" class="form-control" placeholder="REF-001" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Tipo de Control</label>
-                            <select asp-for="ControlType" class="form-select" required>
+                            <label class="form-label fw-bold small text-muted">TIPO DE CONTROL</label>
+                            <select asp-for="ControlType" class="form-select shadow-none" required>
                                 <option value="0">Inventario (Stock)</option>
                                 <option value="1">Activo Fijo (Asset)</option>
                             </select>
                         </div>
 
+                        @* --- NUEVO CAMPO: UNIDAD DE MEDIDA --- *@
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Categoría</label>
-                            <select asp-for="CategoryId" class="form-select" id="ddlCategory" required
-                                    asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name"))">
+                            <label class="form-label fw-bold small text-muted">UNIDAD DE MEDIDA</label>
+                            <select asp-for="Unit" class="form-select shadow-none" required
+                                    asp-items="Html.GetEnumSelectList<UnitOfMeasure>()">
+                                @* Esto genera automáticamente UND, LTS, MTS, etc. *@
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">CATEGORÍA</label>
+                            <select id="ddlCategory" class="form-select shadow-none" required
+                                    asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", Model.SubCategory?.CategoryId))">
                                 <option value="">-- Seleccione --</option>
                             </select>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Subcategoría</label>
-                            <select asp-for="SubCategoryId" class="form-select" id="ddlSubCategory" required
-                                    asp-items="@(new SelectList(ViewBag.SubCategories, "Id", "Name"))">
+                            <label class="form-label fw-bold small text-muted">SUBCATEGORÍA</label>
+                            <select asp-for="SubCategoryId" class="form-select shadow-none" id="ddlSubCategory" required>
                                 <option value="">-- Primero elija categoría --</option>
                             </select>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="bg-light p-3 rounded-3 border text-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IsAvailableForContract" id="switchProductShow">
+                                    <label class="form-check-label fw-bold text-dark ms-2" for="switchProductShow">
+                                        Disponible para Contratos
+                                    </label>
+                                </div>
+                                <div class="form-text x-small mt-1">Si se desactiva, el producto será solo para uso interno.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light border-0">
-                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
-                        <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Producto
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>@(Model.Id == 0 ? "Crear Producto" : "Guardar Cambios")
                     </button>
                 </div>
             </form>

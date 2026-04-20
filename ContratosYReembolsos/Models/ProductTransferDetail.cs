@@ -13,6 +13,6 @@
         public int? FixedAssetId { get; set; }
         public virtual FixedAsset? FixedAsset { get; set; } 
 
-        public int Quantity { get; set; } // Si es activo siempre es 1
+        public decimal Quantity { get; set; } // Si es activo siempre es 1
     }
 }

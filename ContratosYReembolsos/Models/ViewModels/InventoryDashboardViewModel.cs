@@ -14,8 +14,8 @@
         public string ValoresConsumoJson { get; set; }
         public string ValoresIngresoJson { get; set; }
 
-        public int TotalConsumo { get; set; }
-        public int TotalIngreso { get; set; }
+        public decimal TotalConsumo { get; set; }
+        public decimal TotalIngreso { get; set; }
 
         public List<LineaConsumoViewModel> DetalleMovimientos { get; set; }
     }
@@ -24,9 +24,9 @@
     {
         public string ProductName { get; set; }
         public string Sku { get; set; }
-        public int StockInicial { get; set; }
-        public int TotalIngresos { get; set; } // Entradas + Recepciones
-        public int TotalConsumo { get; set; }  // Salidas + Envíos
-        public int StockFinal { get; set; }
+        public decimal StockInicial { get; set; }
+        public decimal TotalIngresos { get; set; } // Entradas + Recepciones
+        public decimal TotalConsumo { get; set; }  // Salidas + Envíos
+        public decimal StockFinal { get; set; }
     }
 }

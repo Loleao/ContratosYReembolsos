@@ -3,6 +3,7 @@ using ContratosYReembolsos.Data;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Models.ValueObjects;
 using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +19,13 @@ namespace ContratosYReembolsos.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ICompositeViewEngine _viewEngine;
+        private readonly INotificationService _notificationService;
 
-        public InventoryController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public InventoryController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, INotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         [Authorize(Roles = "Admin")]
@@ -106,38 +109,62 @@ namespace ContratosYReembolsos.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> SaveProduct(Product model)
         {
-            // 1. Limpiamos validaciones de objetos de navegación que no vienen en el form
             ModelState.Remove("Category");
             ModelState.Remove("SubCategory");
 
             if (!ModelState.IsValid)
             {
-                // 2. Extraemos el error exacto para mostrarlo en el SweetAlert
-                var errors = string.Join(" | ", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage));
-
+                var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 return Json(new { success = false, message = "Validación fallida: " + errors });
             }
 
             try
             {
+                var subCategory = await _context.ProductosSubcategorias
+                    .Include(sc => sc.Category)
+                    .FirstOrDefaultAsync(sc => sc.Id == model.SubCategoryId);
+
+                if (subCategory == null) return Json(new { success = false, message = "Subcategoría inválida." });
+
+                model.CategoryId = subCategory.CategoryId;
+
                 if (model.Id == 0)
                 {
+                    // --- LÓGICA DE GENERACIÓN DE SKU ---
+
+                    // 1. Obtener prefijos (3 letras)
+                    string catPrefix = (subCategory.Category.Name.Length >= 3
+                        ? subCategory.Category.Name.Substring(0, 3)
+                        : subCategory.Category.Name).ToUpper();
+
+                    string subPrefix = (subCategory.Name.Length >= 3
+                        ? subCategory.Name.Substring(0, 3)
+                        : subCategory.Name).ToUpper();
+
+                    // 2. Obtener el correlativo de 6 dígitos
+                    // Contamos cuántos productos existen ya en esta combinación de categoría y subcategoría
+                    int nextCount = await _context.Productos
+                        .CountAsync(p => p.SubCategoryId == model.SubCategoryId) + 1;
+
+                    string correlativo = nextCount.ToString("D6"); // "D6" rellena con ceros a la izquierda hasta 6 dígitos
+
+                    // 3. Ensamblar: CAT[ID]-SUB[ID]-000000
+                    model.Sku = $"{catPrefix}{model.CategoryId}-{subPrefix}{model.SubCategoryId}-{correlativo}";
+
                     _context.Productos.Add(model);
                 }
                 else
                 {
-                    // Usamos Update para que EF maneje el tracking correctamente
                     _context.Update(model);
                 }
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Producto guardado correctamente en el catálogo maestro." });
+                return Json(new { success = true, message = $"Producto guardado. SKU generado: {model.Sku}" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error de base de datos: " + ex.Message });
+                var innerError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return Json(new { success = false, message = "Error de base de datos: " + innerError });
             }
         }
 
@@ -345,8 +372,22 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProductData()
         {
-            var stockProds = await _context.Productos.Where(p => p.ControlType == ControlType.Stock).Select(p => new { id = p.Id, name = p.Name }).ToListAsync();
-            var assetProds = await _context.Productos.Where(p => p.ControlType == ControlType.Asset).Select(p => new { id = p.Id, name = p.Name }).ToListAsync();
+            // Incluimos 'unit' en el objeto anónimo para que llegue al JS
+            var stockProds = await _context.Productos
+                .Where(p => p.ControlType == ControlType.Stock)
+                .Select(p => new {
+                    id = p.Id,
+                    name = p.Name,
+                    unit = (int)p.Unit // Convertimos el Enum a int (0, 1, 2...)
+                }).ToListAsync();
+
+            var assetProds = await _context.Productos
+                .Where(p => p.ControlType == ControlType.Asset)
+                .Select(p => new {
+                    id = p.Id,
+                    name = p.Name,
+                    unit = (int)p.Unit
+                }).ToListAsync();
 
             return Json(new { stock = stockProds, assets = assetProds });
         }
@@ -559,8 +600,8 @@ namespace ContratosYReembolsos.Controllers
                         var stock = await _context.ProductosStock
                             .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == finalProductId);
 
-                        int cantAnterior = stock?.Quantity ?? 0;
-                        int cantNueva = cantAnterior + item.Quantity;
+                        decimal cantAnterior = stock?.Quantity ?? 0;
+                        decimal cantNueva = cantAnterior + item.Quantity;
 
                         if (stock == null)
                         {
@@ -595,6 +636,44 @@ namespace ContratosYReembolsos.Controllers
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // ============================================================
+                // INICIO DE NOTIFICACIONES (SIGNALR + DB)
+                // ============================================================
+
+                // 1. Notificación General de Éxito
+                await _notificationService.CreateAsync(
+                    "Ingreso Procesado",
+                    $"Se registró el ingreso masivo {model.InternalControlNumber} correctamente.",
+                    "Inventario.Ver", // Ajusta al permiso correspondiente de FONAFUN
+                    model.BranchId,
+                    null,
+                    "fa-file-circle-check"
+                );
+
+                // 2. Validación de Stock Crítico Post-Ingreso
+                // Filtramos solo los consumibles que se ingresaron en este lote
+                var idsIngresados = model.Items.Where(i => !i.IsAsset).Select(i => i.ProductId).ToList();
+
+                var alertasStock = await _context.ProductosStock
+                    .Include(ps => ps.Product)
+                    .Where(ps => ps.BranchId == model.BranchId &&
+                                 idsIngresados.Contains(ps.ProductId) &&
+                                 ps.Quantity <= ps.MinimumStock)
+                    .ToListAsync();
+
+                foreach (var alerta in alertasStock)
+                {
+                    await _notificationService.CreateAsync(
+                        "¡Atención: Stock Bajo!",
+                        $"{alerta.Product.Name} sigue bajo el mínimo tras el ingreso ({alerta.Quantity} unidades).",
+                        "Inventario.Alertas",
+                        model.BranchId,
+                        $"/Inventory/Stock?productId={alerta.ProductId}",
+                        "fa-triangle-exclamation"
+                    );
+                }
+
 
                 return Json(new { success = true, message = $"Ingreso {model.InternalControlNumber} procesado correctamente." });
             }
@@ -734,7 +813,6 @@ namespace ContratosYReembolsos.Controllers
         }
 
         // GET: Cargar estructura del modal
-
         [HttpGet]
         public async Task<IActionResult> GetProductTransfer()
         {
@@ -769,7 +847,8 @@ namespace ContratosYReembolsos.Controllers
                 {
                     productId = s.ProductId,
                     name = s.Product.Name,
-                    quantity = s.Quantity
+                    quantity = s.Quantity,
+                    unit = (int)s.Product.Unit
                 }).ToListAsync();
 
             // 2. Activos Disponibles
@@ -863,9 +942,9 @@ namespace ContratosYReembolsos.Controllers
                             throw new Exception($"Stock insuficiente para el producto {item.ProductId}");
 
                         // --- CAPTURA DE SALDOS ---
-                        int cantAnterior = stock.Quantity;
+                        decimal cantAnterior = stock.Quantity;
                         stock.Quantity -= item.Quantity;
-                        int cantNueva = stock.Quantity;
+                        decimal cantNueva = stock.Quantity;
 
                         transfer.Details.Add(new ProductTransferDetail
                         {
@@ -893,6 +972,35 @@ namespace ContratosYReembolsos.Controllers
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // ============================================================
+                // INICIO DE NOTIFICACIONES EN TIEMPO REAL (SIGNALR)
+                // ============================================================
+
+                // Obtener nombres de las sedes para un mensaje más claro
+                var originBranch = await _context.Filiales.FindAsync(model.OriginBranchId);
+                var targetBranch = await _context.Filiales.FindAsync(model.TargetBranchId);
+
+                // A. NOTIFICAR A LA SEDE DESTINO (Aviso de recepción pendiente)
+                await _notificationService.CreateAsync(
+                    "Transferencia en Camino",
+                    $"La sede {originBranch?.Name} ha enviado mercadería. Guía: {finalCode}",
+                    "Inventario.Traslados", // Permiso necesario para ver traslados
+                    model.TargetBranchId,    // ID de la sede que recibirá la alerta
+                    $"/Inventory/Transfers?id={transfer.Id}",
+                    "fa-truck-fast"
+                );
+
+                // B. NOTIFICAR A LA SEDE ORIGEN (Confirmación de salida)
+                await _notificationService.CreateAsync(
+                    "Salida por Traslado",
+                    $"Se ha generado la guía {finalCode} con destino a {targetBranch?.Name}.",
+                    "Inventario.Ver",
+                    model.OriginBranchId,   // ID de la sede que envía
+                    null,
+                    "fa-box-arrow-up"
+                );
+
 
                 return Json(new { success = true, message = $"Transferencia {finalCode} iniciada." });
             }
@@ -958,8 +1066,8 @@ namespace ContratosYReembolsos.Controllers
                             .FirstOrDefaultAsync(s => s.BranchId == transfer.TargetBranchId && s.ProductId == det.ProductId);
 
                         // --- CAPTURA DE SALDOS ---
-                        int cantAnterior = stock?.Quantity ?? 0;
-                        int cantNueva = cantAnterior + det.Quantity;
+                        decimal cantAnterior = stock?.Quantity ?? 0;
+                        decimal cantNueva = cantAnterior + det.Quantity;
 
                         if (stock == null)
                         {
@@ -1133,8 +1241,8 @@ namespace ContratosYReembolsos.Controllers
             var movimientos = await query.ToListAsync();
 
             // 5. Gráfico: Sumarizamos por Tipo de Movimiento
-            List<int> valoresConsumo = new List<int>();
-            List<int> valoresIngreso = new List<int>();
+            List<decimal> valoresConsumo = new List<decimal>();
+            List<decimal> valoresIngreso = new List<decimal>();
 
             for (int i = 0; i < labels.Count; i++)
             {
@@ -1213,5 +1321,39 @@ namespace ContratosYReembolsos.Controllers
 
             return View(model);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMinStockSettings(int branchId)
+        {
+            var stocks = await _context.ProductosStock
+                .Include(ps => ps.Product)
+                .Where(ps => ps.BranchId == branchId)
+                .ToListAsync();
+
+            ViewBag.BranchName = (await _context.Filiales.FindAsync(branchId))?.Name;
+            return PartialView("Partials/_SetMinimumStock", stocks);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateMinimumStocks(List<ProductStockUpdateViewModel> model)
+        {
+            if (model == null || !model.Any())
+                return Json(new { success = false, message = "No hay datos para actualizar." });
+
+            foreach (var item in model)
+            {
+                // Buscamos el registro real en la base de datos
+                var stock = await _context.ProductosStock.FindAsync(item.Id);
+                if (stock != null)
+                {
+                    stock.MinimumStock = item.MinimumStock; // Actualizamos solo el mínimo
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Niveles de stock mínimo actualizados correctamente." });
+        }
+
+
     }
 }

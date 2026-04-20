@@ -1,6 +1,7 @@
 using System;
 using ContratosYReembolsos.Constants;
 using ContratosYReembolsos.Data;
+using ContratosYReembolsos.Hubs;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +32,9 @@ builder.Services.AddDbContext<LimaContractsDbContext>(options =>
 
 builder.Services.AddScoped<IntermentService>();
 builder.Services.AddScoped<IUbigeoService, UbigeoService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.AddSignalR();
 
 // 1. Registrar Identity para usar nuestra clase ApplicationUser y Roles
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
@@ -116,6 +120,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.MapControllerRoute(
     name: "default",

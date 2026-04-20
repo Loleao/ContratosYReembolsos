@@ -78,7 +78,9 @@ namespace ContratosYReembolsos.Data
         public DbSet<ProductTransfer> ProductosTransferencias { get; set; } 
         public DbSet<ProductTransferDetail> ProductosTransferenciasDetalles { get; set; } 
         public DbSet<FixedAsset> ActivosFijos { get; set; } 
-        public DbSet<InventoryMovement> MovimientosInventario { get; set; } 
+        public DbSet<InventoryMovement> MovimientosInventario { get; set; }
+
+        public DbSet<Notification> Notificaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

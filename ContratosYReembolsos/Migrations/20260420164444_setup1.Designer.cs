@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260417194619_setup")]
-    partial class setup
+    [Migration("20260420164444_setup1")]
+    partial class setup1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -800,6 +800,12 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("MovementType")
                         .HasColumnType("int");
 
+                    b.Property<int>("NewQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousQuantity")
+                        .HasColumnType("int");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
@@ -937,6 +943,9 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<int>("ControlType")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsAvailableForContract")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -969,6 +978,9 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("ShowInContracts")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("ProductosCategorias");
@@ -984,6 +996,9 @@ namespace ContratosYReembolsos.Migrations
 
                     b.Property<int>("BranchId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("MinimumStock")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -1013,6 +1028,9 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ShowInContracts")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 

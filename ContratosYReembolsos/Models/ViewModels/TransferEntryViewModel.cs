@@ -15,6 +15,6 @@
         public int ProductId { get; set; }        // Para stock consumible
         public int? FixedAssetId { get; set; }    // Para activos específicos
         public bool IsAsset { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
     }
 }

@@ -11,20 +11,32 @@
                 <div class="modal-body">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
+
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Categoría Padre</label>
-                        <select asp-for="CategoryId" class="form-select form-select-sm" required
+                        <select asp-for="CategoryId" class="form-select form-select-sm shadow-none" required
                                 asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name"))">
                             <option value="">-- Seleccione --</option>
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Nombre Subcategoría</label>
-                        <input asp-for="Name" class="form-control form-control-sm" required placeholder="Ej: Madera Roble" />
+                        <input asp-for="Name" class="form-control form-control-sm shadow-none" required placeholder="Ej: Párvulo" />
+                    </div>
+
+                    <div class="form-check form-switch p-0 ms-4 mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" asp-for="ShowInContracts" id="switchSubShow">
+                        <label class="form-check-label small fw-bold ms-2" for="switchSubShow">
+                            Mostrar en Contratos
+                        </label>
+                        <div class="form-text x-small">Define si esta familia es seleccionable.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">Guardar Subcategoría</button>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 py-2 fw-bold shadow-sm">
+                        <i class="fa-solid fa-save me-2"></i>Guardar Subcategoría
+                    </button>
                 </div>
             </form>
         </div>

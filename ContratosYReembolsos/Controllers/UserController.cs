@@ -162,6 +162,13 @@ public class UserController : Controller
                 new UserClaimViewModel { Value = Permissions.Personal.EditarDatos, DisplayName = "Editar Datos Personales", Group = "Personal" },
                 new UserClaimViewModel { Value = Permissions.Personal.Permisos, DisplayName = "Modificar Accesos y Permisos", Group = "Personal" },
                 new UserClaimViewModel { Value = Permissions.Personal.Eliminar, DisplayName = "Elimimar Usuarios", Group = "Personal" },
+
+                new UserClaimViewModel { Value = Permissions.Inventario.Ver, DisplayName = "Ver Inventario", Group = "Inventario" },
+                new UserClaimViewModel { Value = Permissions.Inventario.Ingresos, DisplayName = "Realizar ingresos directos", Group = "Inventario" },
+                new UserClaimViewModel { Value = Permissions.Inventario.ConfigurarAlertas, DisplayName = "Definir stock minimo", Group = "Inventario" },
+                new UserClaimViewModel { Value = Permissions.Inventario.Traslados, DisplayName = "Realizar traslados", Group = "Inventario" },
+                new UserClaimViewModel { Value = Permissions.Inventario.Kardex, DisplayName = "Ver kardex", Group = "Inventario" },
+
             }
         };
 

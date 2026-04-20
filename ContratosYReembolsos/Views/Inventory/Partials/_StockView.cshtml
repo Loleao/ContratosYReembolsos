@@ -2,48 +2,90 @@
 
 <div id="stock-display-container" class="display-grid">
 
+    @* --- MODO GRID (Tarjetas) --- *@
     <div class="row g-4 grid-mode">
         @foreach (var item in Model)
         {
             <div class="col-md-3">
-                <div class="inventory-card p-3 position-relative">
-                    <span class="stock-badge">@item.Quantity Und.</span>
-                    <div class="img-placeholder mb-2"><i class="fa-solid fa-box"></i></div>
-                    <h6 class="fw-bold mb-0">@item.Product.Name</h6>
-                    <small class="text-muted">SKU: @item.Product.Sku</small>
+                <div class="inventory-card p-3 position-relative h-100 animate__animated animate__fadeIn">
+                    @* Badge dinámico con Unidad de Medida *@
+                    <span class="stock-badge @(item.Quantity <= item.MinimumStock ? "bg-danger" : "bg-dark") shadow-sm">
+                        @item.Quantity.ToString("G29")
+                        <span style="font-size: 0.65rem; opacity: 0.8;">@item.Product.Unit.ToString()</span>
+                    </span>
+
+                    <div class="img-placeholder mb-2">
+                        <i class="fa-solid @(item.Product.Unit == UnitOfMeasure.UND ? "fa-box" : "fa-flask-vial") fa-2x"></i>
+                    </div>
+
+                    <h6 class="fw-bold mb-0 text-dark">@item.Product.Name</h6>
+                    <small class="text-muted d-block mb-2">SKU: @item.Product.Sku</small>
+
+                    @if (item.Quantity <= item.MinimumStock)
+                    {
+                        <div class="alert alert-warning py-1 px-2 mb-0 border-0 d-flex align-items-center" style="font-size: 0.7rem;">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                            <span>Reabastecer (Mín: @item.MinimumStock.ToString("G29"))</span>
+                        </div>
+                    }
                 </div>
             </div>
         }
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 table-mode d-none">
+    @* --- MODO TABLA (Default Profesional) --- *@
+    <div class="card border-0 shadow-sm rounded-4 table-mode d-none animate__animated animate__fadeIn">
         <div class="table-responsive">
             <table class="table align-middle table-hover mb-0">
-                <thead class="bg-light x-small fw-bold text-muted">
+                <thead class="bg-light x-small fw-bold text-muted text-uppercase">
                     <tr>
                         <th class="ps-4">PRODUCTO / MODELO</th>
                         <th>SKU</th>
                         <th class="text-center">STOCK ACTUAL</th>
+                        <th class="text-center">STOCK MÍNIMO</th>
                         <th>ESTADO</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
                     {
+                        bool isLowStock = item.Quantity <= item.MinimumStock;
+
                         <tr>
-                            <td class="ps-4 fw-bold text-dark">@item.Product.Name</td>
-                            <td><span class="badge bg-light text-dark border">@item.Product.Sku</span></td>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">@item.Product.Name</div>
+                                <div class="x-small text-muted">@item.Product.SubCategory?.Name</div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border fw-normal">@item.Product.Sku</span></td>
                             <td class="text-center">
-                                <span class="fw-bold @(item.Quantity <= 5 ? "text-danger" : "text-dark")">@item.Quantity</span>
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="fw-bold fs-6 @(isLowStock ? "text-danger" : "text-dark")">
+                                        @item.Quantity.ToString("G29")
+                                    </span>
+                                    <span class="ms-1 text-muted x-small">@item.Product.Unit.ToString()</span>
+                                </div>
+                            </td>
+                            <td class="text-center text-muted">
+                                @item.MinimumStock.ToString("G29")
                             </td>
                             <td>
-                                @if (item.Quantity > 5)
+                                @if (item.Quantity <= 0)
                                 {
-                                    <span class="text-success small"><i class="fa-solid fa-circle me-1"></i> Óptimo</span>
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i> Agotado
+                                    </span>
+                                }
+                                else if (isLowStock)
+                                {
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3" style="color: #856404 !important;">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Bajo Stock
+                                    </span>
                                 }
                                 else
                                 {
-                                    <span class="text-warning small"><i class="fa-solid fa-triangle-exclamation me-1"></i> Bajo</span>
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
+                                        <i class="fa-solid fa-check-circle me-1"></i> Óptimo
+                                    </span>
                                 }
                             </td>
                         </tr>

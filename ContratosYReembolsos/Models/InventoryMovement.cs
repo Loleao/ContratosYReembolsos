@@ -19,10 +19,10 @@ namespace ContratosYReembolsos.Models
         public int? ProductStockId { get; set; }
         public virtual ProductStock? ProductStock { get; set; }
 
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
 
-        public int PreviousQuantity { get; set; } // Lo que había antes
-        public int NewQuantity { get; set; }      // Lo que quedó después
+        public decimal PreviousQuantity { get; set; } // Lo que había antes
+        public decimal NewQuantity { get; set; }      // Lo que quedó después
 
         public Concept Concept { get; set; }
 
@@ -33,7 +33,6 @@ namespace ContratosYReembolsos.Models
         public int? TransferId { get; set; }
         public string InternalControlNumber { get; set; }
 
-        // Solo se llena si Concept == "Compra". Ej: Guía del Proveedor
         public string? ExternalDocumentNumber { get; set; }
 
         public string? Description { get; set; }

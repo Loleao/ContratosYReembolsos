@@ -57,5 +57,14 @@
             public const string Permisos = "Personal.Permisos";
             public const string Eliminar = "Personal.Eliminar";
         }
+
+        public static class Inventario
+        {
+            public const string Ver = "Inventario.Ver";
+            public const string Ingresos = "Inventario.Ingresos";
+            public const string ConfigurarAlertas = "Inventario.ConfigurarAlertas";
+            public const string Traslados = "Inventario.Traslados";
+            public const string Kardex = "Inventario.Kardex";
+        }
     }
 }

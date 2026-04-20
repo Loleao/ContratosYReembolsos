@@ -8,6 +8,7 @@
         public virtual Product? Product { get; set; }
 
         public int BranchId { get; set; }
-        public int Quantity { get; set; } // Cuántos hay físicamente
+        public decimal Quantity { get; set; } 
+        public decimal MinimumStock { get; set; }
     }
 }

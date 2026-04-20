@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="~/ContratosYReembolsos.styles.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
-
 </head>
 <body>
     <div class="main-wrapper d-flex">
@@ -19,6 +18,21 @@
         @await Html.PartialAsync("_Sidebar")
 
         <main role="main" class="content-area flex-grow-1">
+            <header class="d-flex justify-content-end align-items-center px-4 py-2 bg-white border-bottom sticky-top shadow-sm" style="z-index: 1030; min-height: 60px;">
+
+                @await Html.PartialAsync("_Notifications")
+
+                <div class="user-info d-flex align-items-center ms-3 ps-3 border-start">
+                    <div class="text-end me-2 d-none d-sm-block">
+                        <div class="fw-bold small text-dark" style="line-height: 1;">@User.Identity?.Name</div>
+                        <div class="x-small text-muted">@User.FindFirst("BranchName")?.Value</div>
+                    </div>
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px;">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                </div>
+            </header>
+
             <div class="container-fluid p-4">
                 @RenderBody()
             </div>
@@ -26,11 +40,26 @@
 
     </div>
 
+    <script>
+        window.AppUrls = {
+            getNotifications: '@Url.Action("GetLatest", "Notification")',
+            markNotificationRead: '@Url.Action("MarkAsRead", "Notification")'
+        };
+
+        window.UserContext = {
+            branchId: '@User.FindFirst("BranchId")?.Value'
+        };
+    </script>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script src="~/lib/microsoft/signalr/signalr.min.js"></script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

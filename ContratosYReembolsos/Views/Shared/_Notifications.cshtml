@@ -1,0 +1,46 @@
+﻿<div class="dropdown" id="notification-component">
+    <button class="btn btn-link p-0 position-relative text-muted border-0 shadow-none" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="p-2 rounded-circle hover-bg-light">
+            <i class="fa-solid fa-bell fs-5"></i>
+        </div>
+        <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white d-none" style="font-size: 0.65rem; margin-top: 5px; margin-left: -5px;">
+            0
+        </span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 py-0 mt-2 animate__animated animate__fadeIn" style="width: 320px; overflow: hidden;">
+        <li class="bg-dark text-white p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold small uppercase"><i class="fa-solid fa-satellite-dish me-2"></i>Alertas del Sistema</h6>
+                <span class="badge bg-danger-subtle text-danger x-small" id="notif-count-label">0</span>
+            </div>
+        </li>
+        <div id="notif-items-list" style="max-height: 380px; overflow-y: auto;">
+            <div class="p-5 text-center text-muted">
+                <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                <p class="x-small mb-0">Sincronizando...</p>
+            </div>
+        </div>
+        <li class="p-2 text-center border-top bg-light">
+            <a href="#" class="x-small fw-bold text-decoration-none text-primary">VER TODO EL HISTORIAL</a>
+        </li>
+    </ul>
+</div>
+
+<style>
+    .hover-bg-light:hover {
+        background-color: #f8f9fa;
+    }
+
+    .x-small {
+        font-size: 0.75rem;
+    }
+
+    #notif-items-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    #notif-items-list::-webkit-scrollbar-thumb {
+        background: #e9ecef;
+        border-radius: 10px;
+    }
+</style>

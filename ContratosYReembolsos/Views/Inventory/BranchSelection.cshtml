@@ -41,7 +41,7 @@
 
 <div id="modalContainer"></div>
 
-@section Scripts {
+@* @section Scripts {
     <script>
         let globalStockProducts = [];
         let globalAssetProducts = [];
@@ -61,6 +61,64 @@
         // Ejecutar precarga al cargar la página
         document.addEventListener("DOMContentLoaded", preloadProductData);
 
+        const unitMap = { 0: "UND", 1: "LTS", 2: "MTS", 3: "KGS", 4: "GLN" };
+
+        $(document).on('input', 'input[name$=".Quantity"]', function () {
+            const $input = $(this);
+            const step = $input.attr('step');
+
+            // Si el step es 1, significa que el producto es de tipo UNIDAD o ACTIVO
+            if (step === "1") {
+                let val = $input.val();
+
+                // Eliminamos cualquier caracter que no sea número (puntos, comas, signos)
+                if (val.includes('.') || val.includes(',')) {
+                    // Convertimos a entero puro
+                    $input.val(val.replace(/[^0-9]/g, ''));
+                }
+
+                // Si después de limpiar queda vacío o es 0, forzamos a 1 (opcional, según tu regla)
+                if ($input.val() === "0") {
+                    $input.val(1);
+                }
+            }
+        });
+
+
+        function updateQuantityValidation(idx, productId, isTransfer = false) {
+            const prefix = isTransfer ? "qty-transfer-" : "quantity-";
+            const labelPrefix = isTransfer ? "max-label-" : "unit-label-";
+            const $qtyInput = $(`#${prefix}${idx}`);
+            const $unitLabel = $(`#${labelPrefix}${idx}`);
+
+            // Buscamos el producto en las listas globales (asegúrate de que tengan el campo .unit)
+            const product = globalStockProducts.find(p => p.id == productId) ||
+                            availableStock.find(p => p.productId == productId);
+
+            if (product) {
+                if (product.unit === 0) { // 0 = UND
+                    // CONFIGURACIÓN PARA ENTEROS
+                    $qtyInput.attr('step', '1');
+
+                    // Si tenía decimales de un producto anterior, los volamos
+                    let currentVal = parseFloat($qtyInput.val());
+                    $qtyInput.val(Math.floor(currentVal || 1));
+                } else {
+                    // CONFIGURACIÓN PARA DECIMALES
+                    $qtyInput.attr('step', '0.01');
+                }
+
+                // Actualizar etiqueta visual
+                const unitName = unitMap[product.unit] || "UND";
+                if (isTransfer) {
+                    const currentMax = $unitLabel.text().split(' ')[1] || "-";
+                    $unitLabel.text(`/ ${currentMax} ${unitName}`);
+                } else {
+                    $unitLabel.text(unitName);
+                }
+            }
+        }
+
         // --- Lógica del Modal ---
 
         async function openEntryModal() {
@@ -73,13 +131,58 @@
             new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
         }
 
+        // function addNewEntryRow() {
+        //     const idx = entryRowIndex;
+
+        //     // Generar opciones desde las variables globales
+        //     const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        //     const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+
+        //     const html = `
+        //         <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
+        //             <td>
+        //                 <select name="Items[${idx}].IsAsset" class="form-select form-select-sm border-0 bg-light fw-bold" onchange="toggleRowType(${idx}, this.value)">
+        //                     <option value="false">CONSUMIBLE</option>
+        //                     <option value="true">ACTIVO FIJO</option>
+        //                 </select>
+        //             </td>
+        //             <td>
+        //                 <div id="wrapper-stock-${idx}">
+        //                     <select name="Items[${idx}].ProductId" class="form-select form-select-sm" required>
+        //                         <option value="">-- Seleccione Producto --</option>
+        //                         ${stockOptions}
+        //                     </select>
+        //                 </div>
+        //                 <div id="wrapper-asset-${idx}" style="display:none;">
+        //                     <select name="Items[${idx}].ProductIdAsset" class="form-select form-select-sm">
+        //                         <option value="">-- Seleccione Activo --</option>
+        //                         ${assetOptions}
+        //                     </select>
+        //                 </div>
+        //             </td>
+        //             <td>
+        //                 <input type="number" name="Items[${idx}].Quantity" id="quantity-${idx}" class="form-control form-control-sm text-center fw-bold" value="1" min="1" required />
+        //             </td>
+        //             <td>
+        //                 <input type="text" name="Items[${idx}].SerialNumber" id="serial-${idx}" class="form-control form-control-sm border-0 bg-light" placeholder="N/A" disabled />
+        //             </td>
+        //             <td class="text-center">
+        //                 <button type="button" onclick="removeEntryRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+        //             </td>
+        //         </tr>
+        //     `;
+
+        //     $('#bulkEntryTableBody').append(html);
+        //     entryRowIndex++;
+        // }
+
+        // 3. CAMBIAR TIPO (PRODUCTO VS ASSET) DENTRO DE LA FILA
+
         function addNewEntryRow() {
             const idx = entryRowIndex;
-
-            // Generar opciones desde las variables globales
             const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
             const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-
 
             const html = `
                 <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
@@ -91,7 +194,7 @@
                     </td>
                     <td>
                         <div id="wrapper-stock-${idx}">
-                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm" required>
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-entry" data-idx="${idx}" required>
                                 <option value="">-- Seleccione Producto --</option>
                                 ${stockOptions}
                             </select>
@@ -104,7 +207,10 @@
                         </div>
                     </td>
                     <td>
-                        <input type="number" name="Items[${idx}].Quantity" class="form-control form-control-sm text-center fw-bold" value="1" min="1" required />
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="Items[${idx}].Quantity" id="quantity-${idx}" class="form-control text-center fw-bold" value="1" min="0.01" step="1" required />
+                            <span class="input-group-text x-small bg-light" id="unit-label-${idx}">-</span>
+                        </div>
                     </td>
                     <td>
                         <input type="text" name="Items[${idx}].SerialNumber" id="serial-${idx}" class="form-control form-control-sm border-0 bg-light" placeholder="N/A" disabled />
@@ -119,21 +225,40 @@
             entryRowIndex++;
         }
 
-        // 3. CAMBIAR TIPO (PRODUCTO VS ASSET) DENTRO DE LA FILA
+        // Evento para detectar cambio de producto en ingreso
+        $(document).on('change', '.select-product-entry', function() {
+            const idx = $(this).data('idx');
+            updateQuantityValidation(idx, $(this).val(), false);
+        });
+
         function toggleRowType(idx, isAsset) {
             const assetBool = isAsset === 'true';
-            $(`#wrapper-stock-${idx}`).toggle(!assetBool);
-            $(`#wrapper-asset-${idx}`).toggle(assetBool);
-
+            const $quantityInput = $(`input[name="Items[${idx}].Quantity"]`);
             const $serial = $(`#serial-${idx}`);
-            if(assetBool) {
-                $serial.prop('disabled', false).removeClass('bg-light').addClass('border-warning');
-                $(`#wrapper-stock-${idx} select`).prop('disabled', true);
-                $(`#wrapper-asset-${idx} select`).prop('disabled', false).prop('required', true);
+            const $stockWrapper = $(`#wrapper-stock-${idx}`);
+            const $assetWrapper = $(`#wrapper-asset-${idx}`);
+
+            $stockWrapper.toggle(!assetBool);
+            $assetWrapper.toggle(assetBool);
+
+            if (assetBool) {
+                // --- LÓGICA PARA ACTIVO FIJO ---
+                // 1. Forzar cantidad a 1 y deshabilitar edición
+                $quantityInput.val(1).prop('readonly', true).addClass('bg-light text-muted');
+
+                // 2. Habilitar Serie y selects correspondientes
+                $serial.prop('disabled', false).removeClass('bg-light').addClass('border-warning').prop('required', true);
+                $stockWrapper.find('select').prop('disabled', true);
+                $assetWrapper.find('select').prop('disabled', false).prop('required', true);
             } else {
-                $serial.prop('disabled', true).addClass('bg-light').removeClass('border-warning').val('');
-                $(`#wrapper-stock-${idx} select`).prop('disabled', false).prop('required', true);
-                $(`#wrapper-asset-${idx} select`).prop('disabled', true);
+                // --- LÓGICA PARA CONSUMIBLE ---
+                // 1. Permitir edición de cantidad y quitar estilos de bloqueo
+                $quantityInput.prop('readonly', false).removeClass('bg-light text-muted');
+
+                // 2. Deshabilitar Serie y limpiar valor
+                $serial.prop('disabled', true).addClass('bg-light').removeClass('border-warning').val('').prop('required', false);
+                $stockWrapper.find('select').prop('disabled', false).prop('required', true);
+                $assetWrapper.find('select').prop('disabled', true);
             }
         }
 
@@ -150,6 +275,8 @@
 
         $(document).on('submit', '#formBulkEntry', async function (e) {
             e.preventDefault();
+
+            if (!validateDecimalRules('bulkEntryTableBody')) return;
 
             const $btn = $(this).find('button[type="submit"]');
             $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
@@ -232,17 +359,63 @@
         }
 
         // 3. AGREGAR FILA DINÁMICA
+
+        // function addTransferRow() {
+        //     const idx = transferRowIndex;
+
+        //     const stockOptions = availableStock.map(s =>
+        //         `<option value="${s.productId}" data-max="${s.quantity}">${s.name} (Disp: ${s.quantity})</option>`
+        //     ).join('');
+
+        //     const assetOptions = availableAssets.map(a =>
+        //         `<option value="${a.id}" data-productid="${a.productId}">${a.productName} [SN: ${a.serialNumber}]</option>`
+        //     ).join('');
+
+        //     const html = `
+        //         <tr id="row-transfer-${idx}" class="animate__animated animate__fadeIn">
+        //             <td>
+        //                 <select name="Items[${idx}].IsAsset" class="form-select form-select-sm fw-bold border-0 bg-light" onchange="toggleTransferRowType(${idx}, this.value)">
+        //                     <option value="false">MERCADERÍA</option>
+        //                     <option value="true">ACTIVO</option>
+        //                 </select>
+        //             </td>
+        //             <td>
+        //                 <div id="wrapper-t-stock-${idx}">
+        //                     <select name="Items[${idx}].ProductId" class="form-select form-select-sm shadow-sm border-warning" onchange="updateMaxQty(${idx}, this)" required>
+        //                         <option value="">-- Seleccione Producto --</option>
+        //                         ${stockOptions}
+        //                     </select>
+        //                 </div>
+        //                 <div id="wrapper-t-asset-${idx}" style="display:none;">
+        //                     <select name="Items[${idx}].FixedAssetId" class="form-select form-select-sm shadow-sm border-primary">
+        //                         <option value="">-- Seleccione Activo --</option>
+        //                         ${assetOptions}
+        //                     </select>
+        //                 </div>
+        //             </td>
+        //             <td>
+        //                 <div class="input-group input-group-sm">
+        //                     <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="1" required />
+        //                     <span class="input-group-text x-small bg-white" id="max-label-${idx}">/ -</span>
+        //                 </div>
+        //             </td>
+        //             <td class="text-center">
+        //                 <button type="button" onclick="removeTransferRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+        //             </td>
+        //         </tr>
+        //     `;
+
+        //     $('#transferTableBody').append(html);
+        //     transferRowIndex++;
+        // }
+
+        // 4. HELPERS DE INTERFAZ
+
         function addTransferRow() {
             const idx = transferRowIndex;
-
             const stockOptions = availableStock.map(s =>
-                `<option value="${s.productId}" data-max="${s.quantity}">${s.name} (Disp: ${s.quantity})</option>`
+                `<option value="${s.productId}" data-max="${s.quantity}">${s.name}</option>`
             ).join('');
-
-            // const assetOptions = availableAssets.map(a =>
-            //     `<option value="${a.productId}" data-assetid="${a.id}">${a.productName} [SN: ${a.serialNumber}]</option>`
-            // ).join('');
-
             const assetOptions = availableAssets.map(a =>
                 `<option value="${a.id}" data-productid="${a.productId}">${a.productName} [SN: ${a.serialNumber}]</option>`
             ).join('');
@@ -257,7 +430,7 @@
                     </td>
                     <td>
                         <div id="wrapper-t-stock-${idx}">
-                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm shadow-sm border-warning" onchange="updateMaxQty(${idx}, this)" required>
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm shadow-sm border-warning select-product-transfer" data-idx="${idx}" required>
                                 <option value="">-- Seleccione Producto --</option>
                                 ${stockOptions}
                             </select>
@@ -271,7 +444,7 @@
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="1" required />
+                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="0.01" step="1" required />
                             <span class="input-group-text x-small bg-white" id="max-label-${idx}">/ -</span>
                         </div>
                     </td>
@@ -285,7 +458,30 @@
             transferRowIndex++;
         }
 
-        // 4. HELPERS DE INTERFAZ
+        function validateDecimalRules(formId) {
+            let isValid = true;
+            $(`#${formId} tr`).each(function() {
+                const $qtyInput = $(this).find('input[type="number"]');
+                const step = $qtyInput.attr('step');
+                const val = parseFloat($qtyInput.val());
+
+                if (step === "1" && val % 1 !== 0) {
+                    const prodName = $(this).find('select option:selected').text();
+                    Swal.fire('Cantidad Inválida', `El producto "${prodName}" se mide en UNIDADES y no acepta decimales.`, 'error');
+                    isValid = false;
+                    return false;
+                }
+            });
+            return isValid;
+        }
+
+        // Evento para detectar cambio de producto en transferencia
+        $(document).on('change', '.select-product-transfer', function() {
+            const idx = $(this).data('idx');
+            updateMaxQty(idx, this); // Tu función original
+            updateQuantityValidation(idx, $(this).val(), true); // Nuestra nueva validación
+        });
+
         function toggleTransferRowType(idx, isAsset) {
             const assetBool = isAsset === 'true';
             $(`#wrapper-t-stock-${idx}`).toggle(!assetBool);
@@ -321,6 +517,8 @@
 
         $(document).on('submit', '#formProductTransfer', async function (e) {
             e.preventDefault();
+
+            if (!validateDecimalRules('bulkEntryTableBody')) return;
 
             const $btn = $(this).find('button[type="submit"]');
             const originBranchId = $('#select-origin-branch').val();
@@ -410,5 +608,394 @@
             }
         });
 
+    </script>
+} *@
+
+
+@section Scripts {
+    <script>
+        // 1. VARIABLES Y MAPEOS
+        let globalStockProducts = [];
+        let globalAssetProducts = [];
+        let availableStock = [];
+        let availableAssets = [];
+        let entryRowIndex = 0;
+        let transferRowIndex = 0;
+
+        const unitMap = { 0: "UND", 1: "LTS", 2: "MTS", 3: "KGS", 4: "GLN" };
+        let productUnitRegistry = {};
+
+        // 2. CARGA DE DATOS
+        async function preloadProductData() {
+            try {
+                const res = await fetch('@Url.Action("GetProductData", "Inventory")');
+                const data = await res.json();
+                globalStockProducts = data.stock;
+                globalAssetProducts = data.assets;
+
+                // Mapear unidades para consulta rápida
+                data.stock.forEach(p => productUnitRegistry[p.id] = p.unit);
+            } catch (e) {
+                console.error("Error cargando catálogos:", e);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", preloadProductData);
+
+        // 3. BLOQUEO FÍSICO DE TECLAS PARA ENTEROS
+        $(document).on('keydown', 'input[data-type="int"]', function (e) {
+            // Bloquear punto (190, 110) y coma (188)
+            if (e.key === '.' || e.key === ',' || e.keyCode === 190 || e.keyCode === 110 || e.keyCode === 188) {
+                e.preventDefault();
+            }
+        });
+
+        $(document).on('input', 'input[name$=".Quantity"]', function () {
+            const $input = $(this);
+            if ($input.attr('data-type') === "int") {
+                let val = $input.val();
+                if (val.includes('.') || val.includes(',')) {
+                    $input.val(val.replace(/[^0-9]/g, ''));
+                }
+            }
+        });
+
+        // 4. LÓGICA DE REGLAS DINÁMICAS (CORREGIDA)
+        function applyQuantityRules(idx, productId, isTransfer = false) {
+            const inputId = isTransfer ? `#qty-transfer-${idx}` : `#quantity-${idx}`;
+            const labelId = isTransfer ? `#max-label-${idx}` : `#unit-label-${idx}`;
+            const $input = $(inputId);
+            const $label = $(labelId);
+
+            let unitType = productUnitRegistry[productId];
+            if (unitType === undefined && isTransfer) {
+                const found = availableStock.find(s => s.productId == productId);
+                unitType = found ? found.unit : 0;
+            }
+
+            if (unitType === 0 || unitType === undefined) {
+                // --- MODO ENTERO (UND) ---
+                // Sincronizamos min y step para evitar el error de aproximación
+                $input.attr('step', '1').attr('min', '1').attr('data-type', 'int');
+
+                let val = parseFloat($input.val());
+                if (isNaN(val) || val < 1) {
+                    $input.val(1);
+                } else if (val % 1 !== 0) {
+                    $input.val(Math.floor(val));
+                }
+            } else {
+                // --- MODO DECIMAL (LTS, MTS...) ---
+                $input.attr('step', '0.01').attr('min', '0.01').attr('data-type', 'decimal');
+            }
+
+            const unitName = unitMap[unitType] || "UND";
+            if (isTransfer) {
+                const currentText = $label.text().split(' ')[1] || "-";
+                $label.text(`/ ${currentText} ${unitName}`);
+            } else {
+                $label.text(unitName);
+            }
+        }
+
+        // 5. INGRESO CENTRAL
+        async function openEntryModal() {
+            const res = await fetch('@Url.Action("GetStockEntry", "Inventory")');
+            document.getElementById('modalContainer').innerHTML = await res.text();
+            entryRowIndex = 0;
+            addNewEntryRow();
+            new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
+        }
+
+        function addNewEntryRow() {
+            const idx = entryRowIndex;
+            const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            const html = `
+                <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
+                    <td>
+                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm border-0 bg-light fw-bold" onchange="toggleRowType(${idx}, this.value)">
+                            <option value="false">CONSUMIBLE</option>
+                            <option value="true">ACTIVO FIJO</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div id="wrapper-stock-${idx}">
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-entry" data-idx="${idx}" required>
+                                <option value="">-- Seleccione Producto --</option>
+                                ${stockOptions}
+                            </select>
+                        </div>
+                        <div id="wrapper-asset-${idx}" style="display:none;">
+                            <select name="Items[${idx}].ProductIdAsset" class="form-select form-select-sm">
+                                <option value="">-- Seleccione Activo --</option>
+                                ${assetOptions}
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="Items[${idx}].Quantity" id="quantity-${idx}" class="form-control text-center fw-bold" value="1" min="1" step="1" data-type="int" required />
+                            <span class="input-group-text x-small bg-light" id="unit-label-${idx}">-</span>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" name="Items[${idx}].SerialNumber" id="serial-${idx}" class="form-control form-control-sm border-0 bg-light" placeholder="N/A" disabled />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" onclick="removeEntryRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#bulkEntryTableBody').append(html);
+            entryRowIndex++;
+        }
+
+        $(document).on('change', '.select-product-entry', function() {
+            applyQuantityRules($(this).data('idx'), $(this).val(), false);
+        });
+
+        function toggleRowType(idx, isAsset) {
+            const assetBool = isAsset === 'true';
+            const $qtyInput = $(`#quantity-${idx}`);
+            const $serial = $(`#serial-${idx}`);
+            const $stockWrapper = $(`#wrapper-stock-${idx}`);
+            const $assetWrapper = $(`#wrapper-asset-${idx}`);
+
+            $stockWrapper.toggle(!assetBool);
+            $assetWrapper.toggle(assetBool);
+
+            if (assetBool) {
+                $qtyInput.val(1).prop('readonly', true).addClass('bg-light text-muted').attr('data-type', 'int').attr('step', '1').attr('min', '1');
+                $serial.prop('disabled', false).removeClass('bg-light').addClass('border-warning').prop('required', true);
+                $stockWrapper.find('select').prop('disabled', true);
+                $assetWrapper.find('select').prop('disabled', false).prop('required', true);
+                $(`#unit-label-${idx}`).text('UND');
+            } else {
+                $qtyInput.prop('readonly', false).removeClass('bg-light text-muted');
+                $serial.prop('disabled', true).addClass('bg-light').removeClass('border-warning').val('').prop('required', false);
+                $stockWrapper.find('select').prop('disabled', false).prop('required', true);
+                $assetWrapper.find('select').prop('disabled', true);
+                applyQuantityRules(idx, $stockWrapper.find('select').val(), false);
+            }
+        }
+
+        // 6. TRASLADOS
+        async function openTransferModal() {
+            const res = await fetch('@Url.Action("GetProductTransfer", "Inventory")');
+            document.getElementById('modalContainer').innerHTML = await res.text();
+            transferRowIndex = 0;
+            const originId = $('#select-origin-branch').val();
+            if (originId) onOriginBranchChange(originId);
+            new bootstrap.Modal(document.getElementById('modalTransferContainer')).show();
+        }
+
+        async function onOriginBranchChange(branchId) {
+            if (!branchId) return;
+            $('#btn-add-row').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+            try {
+                const res = await fetch(`@Url.Action("GetAvailableItemsByBranch", "Inventory")?branchId=${branchId}`);
+                const data = await res.json();
+                availableStock = data.stock;
+                availableAssets = data.assets;
+                $('#transferTableBody').empty();
+                transferRowIndex = 0;
+                $('#btn-add-row').prop('disabled', false).html('<i class="fa-solid fa-plus me-1"></i> Agregar');
+                addTransferRow();
+            } catch (e) { console.error(e); }
+        }
+
+        function addTransferRow() {
+            const idx = transferRowIndex;
+            const stockOptions = availableStock.map(s => `<option value="${s.productId}" data-max="${s.quantity}">${s.name}</option>`).join('');
+            const assetOptions = availableAssets.map(a => `<option value="${a.id}" data-productid="${a.productId}">${a.productName} [SN: ${a.serialNumber}]</option>`).join('');
+
+            const html = `
+                <tr id="row-transfer-${idx}" class="animate__animated animate__fadeIn">
+                    <td>
+                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm fw-bold border-0 bg-light" onchange="toggleTransferRowType(${idx}, this.value)">
+                            <option value="false">MERCADERÍA</option>
+                            <option value="true">ACTIVO</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div id="wrapper-t-stock-${idx}">
+                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-transfer shadow-sm border-warning" data-idx="${idx}" required>
+                                <option value="">-- Seleccione Producto --</option>
+                                ${stockOptions}
+                            </select>
+                        </div>
+                        <div id="wrapper-t-asset-${idx}" style="display:none;">
+                            <select name="Items[${idx}].FixedAssetId" class="form-select form-select-sm shadow-sm border-primary">
+                                <option value="">-- Seleccione Activo --</option>
+                                ${assetOptions}
+                            </select>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="1" step="1" data-type="int" required />
+                            <span class="input-group-text x-small bg-white" id="max-label-${idx}">/ -</span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" onclick="removeTransferRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#transferTableBody').append(html);
+            transferRowIndex++;
+        }
+
+        $(document).on('change', '.select-product-transfer', function() {
+            const idx = $(this).data('idx');
+            updateMaxQty(idx, this);
+            applyQuantityRules(idx, $(this).val(), true);
+        });
+
+        function toggleTransferRowType(idx, isAsset) {
+            const assetBool = isAsset === 'true';
+            $(`#wrapper-t-stock-${idx}`).toggle(!assetBool);
+            $(`#wrapper-t-asset-${idx}`).toggle(assetBool);
+            const $qty = $(`#qty-transfer-${idx}`);
+            if(assetBool) {
+                $qty.val(1).prop('readonly', true).attr('data-type', 'int').attr('step', '1').attr('min', '1');
+            } else {
+                $qty.prop('readonly', false);
+                applyQuantityRules(idx, $(`#wrapper-t-stock-${idx} select`).val(), true);
+            }
+        }
+
+        // 7. SUBMITS Y HELPERS
+        $(document).on('submit', '#formBulkEntry', async function (e) {
+            e.preventDefault();
+            if (!validateDecimalRules('bulkEntryTableBody')) return;
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).html('Guardando...');
+            try {
+                const res = await fetch('@Url.Action("ProcessBulkEntry", "Inventory")', { method: 'POST', body: new FormData(this) });
+                const result = await res.json();
+                if (result.success) Swal.fire('Éxito', result.message, 'success').then(() => location.reload());
+                else { Swal.fire('Error', result.message, 'error'); $btn.prop('disabled', false).text('CONFIRMAR'); }
+            } catch (e) { $btn.prop('disabled', false).text('CONFIRMAR'); }
+        });
+
+                // 7.5 SUBMIT DE TRASLADOS (Faltante en tu código)
+        $(document).on('submit', '#formProductTransfer', async function (e) {
+            e.preventDefault();
+
+            // Validar reglas de decimales antes de procesar
+            if (!validateDecimalRules('transferTableBody')) return;
+
+            const $btn = $(this).find('button[type="submit"]');
+            const originBranchId = $('#select-origin-branch').val();
+            const targetBranchId = $('select[name="TargetBranchId"]').val();
+
+            if (originBranchId === targetBranchId) {
+                return Swal.fire('Atención', 'La sede de origen y destino no pueden ser la misma.', 'warning');
+            }
+
+            // 1. Recolectar Items de la tabla dinámica
+            let items = [];
+            $('#transferTableBody tr').each(function () {
+                const rowId = $(this).attr('id').replace('row-transfer-', '');
+                const isAsset = $(this).find(`select[name*="IsAsset"]`).val() === 'true';
+
+                const $stockSelect = $(this).find(`select[name*="ProductId"]`);
+                const $assetSelect = $(this).find(`select[name*="FixedAssetId"]`);
+
+                let pIdRaw = null;
+                let faIdRaw = null;
+
+                if (isAsset) {
+                    faIdRaw = $assetSelect.val();
+                    // Obtenemos el ProductId real desde el data-attribute del option seleccionado
+                    pIdRaw = $assetSelect.find(':selected').data('productid');
+                } else {
+                    pIdRaw = $stockSelect.val();
+                }
+
+                // Importante: Usar parseFloat para capturar los decimales correctamente
+                const item = {
+                    isAsset: isAsset,
+                    quantity: parseFloat($(this).find(`input[id="qty-transfer-${rowId}"]`).val()) || 0,
+                    productId: pIdRaw ? parseInt(pIdRaw) : null,
+                    fixedAssetId: isAsset && faIdRaw ? parseInt(faIdRaw) : null
+                };
+
+                if ((isAsset && !item.fixedAssetId) || (!isAsset && !item.productId)) return;
+                items.push(item);
+            });
+
+            if (items.length === 0) {
+                return Swal.fire('Atención', 'Debe agregar al menos un producto válido al traslado.', 'warning');
+            }
+
+            // 2. Preparar el objeto final para el Controller (JSON)
+            const payload = {
+                internalControlNumber: $('input[name="InternalControlNumber"]').val(),
+                originBranchId: parseInt(originBranchId),
+                targetBranchId: parseInt(targetBranchId),
+                observation: $('textarea[name="Observation"]').val(),
+                items: items
+            };
+
+            // 3. Enviar al Servidor vía POST JSON
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Procesando...');
+
+            try {
+                const response = await fetch('@Url.Action("ProcessTransfer", "Inventory")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        title: '¡Traslado Iniciado!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 2500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-truck-ramp-box me-2"></i>INICIAR TRASLADO');
+            }
+        });
+
+        function updateMaxQty(idx, select) {
+            const max = $(select).find(':selected').data('max') || '-';
+            $(`#max-label-${idx}`).text('/ ' + max);
+            $(`#qty-transfer-${idx}`).attr('max', max);
+        }
+
+        function validateDecimalRules(tbodyId) {
+            let isValid = true;
+            $(`#${tbodyId} tr`).each(function() {
+                const $qty = $(this).find('input[type="number"]');
+                if ($qty.attr('step') === "1" && parseFloat($qty.val()) % 1 !== 0) {
+                    Swal.fire('Atención', 'Este producto solo acepta unidades enteras.', 'warning');
+                    isValid = false; return false;
+                }
+            });
+            return isValid;
+        }
+
+        function removeEntryRow(idx) { $(`#row-entry-${idx}`).remove(); }
+        function removeTransferRow(idx) { $(`#row-transfer-${idx}`).remove(); }
     </script>
 }

@@ -1,0 +1,68 @@
+﻿@using ContratosYReembolsos.Models @* Asegúrate de que el namespace sea correcto *@
+@model List<ContratosYReembolsos.Models.ProductStock>
+
+<div class="modal fade" id="modalMinStockContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-sliders me-2"></i>Configurar Stocks Mínimos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formSaveMinStocks">
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <small class="text-muted text-uppercase fw-bold">Sede: @ViewBag.BranchName</small>
+                        <p class="x-small text-muted mb-0">Define la cantidad mínima para activar las alertas de reabastecimiento.</p>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-white sticky-top shadow-sm">
+                                <tr class="x-small text-muted">
+                                    <th class="ps-4">PRODUCTO</th>
+                                    <th class="text-center">STOCK ACTUAL</th>
+                                    <th class="text-center" style="width: 150px;">MIN. REQUERIDO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Count; i++)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            @* Aquí es donde deben estar estos campos, dentro del for *@
+                                            <input type="hidden" name="[@i].Id" value="@Model[i].Id" />
+
+                                            <div class="fw-bold small">@Model[i].Product.Name</div>
+                                            <div class="x-small text-muted">@Model[i].Product.Sku</div>
+                                        </td>
+                                        <td class="text-center small">
+                                            @Model[i].Quantity.ToString("G29")
+                                            <span class="text-muted">@Model[i].Product.Unit.ToString()</span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="[@i].MinimumStock"
+                                                       value="@Model[i].MinimumStock.ToString("G29")"
+                                                       class="form-control text-center fw-bold border-primary-subtle"
+                                                       step="@(Model[i].Product.Unit == UnitOfMeasure.UND ? "1" : "0.01")"
+                                                       min="0" />
+                                                <span class="input-group-text x-small">@Model[i].Product.Unit.ToString()</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 py-3">
+                    <button type="button" class="btn btn-link text-muted fw-bold text-decoration-none" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Configuración
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

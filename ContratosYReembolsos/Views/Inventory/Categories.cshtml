@@ -3,21 +3,22 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold">Categorías Maestras</h3>
-            <p class="text-muted small">Defina los grupos principales de productos.</p>
+            <h3 class="fw-bold m-0">Categorías Maestras</h3>
+            <p class="text-muted small">Control jerárquico de visibilidad para el catálogo comercial.</p>
         </div>
-        <button class="btn btn-primary" onclick="openCategoryModal(0)">
+        <button class="btn btn-primary shadow-sm rounded-pill px-4" onclick="openCategoryModal(0)">
             <i class="fa-solid fa-plus me-2"></i>Nueva Categoría
         </button>
     </div>
 
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light small text-uppercase">
+                <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-4" style="width: 100px;">ID</th>
                         <th>Nombre de Categoría</th>
+                        <th class="text-center">Uso en Contratos</th>
                         <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
@@ -26,11 +27,39 @@
                     {
                         <tr>
                             <td class="ps-4 text-muted">#@item.Id</td>
-                            <td class="fw-bold">@item.Name</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-3 bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:35px; height:35px;">
+                                        <i class="fa-solid fa-folder-tree text-secondary"></i>
+                                    </div>
+                                    <span class="fw-bold">@item.Name</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                @if (item.ShowInContracts)
+                                {
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
+                                        <i class="fa-solid fa-check-circle me-1"></i>Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-3">
+                                        <i class="fa-solid fa-eye-slash me-1"></i>Oculto
+                                    </span>
+                                }
+                            </td>
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-light border" onclick="openCategoryModal(@item.Id)">
-                                    <i class="fa-solid fa-pen text-primary"></i>
+                                <button class="btn btn-sm btn-outline-primary rounded-circle"
+                                        onclick="openCategoryModal(@item.Id)"
+                                        title="Editar Categoría">
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
+                                <a href="@Url.Action("Index", "SubCategories", new { categoryId = item.Id })"
+                                   class="btn btn-sm btn-outline-secondary rounded-circle ms-1"
+                                   title="Ver Subcategorías">
+                                    <i class="fa-solid fa-list-ul"></i>
+                                </a>
                             </td>
                         </tr>
                     }
@@ -52,9 +81,28 @@
 
         $(document).on('submit', '#formCategorySave', async function(e) {
             e.preventDefault();
-            const response = await fetch('@Url.Action("SaveCategory")', { method: 'POST', body: new FormData(this) });
-            const res = await response.json();
-            if(res.success) location.reload();
+
+            // Bloquear botón para evitar doble click
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
+
+            try {
+                const response = await fetch('@Url.Action("SaveCategory")', {
+                    method: 'POST',
+                    body: new FormData(this)
+                });
+                const res = await response.json();
+
+                if(res.success) {
+                    location.reload();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                    $btn.prop('disabled', false).text('Guardar Categoría');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
+                $btn.prop('disabled', false).text('Guardar Categoría');
+            }
         });
     </script>
 }

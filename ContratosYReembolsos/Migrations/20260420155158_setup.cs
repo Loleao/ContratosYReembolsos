@@ -76,7 +76,8 @@ namespace ContratosYReembolsos.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ShowInContracts = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -248,6 +249,7 @@ namespace ContratosYReembolsos.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ShowInContracts = table.Column<bool>(type: "bit", nullable: false),
                     CategoryId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -319,7 +321,8 @@ namespace ContratosYReembolsos.Migrations
                     Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ControlType = table.Column<int>(type: "int", nullable: false),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
-                    SubCategoryId = table.Column<int>(type: "int", nullable: false)
+                    SubCategoryId = table.Column<int>(type: "int", nullable: false),
+                    IsAvailableForContract = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -836,6 +839,8 @@ namespace ContratosYReembolsos.Migrations
                     FixedAssetId = table.Column<int>(type: "int", nullable: true),
                     ProductStockId = table.Column<int>(type: "int", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
+                    PreviousQuantity = table.Column<int>(type: "int", nullable: false),
+                    NewQuantity = table.Column<int>(type: "int", nullable: false),
                     Concept = table.Column<int>(type: "int", nullable: false),
                     MovementType = table.Column<int>(type: "int", nullable: false),
                     TransferId = table.Column<int>(type: "int", nullable: true),

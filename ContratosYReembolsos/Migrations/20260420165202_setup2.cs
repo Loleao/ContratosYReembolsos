@@ -11,15 +11,8 @@ namespace ContratosYReembolsos.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "NewQuantity",
-                table: "MovimientosInventario",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "PreviousQuantity",
-                table: "MovimientosInventario",
+                name: "Unit",
+                table: "Productos",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
@@ -29,12 +22,8 @@ namespace ContratosYReembolsos.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "NewQuantity",
-                table: "MovimientosInventario");
-
-            migrationBuilder.DropColumn(
-                name: "PreviousQuantity",
-                table: "MovimientosInventario");
+                name: "Unit",
+                table: "Productos");
         }
     }
 }

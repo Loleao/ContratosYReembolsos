@@ -5,12 +5,14 @@
 }
 
 <style>
+    /* Estilos para el modo tabla y grid */
     .inventory-card {
         border: none;
         border-radius: 15px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         transition: all 0.3s ease;
         background: #fff;
+        position: relative;
     }
 
         .inventory-card:hover {
@@ -30,14 +32,11 @@
         color: #fff;
     }
 
-    .img-placeholder {
-        height: 140px;
-        background: #f8f9fa;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #dee2e6;
+    .unit-tag {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        opacity: 0.8;
+        margin-left: 4px;
     }
 
     .btn-toggle-group {
@@ -77,24 +76,25 @@
         </div>
 
         <div class="d-flex gap-2">
+            <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border shadow-sm me-2">
+                <button class="btn btn-white rounded-pill px-3" id="view-grid-btn" onclick="toggleDisplayMode('grid')">
+                    <i class="fa-solid fa-grip"></i>
+                </button>
+                <button class="btn btn-white rounded-pill px-3 active shadow-sm" id="view-list-btn" onclick="toggleDisplayMode('list')">
+                    <i class="fa-solid fa-list"></i>
+                </button>
+            </div>
+            <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" onclick="openMinStockModal()">
+                <i class="fa-solid fa-bell-concierge me-1"></i> Ajustar Alertas
+            </button>
             <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openEntryModal()">
                 <i class="fa-solid fa-plus-circle me-1"></i> Nuevo Ingreso
             </button>
         </div>
     </div>
 
-    <div class="d-flex align-items-center gap-3">
-        <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border shadow-sm">
-            <button class="btn btn-white rounded-pill px-3 active shadow-sm" id="view-grid-btn" onclick="toggleDisplayMode('grid')">
-                <i class="fa-solid fa-grip me-1"></i>
-            </button>
-            <button class="btn btn-white rounded-pill px-3" id="view-list-btn" onclick="toggleDisplayMode('list')">
-                <i class="fa-solid fa-list me-1"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="text-center mb-5">
+    @* --- NAVEGACIÓN DE PESTAÑAS (TABS) --- *@
+    <div class="text-center mb-4">
         <div class="btn-toggle-group shadow-sm">
             <button id="btnStock" class="btn active" onclick="switchView('stock')">
                 <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Consumible
@@ -112,12 +112,13 @@
                 }
             </button>
             <button id="btnKardex" class="btn" onclick="switchView('kardex')">
-                <i class="fa-solid fa-file-text-o me-2"></i>Kardex
+                <i class="fa-solid fa-clipboard-list me-2"></i>Kardex
             </button>
         </div>
     </div>
 
-    <div id="inventoryContent" class="position-relative">
+    @* Contenedor Dinámico *@
+    <div id="inventoryContent" class="position-relative min-vh-50">
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status"></div>
         </div>
@@ -126,31 +127,32 @@
 
 <div id="modalContainer"></div>
 
+
 @section Scripts {
     <script>
         const branchId = '@ViewBag.BranchId';
-
-        // Rutas de las acciones en el controlador
         const urls = {
             stock: '@Url.Action("GetStockView", "Inventory")',
             assets: '@Url.Action("GetAssetsView", "Inventory")',
             pending: '@Url.Action("GetPendingView", "Inventory")',
-            confirm: '@Url.Action("ConfirmReceipt", "Inventory")',
             kardex: '@Url.Action("GetKardexView", "Inventory")',
         };
 
-        // Carga inicial
-        document.addEventListener("DOMContentLoaded", () => switchView('stock'));
+        // 1. CARGA INICIAL Y PERSISTENCIA
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!localStorage.getItem('inventory-view-mode')) {
+                localStorage.setItem('inventory-view-mode', 'list');
+            }
+            switchView('stock');
+        });
 
+        // 2. CAMBIO DE PESTAÑAS (Stock, Assets, etc.)
         async function switchView(view) {
             const container = document.getElementById('inventoryContent');
 
-            // Actualizar botones UI
             document.querySelectorAll('.btn-toggle-group .btn').forEach(b => b.classList.remove('active'));
-            if(view === 'stock') document.getElementById('btnStock').classList.add('active');
-            if(view === 'assets') document.getElementById('btnAssets').classList.add('active');
-            if(view === 'pending') document.getElementById('btnPending').classList.add('active');
-            if(view === 'kardex') document.getElementById('btnKardex').classList.add('active');
+            const idBtn = 'btn' + view.charAt(0).toUpperCase() + view.slice(1);
+            if(document.getElementById(idBtn)) document.getElementById(idBtn).classList.add('active');
 
             container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
 
@@ -158,17 +160,24 @@
                 const response = await fetch(`${urls[view]}?branchId=${branchId}`);
                 if (!response.ok) throw new Error();
                 container.innerHTML = await response.text();
+
+                const savedMode = localStorage.getItem('inventory-view-mode') || 'list';
+                applyDisplayMode(savedMode);
+
             } catch (e) {
-                container.innerHTML = '<div class="alert alert-danger rounded-4">Error al conectar con el servidor.</div>';
+                container.innerHTML = '<div class="alert alert-danger rounded-4 mt-3"><i class="fa-solid fa-circle-exclamation me-2"></i>Error al cargar la vista.</div>';
             }
         }
 
+        // 3. CAMBIO DE MODO VISUAL (Grid vs List)
         function toggleDisplayMode(mode) {
+            localStorage.setItem('inventory-view-mode', mode);
+            applyDisplayMode(mode);
+        }
+
+        function applyDisplayMode(mode) {
             const gridBtn = document.getElementById('view-grid-btn');
             const listBtn = document.getElementById('view-list-btn');
-
-            // Guardar preferencia en localStorage
-            localStorage.setItem('inventory-view-mode', mode);
 
             if (mode === 'list') {
                 gridBtn.classList.remove('active', 'shadow-sm');
@@ -183,26 +192,23 @@
             }
         }
 
-        $(document).ajaxComplete(function() {
-            const savedMode = localStorage.getItem('inventory-view-mode') || 'grid';
-            toggleDisplayMode(savedMode);
-        });
-
+        // 4. LÓGICA DE RECEPCIÓN DE TRANSFERENCIAS (LO QUE TE FALTABA)
         async function showReceiveModal(id, code) {
             const { value: text, isConfirmed } = await Swal.fire({
                 title: 'Confirmar Recepción',
-                text: `¿Está seguro de recibir la transferencia ${code}?`,
+                text: `¿Está seguro de recibir la transferencia ${code}? Los productos se sumarán al stock de esta sede.`,
                 input: 'textarea',
                 inputPlaceholder: 'Ingrese una observación de recepción (opcional)...',
-                inputAttributes: {
-                    'aria-label': 'Observación de recepción'
-                },
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#198754', // verde success
+                confirmButtonColor: '#198754',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Sí, recibir todo',
-                cancelButtonText: 'Cancelar'
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'rounded-pill px-4',
+                    cancelButton: 'rounded-pill px-4'
+                }
             });
 
             if (isConfirmed) {
@@ -211,9 +217,9 @@
         }
 
         async function processReceipt(id, observation) {
-            // Bloquear pantalla
             Swal.fire({
-                title: 'Procesando...',
+                title: 'Procesando recepción...',
+                allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
 
@@ -222,12 +228,10 @@
                 formData.append('transferId', id);
                 formData.append('receptionObservation', observation || "");
 
-                const token = $('input[name="__RequestVerificationToken"]').val();
-
                 const response = await fetch('@Url.Action("ConfirmTransferReceipt", "Inventory")', {
                     method: 'POST',
                     headers: {
-                        'RequestVerificationToken': token
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                     },
                     body: formData
                 });
@@ -235,8 +239,28 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    Swal.fire('¡Recibido!', result.message, 'success').then(() => {
-                        location.reload(); // Recarga para ver los nuevos stocks
+                    Swal.fire({
+                        title: '¡Recibido!',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // 1. ACTUALIZAR EL BADGE DE NOTIFICACIONES MANUALMENTE
+                        const $badge = $('#btnPending .badge');
+                        if ($badge.length > 0) {
+                            let count = parseInt($badge.text().trim()) || 0;
+                            count--;
+
+                            if (count <= 0) {
+                                $badge.remove(); // Si llega a 0, eliminamos el círculo rojo
+                            } else {
+                                $badge.text(count); // Si aún quedan, bajamos el número
+                            }
+                        }
+
+                        // 2. REDIRECCIONAR A LA VISTA DE STOCK
+                        switchView('stock');
                     });
                 } else {
                     Swal.fire('Error', result.message, 'error');
@@ -245,6 +269,59 @@
                 Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
             }
         }
+
+        // 5. OTROS MODALES
+        async function openEntryModal() {
+            const res = await fetch('@Url.Action("GetStockEntry", "Inventory")');
+            document.getElementById('modalContainer').innerHTML = await res.text();
+            entryRowIndex = 0;
+            addNewEntryRow();
+            new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
+        }
+
+                async function openMinStockModal() {
+            try {
+                const res = await fetch(`@Url.Action("GetMinStockSettings", "Inventory")?branchId=${branchId}`);
+                document.getElementById('modalContainer').innerHTML = await res.text();
+                new bootstrap.Modal(document.getElementById('modalMinStockContainer')).show();
+            } catch (e) {
+                Swal.fire('Error', 'No se pudo cargar la configuración', 'error');
+            }
+        }
+
+        //STOCKS MINIMOS
+
+        $(document).on('submit', '#formSaveMinStocks', async function (e) {
+            e.preventDefault();
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            try {
+                const response = await fetch('@Url.Action("UpdateMinimumStocks", "Inventory")', {
+                    method: 'POST',
+                    body: new FormData(this)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Configuración actualizada',
+                        text: result.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        location.reload(); // Recargamos para refrescar los estados de las tarjetas
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).text('Guardar Configuración');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Error de comunicación', 'error');
+                $btn.prop('disabled', false).text('Guardar Configuración');
+            }
+        });
 
     </script>
 }

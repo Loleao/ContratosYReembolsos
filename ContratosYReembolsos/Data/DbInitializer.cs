@@ -121,6 +121,70 @@ namespace ContratosYReembolsos.Data
                     }
                 }
             }
+
+            // 7. Catálogo de Productos (Ataúdes con SKU Inteligente)
+            if (!context.ProductosCategorias.Any())
+            {
+                // A. Crear Categoría Maestra
+                var catAtaudes = new ProductCategory
+                {
+                    Name = "Ataudes",
+                    ShowInContracts = true
+                };
+                context.ProductosCategorias.Add(catAtaudes);
+                await context.SaveChangesAsync(); // Guardamos para obtener el catAtaudes.Id
+
+                // B. Crear Subcategorías
+                var subCats = new List<ProductSubcategory>
+                {
+                    new ProductSubcategory { Name = "Estandar", CategoryId = catAtaudes.Id, ShowInContracts = true },
+                    new ProductSubcategory { Name = "Semiviciado", CategoryId = catAtaudes.Id, ShowInContracts = true },
+                    new ProductSubcategory { Name = "Parvulo", CategoryId = catAtaudes.Id, ShowInContracts = true }
+                };
+                context.ProductosSubcategorias.AddRange(subCats);
+                await context.SaveChangesAsync(); // Guardamos para obtener los IDs de subcategorías
+
+                // C. Crear Productos (1 Marrón y 1 Blanco por cada subcategoría)
+                var productos = new List<Product>();
+                var colores = new[] { "Marron", "Blanco" };
+
+                // Prefijo de categoría (3 letras + ID)
+                string catPart = (catAtaudes.Name.Length >= 3 ? catAtaudes.Name.Substring(0, 3) : catAtaudes.Name).ToUpper();
+                string catIdPart = catAtaudes.Id.ToString();
+
+                foreach (var sub in subCats)
+                {
+                    // Prefijo de subcategoría (3 letras + ID)
+                    string subPart = (sub.Name.Length >= 3 ? sub.Name.Substring(0, 3) : sub.Name).ToUpper();
+                    string subIdPart = sub.Id.ToString();
+
+                    int correlativo = 1;
+
+                    foreach (var color in colores)
+                    {
+                        string colorTitle = char.ToUpper(color[0]) + color.Substring(1).ToLower();
+                        string subTitle = char.ToUpper(sub.Name[0]) + sub.Name.Substring(1).ToLower();
+
+                        // Formato: CAT[ID]-SUB[ID]-000000
+                        string generatedSku = $"{catPart}{catIdPart}-{subPart}{subIdPart}-{correlativo.ToString("D6")}";
+
+                        productos.Add(new Product
+                        {
+                            Name = $"Ataud {colorTitle} {subTitle}",
+                            Sku = generatedSku,
+                            ControlType = ControlType.Stock,
+                            CategoryId = catAtaudes.Id,
+                            SubCategoryId = sub.Id,
+                            IsAvailableForContract = true
+                        });
+
+                        correlativo++;
+                    }
+                }
+
+                context.Productos.AddRange(productos);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }
