@@ -887,8 +887,10 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("GroupingKey")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("IconClass")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsRead")
@@ -909,8 +911,6 @@ namespace ContratosYReembolsos.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BranchId");
 
                     b.ToTable("Notificaciones");
                 });
@@ -1836,15 +1836,6 @@ namespace ContratosYReembolsos.Migrations
                         .IsRequired();
 
                     b.Navigation("Pavilion");
-                });
-
-            modelBuilder.Entity("ContratosYReembolsos.Models.Notification", b =>
-                {
-                    b.HasOne("ContratosYReembolsos.Models.Branch", "Branch")
-                        .WithMany()
-                        .HasForeignKey("BranchId");
-
-                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Product", b =>

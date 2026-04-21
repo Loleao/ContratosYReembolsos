@@ -1,0 +1,78 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.Notification>
+@{
+    ViewData["Title"] = "Historial de Notificaciones";
+}
+
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Notificaciones</h5>
+            <span class="badge bg-primary">@Model.Count() registros</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Estado</th>
+                            <th>Icono</th>
+                            <th>Título y Mensaje</th>
+                            <th>Fecha y Hora</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr class="@(item.IsRead ? "text-muted" : "table-info")">
+                                <td class="text-center">
+                                    @if (item.IsRead)
+                                    {
+                                        <i class="fas fa-check-double text-success" title="Leída"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-circle text-primary" title="Nueva" style="font-size: 10px;"></i>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="@item.IconClass text-secondary"></i>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>@item.Title</strong><br />
+                                    <small>@item.Message</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <i class="far fa-clock me-1"></i> @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                    </small>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.TargetUrl))
+                                    {
+                                        <a href="@item.TargetUrl" class="btn btn-sm btn-outline-primary shadow-sm"
+                                           onclick="markAsRead(@item.Id)">
+                                            Ver detalle
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlMarkAsRead = '@Url.Action("MarkAsRead", "Notification")';
+
+    function markAsRead(id) {
+        $.post(urlMarkAsRead, { id: id }, function() {
+            console.log("Notificación marcada como leída.");
+        });
+    }
+</script>

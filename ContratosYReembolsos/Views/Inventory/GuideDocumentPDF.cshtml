@@ -1,0 +1,324 @@
+﻿@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
+@model ContratosYReembolsos.Models.ViewModels.ReporteGuiaViewModel
+@{
+    Layout = null;
+
+    // 1. Construimos la ruta física exacta
+    var path = System.IO.Path.Combine(HostEnvironment.WebRootPath, "images", "logo_fonafun.png");
+    string base64Logo = "";
+
+    // 2. Convertimos a Base64 para que el PDF lo lleve incrustado
+    if (System.IO.File.Exists(path))
+    {
+        byte[] imageArray = System.IO.File.ReadAllBytes(path);
+        base64Logo = Convert.ToBase64String(imageArray);
+    }
+
+    bool esTransferencia = Model.TipoOperacion.Contains("REMISION") || Model.TipoOperacion.Contains("TRANSFERENCIA");
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <style>
+        @@page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Encabezado */
+        .header {
+            width: 100%;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #003366; /* Azul Institucional */
+            padding-bottom: 10px;
+        }
+
+            .header img {
+                width: 75px;
+                filter: grayscale(20%);
+            }
+
+        .header-title {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+            .header-title h1 {
+                margin: 0;
+                font-size: 16pt;
+                color: #003366;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .header-title p {
+                margin: 0;
+                font-size: 9pt;
+                font-weight: bold;
+                color: #666;
+            }
+
+        .header-doc-info {
+            text-align: right;
+            vertical-align: middle;
+            font-size: 10pt;
+        }
+
+        /* Sección de Información */
+        .info-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+
+            .info-grid td {
+                padding: 8px 12px;
+                border: 1px solid #e0e0e0;
+            }
+
+        .label {
+            font-weight: bold;
+            color: #444;
+            text-transform: uppercase;
+            font-size: 8pt;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Banner de Estado */
+        .status-banner {
+            text-align: center;
+            padding: 6px;
+            margin-bottom: 15px;
+            border: 2px dashed #003366;
+            font-weight: bold;
+            background-color: #fff;
+            color: #003366;
+            font-size: 9pt;
+        }
+
+        /* Tabla de Datos */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+            .data-table th {
+                background-color: #003366;
+                color: #ffffff;
+                text-transform: uppercase;
+                font-size: 9pt;
+                padding: 10px;
+                border: 1px solid #003366;
+                text-align: center;
+            }
+
+            .data-table td {
+                padding: 8px 10px;
+                border: 1px solid #ccc;
+                font-size: 9pt;
+            }
+
+        .row-even {
+            background-color: #ffffff;
+        }
+
+        .row-odd {
+            background-color: #fcfcfc;
+        }
+
+        /* Firmas */
+        .footer-signatures {
+            margin-top: 80px;
+            width: 100%;
+        }
+
+        .sig-box {
+            width: 40%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .sig-line {
+            border-top: 1.5px solid #333;
+            margin: 0 20px;
+            padding-top: 5px;
+        }
+
+        .sig-text {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        /* Marca de Agua */
+        .watermark {
+            position: fixed;
+            top: 40%;
+            left: 5%;
+            width: 100%;
+            text-align: center;
+            opacity: 0.1;
+            transform: rotate(-45deg);
+            font-size: 100pt;
+            font-weight: bold;
+            color: #cc0000;
+            z-index: -1000;
+        }
+
+        .badge-type {
+            font-size: 7pt;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .bg-entry {
+            background-color: #28a745;
+        }
+
+        .bg-exit {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    @if (Model.TipoOperacion.Contains("ANULADO"))
+    {
+        <div class="watermark">ANULADO</div>
+    }
+
+    <table class="header">
+        <tr>
+            <td width="20%">
+                @if (!string.IsNullOrEmpty(base64Logo))
+                {
+                    <img src="data:image/png;base64,@base64Logo" style="width: 80px;" />
+                }
+                else
+                {
+                    <span style="color:red; font-size:8px;">Logo no encontrado</span>
+                }
+            </td>
+            <td class="header-title">
+                <h1>@Model.TipoOperacion</h1>
+                <p>FONDO DE APOYO FUNERARIO DE LA POLICÍA NACIONAL DEL PERÚ</p>
+            </td>
+            <td class="header-doc-info" width="25%">
+                <span style="font-size: 14pt; font-weight: bold; color: #003366;">N° @Model.NumeroGuia</span><br />
+                Emisión: @Model.Fecha.ToString("dd/MM/yyyy HH:mm")
+            </td>
+        </tr>
+    </table>
+
+    @if (!string.IsNullOrEmpty(Model.EstadoMensaje))
+    {
+        <div class="status-banner">
+            <i class="fas fa-info-circle"></i> @Model.EstadoMensaje.ToUpper()
+        </div>
+    }
+
+    <table class="info-grid">
+        <tr>
+            <td width="50%">
+                <span class="label">Punto de Origen / Sede Emisora</span>
+                <strong>@Model.SedeOrigen</strong>
+            </td>
+            <td width="50%">
+                <span class="label">Punto de Destino / Sede Receptora</span>
+                <strong>@Model.SedeDestino</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span class="label">Responsable de Operación</span>
+                @Model.UsuarioResponsable
+            </td>
+            <td>
+                <span class="label">Documento de Referencia / Externo</span>
+                @Model.DocumentoExterno
+            </td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="5%">Item</th>
+                <th width="15%">Código / Serie</th>
+                <th>Descripción Detallada del Bien</th>
+                @if (esTransferencia)
+                {
+                    <th width="15%">Sede</th>
+                }
+                <th width="10%">Cant.</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int count = 1;
+            }
+            @foreach (var item in Model.Items)
+            {
+                <tr class="@(count % 2 == 0 ? "row-even" : "row-odd")">
+                    <td align="center">@count</td>
+                    <td align="center">
+                        <small>@(string.IsNullOrEmpty(item.CodigoPatrimonial) ? "---" : item.CodigoPatrimonial)</small>
+                    </td>
+                    <td>
+                        @if (esTransferencia)
+                        {
+                            <span class="badge-type @(item.Tipo == "ENTRADA" ? "bg-entry" : "bg-exit")">@item.Tipo[0]</span>
+                        }
+                        @item.Producto
+                    </td>
+                    @if (esTransferencia)
+                    {
+                        <td style="font-size: 8pt;">@item.Sede</td>
+                    }
+                    <td align="center"><strong>@item.Cantidad.ToString("N0")</strong></td>
+                </tr>
+                count++;
+            }
+        </tbody>
+    </table>
+
+    <table class="footer-signatures">
+        <tr>
+            <td class="sig-box">
+                <div class="sig-line"></div>
+                <span class="sig-text">Responsable Despacho / Origen</span><br />
+                <small>DNI / Firma y Sello</small>
+            </td>
+            <td width="20%"></td>
+            <td class="sig-box">
+                <div class="sig-line"></div>
+                <span class="sig-text">Responsable Recepción / Destino</span><br />
+                <small>DNI / Firma y Sello</small>
+            </td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 40px; font-size: 7pt; color: #999; text-align: center;">
+        Este documento es una representación impresa de un movimiento de inventario generado por el Sistema Legajos FONAFUN-PNP.<br />
+        Impreso el @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")
+    </div>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 ﻿using ContratosYReembolsos.Data;
-using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Hubs;
+using ContratosYReembolsos.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,10 +17,20 @@ namespace ContratosYReembolsos.Services
             _hubContext = hubContext;
         }
 
-        public async Task CreateAsync(string title, string message, string permission, int? branchId = null, string? url = null, string icon = "fa-bell")
+        public async Task CreateAsync(string title, string message, string permission, int? branchId, string url, string icon, string groupingKey = null)
         {
-            // 1. Persistencia en Base de Datos (HTTP/SQL)
-            var notification = new Models.Notification
+            // 1. VALIDACIÓN DE DUPLICADOS (Idempotencia)
+            if (!string.IsNullOrEmpty(groupingKey))
+            {
+                // Si ya existe una notificación activa con esta misma clave, no hacemos nada
+                bool exists = await _context.Notificaciones
+                    .AnyAsync(n => n.GroupingKey == groupingKey && !n.IsRead);
+
+                if (exists) return;
+            }
+
+            // 2. CREACIÓN DEL OBJETO
+            var notification = new Notification
             {
                 Title = title,
                 Message = message,
@@ -28,6 +38,7 @@ namespace ContratosYReembolsos.Services
                 BranchId = branchId,
                 TargetUrl = url,
                 IconClass = icon,
+                GroupingKey = groupingKey, // Importante para el F5
                 CreatedAt = DateTime.Now,
                 IsRead = false
             };
@@ -35,36 +46,46 @@ namespace ContratosYReembolsos.Services
             _context.Notificaciones.Add(notification);
             await _context.SaveChangesAsync();
 
-            // 2. Notificación en Tiempo Real (SignalR/WebSockets)
+            // 3. EMISIÓN EN TIEMPO REAL (SignalR)
+            // Preparamos el objeto para el front-end
+            var signalRData = new
+            {
+                id = notification.Id,
+                title = notification.Title,
+                message = notification.Message,
+                url = notification.TargetUrl,
+                icon = notification.IconClass,
+                timeAgo = "Ahora"
+            };
+
             if (branchId.HasValue)
             {
-                // Solo enviamos a los usuarios que pertenecen al grupo de esa sede
-                await _hubContext.Clients.Group(branchId.Value.ToString()).SendAsync("ReceiveNotification");
+                // Enviar solo a los usuarios conectados en esa sede específica
+                await _hubContext.Clients.Group($"Branch_{branchId}")
+                    .SendAsync("ReceiveNotification", signalRData);
             }
             else
             {
-                // Si es global (branchId null), enviamos a todos los conectados
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification");
+                // Si no hay sede, es global (para todos los Admins)
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", signalRData);
             }
         }
 
-        public async Task<List<Models.Notification>> GetActiveNotificationsAsync(IEnumerable<string> userClaims, int? userBranchId)
+        public async Task<List<Notification>> GetActiveNotificationsAsync(IEnumerable<string> userClaims, int? userBranchId)
         {
-            // Buscamos si entre los claims existe el valor "Admin" 
-            // Identity guarda el rol en un claim específico, así que verificamos ambos casos
+            // Identificar si es Admin por sus claims
             bool isAdmin = userClaims.Any(c => c.Equals("Admin", StringComparison.OrdinalIgnoreCase));
 
             var query = _context.Notificaciones.Where(n => !n.IsRead);
 
             if (!isAdmin)
             {
-                // Si NO es admin, aplicamos el filtro de Branch y Permisos
+                // Filtro estricto para usuarios mortales
                 query = query.Where(n =>
                     (n.RequiredPermission == null || userClaims.Contains(n.RequiredPermission)) &&
                     (n.BranchId == null || n.BranchId == userBranchId)
                 );
             }
-            // Si ES admin, se salta los filtros anteriores y ve todas las sedes
 
             return await query
                 .OrderByDescending(n => n.CreatedAt)

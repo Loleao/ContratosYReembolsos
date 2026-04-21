@@ -56,6 +56,27 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notificaciones",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TargetUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IconClass = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: true),
+                    RequiredPermission = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    GroupingKey = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notificaciones", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Pabellones",
                 columns: table => new
                 {
@@ -320,6 +341,7 @@ namespace ContratosYReembolsos.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ControlType = table.Column<int>(type: "int", nullable: false),
+                    Unit = table.Column<int>(type: "int", nullable: false),
                     CategoryId = table.Column<int>(type: "int", nullable: false),
                     SubCategoryId = table.Column<int>(type: "int", nullable: false),
                     IsAvailableForContract = table.Column<bool>(type: "bit", nullable: false)
@@ -617,7 +639,8 @@ namespace ContratosYReembolsos.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     BranchId = table.Column<int>(type: "int", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false)
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MinimumStock = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -804,7 +827,7 @@ namespace ContratosYReembolsos.Migrations
                     TransferId = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     FixedAssetId = table.Column<int>(type: "int", nullable: true),
-                    Quantity = table.Column<int>(type: "int", nullable: false)
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -838,9 +861,9 @@ namespace ContratosYReembolsos.Migrations
                     BranchId = table.Column<int>(type: "int", nullable: false),
                     FixedAssetId = table.Column<int>(type: "int", nullable: true),
                     ProductStockId = table.Column<int>(type: "int", nullable: true),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    PreviousQuantity = table.Column<int>(type: "int", nullable: false),
-                    NewQuantity = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PreviousQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    NewQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Concept = table.Column<int>(type: "int", nullable: false),
                     MovementType = table.Column<int>(type: "int", nullable: false),
                     TransferId = table.Column<int>(type: "int", nullable: true),
@@ -1452,6 +1475,9 @@ namespace ContratosYReembolsos.Migrations
 
             migrationBuilder.DropTable(
                 name: "Nichos");
+
+            migrationBuilder.DropTable(
+                name: "Notificaciones");
 
             migrationBuilder.DropTable(
                 name: "ProductosTransferenciasDetalles");

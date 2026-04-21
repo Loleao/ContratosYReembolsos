@@ -279,7 +279,7 @@
             new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
         }
 
-                async function openMinStockModal() {
+        async function openMinStockModal() {
             try {
                 const res = await fetch(`@Url.Action("GetMinStockSettings", "Inventory")?branchId=${branchId}`);
                 document.getElementById('modalContainer').innerHTML = await res.text();
@@ -322,6 +322,45 @@
                 $btn.prop('disabled', false).text('Guardar Configuración');
             }
         });
+
+        function confirmCancelTransfer(id, controlNumber) {
+            Swal.fire({
+                title: '¿Anular Transferencia?',
+                text: `Se cancelará la guía ${controlNumber} y el stock regresará a la sede de origen.`,
+                icon: 'warning',
+                input: 'textarea',
+                inputLabel: 'Motivo de anulación',
+                inputPlaceholder: 'Escriba el motivo aquí...',
+                inputAttributes: { 'aria-label': 'Escriba el motivo aquí' },
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, anular',
+                cancelButtonText: 'Cerrar',
+                preConfirm: (reason) => {
+                    if (!reason) {
+                        Swal.showValidationMessage('El motivo es obligatorio para la auditoría');
+                    }
+                    return reason;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    cancelTransfer(id, result.value);
+                }
+            });
+        }
+
+        function cancelTransfer(id, reason) {
+            $.post('@Url.Action("CancelTransfer", "Inventory")', { id: id, reason: reason }, function(response) {
+                if (response.success) {
+                    Swal.fire('Anulada', response.message, 'success').then(() => {
+                        location.reload(); // O recargar el componente de la tabla
+                    });
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            });
+        }
 
     </script>
 }

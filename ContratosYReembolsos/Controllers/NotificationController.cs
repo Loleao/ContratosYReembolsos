@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ContratosYReembolsos.Services;
 using ContratosYReembolsos.Data;
-using Microsoft.EntityFrameworkCore; // Ajusta según tu namespace
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc.Infrastructure; // Ajusta según tu namespace
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -10,32 +12,54 @@ namespace ContratosYReembolsos.Controllers
     {
         private readonly INotificationService _notificationService;
         private readonly ApplicationDbContext _context;
+        private readonly IUrlHelperFactory _urlHelperFactory;
+        private readonly IActionContextAccessor _actionContextAccessor;
 
-        public NotificationController(INotificationService notificationService, ApplicationDbContext context)
+        public NotificationController(INotificationService notificationService, ApplicationDbContext context, IUrlHelperFactory urlHelperFactory, IActionContextAccessor actionContextAccessor)
         {
             _notificationService = notificationService;
             _context = context;
+            _urlHelperFactory = urlHelperFactory;
+            _actionContextAccessor = actionContextAccessor;
         }
+
+        // Acción para ver el historial completo
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var branchClaim = User.FindFirst("BranchId")?.Value;
+            int? branchId = string.IsNullOrEmpty(branchClaim) ? null : int.Parse(branchClaim);
+            bool isAdmin = User.IsInRole("Admin");
+
+            var query = _context.Notificaciones.AsQueryable();
+
+            // Si no es admin, solo ve las de su sede
+            if (!isAdmin)
+            {
+                query = query.Where(n => n.BranchId == null || n.BranchId == branchId);
+            }
+
+            var history = await query
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
+            return View(history);
+        }
+
 
         // Esta es la acción que busca el JS
         [HttpGet]
         public async Task<IActionResult> GetLatest()
         {
-            // Obtenemos todos los valores de los claims (permisos y roles)
             var allUserClaims = User.Claims.Select(c => c.Value).ToList();
-
             var branchClaim = User.FindFirst("BranchId")?.Value;
             int? branchId = string.IsNullOrEmpty(branchClaim) ? null : int.Parse(branchClaim);
-
-            // DETERMINAR SI REVISAMOS STOCK (Proactivo)
-            // Usamos IsInRole directamente aquí porque tenemos acceso al User de Identity
             bool isAdmin = User.IsInRole("Admin");
 
             if (isAdmin || branchId.HasValue)
             {
                 var stockQuery = _context.ProductosStock.Include(ps => ps.Product).AsQueryable();
 
-                // Si no es admin, filtramos solo su sede. Si es admin, revisa TODO el inventario nacional.
                 if (!isAdmin)
                 {
                     stockQuery = stockQuery.Where(ps => ps.BranchId == branchId);
@@ -47,26 +71,25 @@ namespace ContratosYReembolsos.Controllers
 
                 foreach (var item in lowStockItems)
                 {
-                    // Evitar duplicados
-                    bool alreadyNotified = await _context.Notificaciones
-                        .AnyAsync(n => n.BranchId == item.BranchId && !n.IsRead && n.Title.Contains(item.Product.Name));
+                    // 1. Definimos la llave única
+                    string gKey = $"LOW_STOCK_{item.ProductId}_{item.BranchId}";
 
-                    if (!alreadyNotified)
-                    {
-                        // El Admin genera la notificación para la sede correspondiente
-                        await _notificationService.CreateAsync(
-                            "Bajo Stock detectado",
-                            $"El producto {item.Product.Name} en la sede {item.BranchId} requiere reposición.",
-                            "Inventario.Ver",
-                            item.BranchId,
-                            "/Inventory/Stock",
-                            "fa-triangle-exclamation"
-                        );
-                    }
+                    // 2. Generamos la URL dinámica correcta
+                    string targetUrl = Url.Action("Inventory", "Inventory", new { branchId = item.BranchId });
+
+                    // 3. PASAMOS la gKey al servicio (Era el parámetro que faltaba)
+                    await _notificationService.CreateAsync(
+                        "Bajo Stock detectado",
+                        $"El producto {item.Product.Name} requiere reposición.",
+                        "Inventario.Ver",
+                        item.BranchId,
+                        targetUrl,
+                        "fa-triangle-exclamation",
+                        gKey // <--- ¡AQUÍ ESTÁ LA CORRECCIÓN!
+                    );
                 }
             }
 
-            // El servicio ahora recibirá el claim de "Admin" y sabrá que no debe filtrar
             var notifications = await _notificationService.GetActiveNotificationsAsync(allUserClaims, branchId);
 
             return Json(new
@@ -78,7 +101,7 @@ namespace ContratosYReembolsos.Controllers
                     message = n.Message,
                     iconClass = n.IconClass,
                     targetUrl = n.TargetUrl,
-                    timeAgo = "Reciente"
+                    timeAgo = GetRelativeTime(n.CreatedAt) // Usamos tu función de tiempo
                 })
             });
         }

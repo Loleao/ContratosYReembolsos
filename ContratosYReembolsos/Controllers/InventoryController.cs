@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Rotativa.AspNetCore;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -392,116 +393,6 @@ namespace ContratosYReembolsos.Controllers
             return Json(new { stock = stockProds, assets = assetProds });
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ProcessBulkEntry(BulkEntryViewModel model)
-        //{
-        //    if (model.Items == null || !model.Items.Any())
-        //        return Json(new { success = false, message = "No hay ítems para ingresar." });
-
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        string currentUserId = User.Identity?.Name ?? "Sistema";
-
-        //        foreach (var item in model.Items)
-        //        {
-        //            int finalProductId = item.IsAsset ? item.ProductIdAsset.Value : item.ProductId;
-
-        //            if (item.IsAsset)
-        //            {
-        //                // --- CASO ACTIVO FIJO ---
-        //                for (int i = 0; i < item.Quantity; i++)
-        //                {
-        //                    var newAsset = new FixedAsset
-        //                    {
-        //                        ProductId = finalProductId,
-        //                        BranchId = model.BranchId,
-        //                        SerialNumber = item.SerialNumber ?? "S/N",
-        //                        Status = "Available",
-        //                        CreatedAt = DateTime.Now
-        //                    };
-        //                    _context.ActivosFijos.Add(newAsset);
-        //                    await _context.SaveChangesAsync();
-
-        //                    // En activos nuevos, el balance siempre es de 0 a 1 unidad
-        //                    _context.MovimientosInventario.Add(new InventoryMovement
-        //                    {
-        //                        ProductId = finalProductId,
-        //                        BranchId = model.BranchId,
-        //                        FixedAssetId = newAsset.Id,
-        //                        Quantity = 1,
-        //                        PreviousQuantity = 0, // No existía antes
-        //                        NewQuantity = 1,      // Ahora existe 1
-        //                        Concept = Concept.Buy,
-        //                        MovementType = MovementType.Entry,
-        //                        InternalControlNumber = model.InternalControlNumber,
-        //                        ExternalDocumentNumber = model.ExternalDocumentNumber,
-        //                        Description = model.Description,
-        //                        UserId = currentUserId,
-        //                        CreatedAt = DateTime.Now
-        //                    });
-        //                }
-        //            }
-        //            else
-        //            {
-        //                // --- CASO STOCK CONSUMIBLE ---
-        //                var stock = await _context.ProductosStock
-        //                    .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == finalProductId);
-
-        //                // Capturamos el estado inicial
-        //                int cantAnterior = stock?.Quantity ?? 0;
-        //                int cantNueva = cantAnterior + item.Quantity;
-
-        //                if (stock == null)
-        //                {
-        //                    stock = new ProductStock
-        //                    {
-        //                        BranchId = model.BranchId,
-        //                        ProductId = finalProductId,
-        //                        Quantity = item.Quantity
-        //                    };
-        //                    _context.ProductosStock.Add(stock);
-        //                }
-        //                else
-        //                {
-        //                    stock.Quantity = cantNueva;
-        //                }
-
-        //                // Guardamos para asegurar el ProductStockId
-        //                await _context.SaveChangesAsync();
-
-        //                _context.MovimientosInventario.Add(new InventoryMovement
-        //                {
-        //                    ProductId = finalProductId,
-        //                    BranchId = model.BranchId,
-        //                    ProductStockId = stock.Id,
-        //                    Quantity = item.Quantity,
-        //                    PreviousQuantity = cantAnterior, // <--- Aplicado
-        //                    NewQuantity = cantNueva,         // <--- Aplicado
-        //                    Concept = Concept.Buy,
-        //                    MovementType = MovementType.Entry,
-        //                    InternalControlNumber = model.InternalControlNumber,
-        //                    ExternalDocumentNumber = model.ExternalDocumentNumber,
-        //                    Description = model.Description,
-        //                    UserId = currentUserId,
-        //                    CreatedAt = DateTime.Now
-        //                });
-        //            }
-        //        }
-
-        //        await _context.SaveChangesAsync();
-        //        await transaction.CommitAsync();
-
-        //        return Json(new { success = true, message = $"Ingreso {model.InternalControlNumber} procesado correctamente." });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        return Json(new { success = false, message = "Error interno: " + ex.Message });
-        //    }
-        //}
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessBulkEntry(BulkEntryViewModel model)
@@ -522,8 +413,6 @@ namespace ContratosYReembolsos.Controllers
                     if (item.IsAsset)
                     {
                         // --- CASO ACTIVO FIJO ---
-
-                        // 1. Obtener datos del Producto, Categoría y Subcategoría para armar el prefijo
                         var product = await _context.Productos
                             .Include(p => p.SubCategory)
                             .ThenInclude(sc => sc.Category)
@@ -531,14 +420,10 @@ namespace ContratosYReembolsos.Controllers
 
                         if (product == null) throw new Exception($"Producto ID {finalProductId} no encontrado.");
 
-                        // Extraemos siglas (3 primeros caracteres) y IDs
                         string catPart = $"{(product.SubCategory.Category.Name.Length >= 3 ? product.SubCategory.Category.Name.Substring(0, 3) : product.SubCategory.Category.Name).ToUpper()}{product.SubCategory.Category.Id}";
                         string subPart = $"{(product.SubCategory.Name.Length >= 3 ? product.SubCategory.Name.Substring(0, 3) : product.SubCategory.Name).ToUpper()}{product.SubCategory.Id}";
-
-                        // Prefijo: FON-2026-CAT1-SUB4-
                         string prefixFilter = $"FON-{currentYear}-{catPart}-{subPart}-";
 
-                        // 2. Buscar el último correlativo en la BD para este patrón específico
                         var lastAsset = await _context.ActivosFijos
                             .Where(a => a.PatrimonialCode.StartsWith(prefixFilter))
                             .OrderByDescending(a => a.PatrimonialCode)
@@ -547,25 +432,19 @@ namespace ContratosYReembolsos.Controllers
                         int nextNumber = 1;
                         if (lastAsset != null)
                         {
-                            // Extraer los últimos 5 dígitos del string
                             string lastPart = lastAsset.PatrimonialCode.Split('-').Last();
-                            if (int.TryParse(lastPart, out int lastNum))
-                            {
-                                nextNumber = lastNum + 1;
-                            }
+                            if (int.TryParse(lastPart, out int lastNum)) nextNumber = lastNum + 1;
                         }
 
                         for (int i = 0; i < item.Quantity; i++)
                         {
-                            // 3. Generar el código final: FON-2026-CAT1-SUB4-00001
                             string newPatrimonialCode = $"{prefixFilter}{nextNumber:D5}";
-
                             var newAsset = new FixedAsset
                             {
                                 ProductId = finalProductId,
                                 BranchId = model.BranchId,
                                 SerialNumber = item.SerialNumber ?? "S/N",
-                                PatrimonialCode = newPatrimonialCode, // Asignación automática
+                                PatrimonialCode = newPatrimonialCode,
                                 Status = "Available",
                                 CreatedAt = DateTime.Now
                             };
@@ -573,7 +452,6 @@ namespace ContratosYReembolsos.Controllers
                             _context.ActivosFijos.Add(newAsset);
                             await _context.SaveChangesAsync();
 
-                            // Registrar movimiento en Kardex
                             _context.MovimientosInventario.Add(new InventoryMovement
                             {
                                 ProductId = finalProductId,
@@ -591,12 +469,12 @@ namespace ContratosYReembolsos.Controllers
                                 CreatedAt = DateTime.Now
                             });
 
-                            nextNumber++; // Incrementar para el siguiente activo del mismo grupo
+                            nextNumber++;
                         }
                     }
                     else
                     {
-                        // --- CASO STOCK CONSUMIBLE (Mantenemos tu lógica original) ---
+                        // --- CASO STOCK CONSUMIBLE ---
                         var stock = await _context.ProductosStock
                             .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == finalProductId);
 
@@ -638,21 +516,22 @@ namespace ContratosYReembolsos.Controllers
                 await transaction.CommitAsync();
 
                 // ============================================================
-                // INICIO DE NOTIFICACIONES (SIGNALR + DB)
+                // SISTEMA DE NOTIFICACIONES DINÁMICO
                 // ============================================================
 
-                // 1. Notificación General de Éxito
+                // 1. Notificación General de Éxito (Sin GroupingKey para que siempre llegue)
+                string inventoryUrl = Url.Action("Inventory", "Inventory", new { branchId = model.BranchId });
+
                 await _notificationService.CreateAsync(
                     "Ingreso Procesado",
                     $"Se registró el ingreso masivo {model.InternalControlNumber} correctamente.",
-                    "Inventario.Ver", // Ajusta al permiso correspondiente de FONAFUN
+                    "Inventario.Ver",
                     model.BranchId,
-                    null,
+                    inventoryUrl,
                     "fa-file-circle-check"
                 );
 
                 // 2. Validación de Stock Crítico Post-Ingreso
-                // Filtramos solo los consumibles que se ingresaron en este lote
                 var idsIngresados = model.Items.Where(i => !i.IsAsset).Select(i => i.ProductId).ToList();
 
                 var alertasStock = await _context.ProductosStock
@@ -664,22 +543,28 @@ namespace ContratosYReembolsos.Controllers
 
                 foreach (var alerta in alertasStock)
                 {
+                    // Generamos la Clave Única para evitar duplicados en el F5 del GetLatest
+                    string gKey = $"LOW_STOCK_{alerta.ProductId}_{model.BranchId}";
+
                     await _notificationService.CreateAsync(
                         "¡Atención: Stock Bajo!",
                         $"{alerta.Product.Name} sigue bajo el mínimo tras el ingreso ({alerta.Quantity} unidades).",
-                        "Inventario.Alertas",
+                        "Inventario.Ver",
                         model.BranchId,
-                        $"/Inventory/Stock?productId={alerta.ProductId}",
-                        "fa-triangle-exclamation"
+                        inventoryUrl,
+                        "fa-triangle-exclamation",
+                        gKey // <--- Aquí la magia del GroupingKey
                     );
                 }
-
 
                 return Json(new { success = true, message = $"Ingreso {model.InternalControlNumber} procesado correctamente." });
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 return Json(new { success = false, message = "Error interno: " + ex.Message });
             }
         }
@@ -974,31 +859,20 @@ namespace ContratosYReembolsos.Controllers
                 await transaction.CommitAsync();
 
                 // ============================================================
-                // INICIO DE NOTIFICACIONES EN TIEMPO REAL (SIGNALR)
+                // NOTIFICACIONES SIGNALR
                 // ============================================================
-
-                // Obtener nombres de las sedes para un mensaje más claro
                 var originBranch = await _context.Filiales.FindAsync(model.OriginBranchId);
-                var targetBranch = await _context.Filiales.FindAsync(model.TargetBranchId);
 
-                // A. NOTIFICAR A LA SEDE DESTINO (Aviso de recepción pendiente)
-                await _notificationService.CreateAsync(
-                    "Transferencia en Camino",
-                    $"La sede {originBranch?.Name} ha enviado mercadería. Guía: {finalCode}",
-                    "Inventario.Traslados", // Permiso necesario para ver traslados
-                    model.TargetBranchId,    // ID de la sede que recibirá la alerta
-                    $"/Inventory/Transfers?id={transfer.Id}",
-                    "fa-truck-fast"
-                );
+                // URL para que el destino vea sus transferencias pendientes
+                string targetUrl = Url.Action("Inventory", "Inventory", new { branchId = model.TargetBranchId });
 
-                // B. NOTIFICAR A LA SEDE ORIGEN (Confirmación de salida)
                 await _notificationService.CreateAsync(
-                    "Salida por Traslado",
-                    $"Se ha generado la guía {finalCode} con destino a {targetBranch?.Name}.",
-                    "Inventario.Ver",
-                    model.OriginBranchId,   // ID de la sede que envía
-                    null,
-                    "fa-box-arrow-up"
+                    "Transferencia Recibida",
+                    $"Nueva mercadería en camino desde {originBranch?.Name}. Guía: {finalCode}",
+                    "Inventario.Traslados",
+                    model.TargetBranchId,
+                    targetUrl,
+                    "fa-truck-ramp-box"
                 );
 
 
@@ -1107,7 +981,84 @@ namespace ContratosYReembolsos.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // ============================================================
+                // NOTIFICACIÓN DE RETORNO (Aviso al Origen)
+                // ============================================================
+                var targetBranch = await _context.Filiales.FindAsync(transfer.TargetBranchId);
+
+                // Notificamos a la sede que envió que ya recibieron sus productos
+                await _notificationService.CreateAsync(
+                    "Transferencia Confirmada",
+                    $"La sede {targetBranch?.Name} recibió la mercadería de la guía {transfer.InternalControlNumber}.",
+                    "Inventario.Ver",
+                    transfer.OriginBranchId, // Sede de origen
+                    null, // No necesita redirección específica
+                    "fa-circle-check"
+                );
+
+
                 return Json(new { success = true, message = "Mercadería recibida correctamente." });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CancelTransfer(int id, string reason)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var transfer = await _context.ProductosTransferencias
+                    .Include(t => t.Details)
+                    .FirstOrDefaultAsync(t => t.Id == id);
+
+                if (transfer == null || transfer.Status == TransferStatus.Received)
+                    return Json(new { success = false, message = "No se puede anular una transferencia ya recibida." });
+
+                // 1. Revertir Stock en Origen
+                foreach (var det in transfer.Details)
+                {
+                    if (det.FixedAssetId.HasValue)
+                    {
+                        // Si es Activo Fijo, lo volvemos a poner como Disponible en la sede origen
+                        var asset = await _context.ActivosFijos.FindAsync(det.FixedAssetId);
+                        if (asset != null) asset.Status = "Disponible";
+                    }
+                    else
+                    {
+                        // Si es suministro, sumamos la cantidad de vuelta a la sede origen
+                        var stock = await _context.ProductosStock
+                            .FirstOrDefaultAsync(s => s.BranchId == transfer.OriginBranchId && s.ProductId == det.ProductId);
+                        if (stock != null) stock.Quantity += det.Quantity;
+                    }
+
+                    // 2. Registrar movimiento de REVERSO en el Kardex (InventoryMovement)
+                    var reverso = new InventoryMovement
+                    {
+                        ProductId = det.ProductId,
+                        BranchId = transfer.OriginBranchId,
+                        Quantity = det.Quantity,
+                        Concept = Concept.Adjustment, // O crear uno llamado "Reverso"
+                        MovementType = MovementType.Entry,
+                        InternalControlNumber = transfer.InternalControlNumber,
+                        Description = $"ANULACIÓN DE GUÍA: {reason}",
+                        UserId = User.Identity.Name // O el ID del usuario actual
+                    };
+                    _context.MovimientosInventario.Add(reverso);
+                }
+
+                // 3. Actualizar estado de la transferencia
+                transfer.Status = TransferStatus.Cancelled;
+                transfer.ReceptionObservation = $"ANULADA: {reason}";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Json(new { success = true, message = "Transferencia anulada correctamente." });
             }
             catch (Exception ex)
             {
@@ -1352,6 +1303,103 @@ namespace ContratosYReembolsos.Controllers
 
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Niveles de stock mínimo actualizados correctamente." });
+        }
+
+        public async Task<IActionResult> Movements()
+        {
+            // Cargamos los movimientos incluyendo Producto y Sede para mostrar nombres
+            var movements = await _context.MovimientosInventario
+                .Include(m => m.Product)
+                .Include(m => m.Branch)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+
+            return View(movements);
+        }
+
+        public async Task<IActionResult> ImprimirGuia(string controlNumber)
+        {
+            // 1. Cargamos los movimientos incluyendo Activo Fijo para el Código Patrimonial
+            var movimientos = await _context.MovimientosInventario
+                .Include(m => m.Product)
+                .Include(m => m.Branch)
+                .Include(m => m.FixedAsset) // Importante para evitar el error de propiedad inexistente
+                .Where(m => m.InternalControlNumber == controlNumber)
+                .ToListAsync();
+
+            if (!movimientos.Any()) return NotFound();
+
+            var primerMov = movimientos.First();
+
+            // 2. Construcción del Modelo Base
+            var model = new ReporteGuiaViewModel
+            {
+                NumeroGuia = controlNumber,
+                Fecha = primerMov.CreatedAt,
+                UsuarioResponsable = primerMov.UserId,
+                DocumentoExterno = primerMov.ExternalDocumentNumber ?? "S/N",
+                // Mapeo detallado de ítems
+                Items = movimientos.Select(m => new DetalleGuiaItem
+                {
+                    Producto = m.Product?.Name,
+                    Cantidad = m.Quantity,
+                    Tipo = m.MovementType == MovementType.Entry ? "ENTRADA" : "SALIDA",
+                    Sede = m.Branch?.Name,
+                    // Asignación del código patrimonial (si no existe, ponemos un guion)
+                    CodigoPatrimonial = m.FixedAsset?.PatrimonialCode ?? "---"
+                }).ToList()
+            };
+
+            // 3. Lógica específica por Concepto
+            if (primerMov.Concept == Concept.Buy)
+            {
+                model.TipoOperacion = "ACTA DE RECEPCIÓN E INTERNAMIENTO";
+                model.SedeOrigen = "PROVEEDOR / COMPRA";
+                model.SedeDestino = primerMov.Branch?.Name ?? "SEDE NO DEFINIDA";
+                model.EstadoMensaje = null; // En compras no suele haber estado "En tránsito"
+            }
+            else if (primerMov.Concept == Concept.Transfer)
+            {
+                model.TipoOperacion = "GUÍA DE REMISIÓN INTERNA (TRANSFERENCIA)";
+
+                var salida = movimientos.FirstOrDefault(m => m.MovementType == MovementType.Exit);
+                var entrada = movimientos.FirstOrDefault(m => m.MovementType == MovementType.Entry);
+
+                model.SedeOrigen = salida?.Branch?.Name ?? "ORIGEN NO IDENTIFICADO";
+
+                // Lógica de Estado "POR RECIBIR"
+                if (entrada == null)
+                {
+                    // Buscamos la transferencia pendiente para saber a dónde se supone que debe llegar
+                    var transferencia = await _context.ProductosTransferencias
+                        .Include(t => t.TargetBranch)
+                        .FirstOrDefaultAsync(t => t.InternalControlNumber == controlNumber);
+
+                    model.SedeDestino = transferencia?.TargetBranch?.Name ?? "PENDIENTE DE RECEPCIÓN";
+                    model.EstadoMensaje = "MERCADERÍA EN TRÁNSITO - PENDIENTE DE RECEPCIÓN";
+                }
+                else
+                {
+                    model.SedeDestino = entrada.Branch?.Name;
+                    model.EstadoMensaje = "TRANSFERENCIA COMPLETADA - CARGO DE RECEPCIÓN";
+                }
+            }
+            else
+            {
+                // Fallback para otros movimientos (Ajustes, Bajas, etc.)
+                model.TipoOperacion = $"NOTA DE MOVIMIENTO: {primerMov.Concept}";
+                model.SedeOrigen = primerMov.Branch?.Name;
+                model.SedeDestino = "---";
+            }
+
+            // 4. Configuración del PDF (Vertical A4)
+            return new ViewAsPdf("GuideDocumentPDF", model)
+            {
+                PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                PageOrientation = Rotativa.AspNetCore.Options.Orientation.Portrait,
+                PageMargins = new Rotativa.AspNetCore.Options.Margins(15, 15, 15, 15),
+                CustomSwitches = "--page-offset 0 --footer-center [page]/[toPage] --footer-font-size 8"
+            };
         }
 
 

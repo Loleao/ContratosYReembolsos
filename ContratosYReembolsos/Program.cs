@@ -7,6 +7,7 @@ using ContratosYReembolsos.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
 
@@ -33,6 +34,7 @@ builder.Services.AddDbContext<LimaContractsDbContext>(options =>
 builder.Services.AddScoped<IntermentService>();
 builder.Services.AddScoped<IUbigeoService, UbigeoService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
 builder.Services.AddSignalR();
 

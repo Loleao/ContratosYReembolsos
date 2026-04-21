@@ -58,9 +58,17 @@
                             }
                         </td>
                         <td class="text-end pe-4">
-                            <button onclick="showReceiveModal(@t.Id, '@t.InternalControlNumber')" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm fw-bold">
-                                <i class="fa-solid fa-hand-holding-box me-1"></i> Confirmar Recepción
-                            </button>
+                            <div class="btn-group shadow-sm rounded-pill overflow-hidden">
+                                <button onclick="showReceiveModal(@t.Id, '@t.InternalControlNumber')"
+                                        class="btn btn-success btn-sm px-3 fw-bold border-0">
+                                    <i class="fa-solid fa-check me-1"></i> Recibir
+                                </button>
+
+                                <button onclick="confirmCancelTransfer(@t.Id, '@t.InternalControlNumber')"
+                                        class="btn btn-outline-danger btn-sm px-3 border-0 bg-white">
+                                    <i class="fa-solid fa-ban"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 }

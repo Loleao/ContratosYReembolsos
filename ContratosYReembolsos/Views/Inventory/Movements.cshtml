@@ -1,0 +1,107 @@
+﻿@model IEnumerable<ContratosYReembolsos.Models.InventoryMovement>
+
+@{
+    // Agrupamos por Nro de Control y Concepto para no mezclar tipos de operación
+    var groupedMovements = Model.GroupBy(m => new { 
+        Control = m.InternalControlNumber ?? Guid.NewGuid().ToString(), 
+        Concepto = m.Concept 
+    });
+}
+
+<div class="container-fluid mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Kardex Consolidado de Inventario</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>N° Documento</th>
+                            <th>Operación / Concepto</th>
+                            <th>Detalle de Movimientos</th>
+                            <th class="text-center">Guía</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in groupedMovements)
+                        {
+                            var info = group.First();
+                            bool esTransferencia = info.Concept == Concept.Transfer;
+
+                            <tr>
+                                <td class="text-nowrap small">
+                                    @info.CreatedAt.ToString("dd/MM/yyyy")<br />
+                                    <span class="text-muted">@info.CreatedAt.ToString("HH:mm")</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">@info.InternalControlNumber</span>
+                                    @if (!string.IsNullOrEmpty(info.ExternalDocumentNumber))
+                                    {
+                                        <br /><small class="text-muted"><i class="fas fa-file-invoice me-1"></i>@info.ExternalDocumentNumber</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (esTransferencia)
+                                    {
+                                        <span class="badge rounded-pill bg-primary">
+                                            <i class="fas fa-exchange-alt me-1"></i> TRANSFERENCIA
+                                        </span>
+                                    }
+                                    else if (info.Concept == Concept.Buy)
+                                    {
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="fas fa-shopping-cart me-1"></i> COMPRA / INGRESO
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-secondary">
+                                            @info.Concept.ToString().ToUpper()
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        @foreach (var item in group)
+                                        {
+                                            <div class="small d-flex align-items-center">
+                                                @if (item.MovementType == MovementType.Entry)
+                                                {
+                                                    <i class="fas fa-arrow-alt-circle-down text-success me-2" title="Entrada"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-arrow-alt-circle-up text-danger me-2" title="Salida"></i>
+                                                }
+                                                
+                                                <span class="me-2"><strong>@item.Quantity.ToString("N0")</strong></span>
+                                                <span class="text-truncate" style="max-width: 250px;">@item.Product?.Name</span>
+                                                <span class="badge bg-light text-dark ms-auto border">@item.Branch?.Name</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(info.InternalControlNumber))
+                                    {
+                                        <a asp-controller="Inventory" 
+                                           asp-action="ImprimirGuia" 
+                                           asp-route-controlNumber="@info.InternalControlNumber" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Generar PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
