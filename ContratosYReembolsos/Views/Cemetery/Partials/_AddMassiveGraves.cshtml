@@ -1,6 +1,7 @@
 ﻿@using System.Linq
+@using ContratosYReembolsos.Models.Entities.Cemeteries
 @{
-    var existingRows = ViewBag.ExistingRows as IEnumerable<IGrouping<string, ContratosYReembolsos.Models.IntermentSpace>>;
+    var existingRows = ViewBag.ExistingRows as IEnumerable<IGrouping<string, IntermentSpace>>;
     string nextLetter = ViewBag.NextLetter;
 }
 

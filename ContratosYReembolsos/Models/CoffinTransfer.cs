@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using ContratosYReembolsos.Models.Entities.Branches;
 
 namespace ContratosYReembolsos.Models
 {

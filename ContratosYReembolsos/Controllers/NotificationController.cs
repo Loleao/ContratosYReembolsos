@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ContratosYReembolsos.Services;
-using ContratosYReembolsos.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Routing;
-using Microsoft.AspNetCore.Mvc.Infrastructure; // Ajusta según tu namespace
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Services.Interfaces; // Ajusta según tu namespace
 
 namespace ContratosYReembolsos.Controllers
 {

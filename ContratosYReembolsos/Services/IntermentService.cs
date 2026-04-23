@@ -1,5 +1,5 @@
-﻿using ContratosYReembolsos.Data;
-using ContratosYReembolsos.Models;
+﻿using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Models.Entities.Cemeteries;
 
 namespace ContratosYReembolsos.Services
 {

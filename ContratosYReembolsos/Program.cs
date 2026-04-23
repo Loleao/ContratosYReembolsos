@@ -1,9 +1,18 @@
 using System;
 using ContratosYReembolsos.Constants;
-using ContratosYReembolsos.Data;
+using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Data.SeedData;
 using ContratosYReembolsos.Hubs;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Services;
+using ContratosYReembolsos.Services.Implementations;
+using ContratosYReembolsos.Services.Implementations.Agencies;
+using ContratosYReembolsos.Services.Implementations.Branches;
+using ContratosYReembolsos.Services.Implementations.Cemeteries;
+using ContratosYReembolsos.Services.Implementations.Contracts;
+using ContratosYReembolsos.Services.Implementations.Inventory;
+using ContratosYReembolsos.Services.Implementations.Transport;
+using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -34,7 +43,17 @@ builder.Services.AddDbContext<LimaContractsDbContext>(options =>
 builder.Services.AddScoped<IntermentService>();
 builder.Services.AddScoped<IUbigeoService, UbigeoService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IAgencyService, AgencyService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<ITransportService, TransportService>();
+builder.Services.AddScoped<ICemeteryService, CemeteryService>();
+builder.Services.AddScoped<IContractService, ContractService>();
+
+
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+
+
 
 builder.Services.AddSignalR();
 
@@ -96,14 +115,16 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         var ubigeoService = services.GetRequiredService<IUbigeoService>();
         var intermentService = services.GetRequiredService<IntermentService>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // Llamada al inicializador externo
-        await DbInitializer.SeedAsync(context, ubigeoService, intermentService);
+        // Orquestamos todo en una sola llamada
+        await DbInitializer.SeedAsync(context, ubigeoService, intermentService, userManager, roleManager);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocurrió un error al sembrar los datos maestros.");
+        logger.LogError(ex, "Error crítico durante el sembrado de datos maestros e Identity.");
     }
 }
 
@@ -128,47 +149,6 @@ app.MapHub<NotificationHub>("/notificationHub");
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-        if (!await roleManager.RoleExistsAsync("Admin"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-        }
-
-        var adminDni = "00000000";
-        var adminUser = await userManager.FindByNameAsync(adminDni);
-
-        if (adminUser == null)
-        {
-            var user = new ApplicationUser
-            {
-                UserName = adminDni,
-                DNI = adminDni,
-                FullName = "Administrador Sistema",
-                Email = "admin@fonafun.com",
-                EmailConfirmed = true
-            };
-
-            // La clave será Admin123* (puedes cambiarla)
-            await userManager.CreateAsync(user, "Admin123*");
-            await userManager.AddToRoleAsync(user, "Admin");
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = loggerFactory.CreateLogger<Program>();
-        logger.LogError(ex, "Erro al crear el usuario Admin inicial.");
-    }
-}
 
 
 app.Run();

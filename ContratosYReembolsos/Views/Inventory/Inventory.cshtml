@@ -1,4 +1,5 @@
-﻿@model (List<ContratosYReembolsos.Models.ProductStock> Stock, List<ContratosYReembolsos.Models.FixedAsset> Assets)
+﻿@using ContratosYReembolsos.Models.Entities.Inventory
+@model (List<ProductStock> Stock, List<FixedAsset> Assets)
 
 @{
     ViewData["Title"] = "Gestión de Sede - " + ViewBag.BranchName;

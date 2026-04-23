@@ -1,4 +1,6 @@
-﻿namespace ContratosYReembolsos.Models.ViewModels
+﻿using ContratosYReembolsos.Models.Entities.Branches;
+
+namespace ContratosYReembolsos.Models.ViewModels
 {
     public class AssetDashboardViewModel
     {

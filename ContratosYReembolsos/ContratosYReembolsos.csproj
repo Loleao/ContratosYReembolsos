@@ -24,4 +24,13 @@
     <PackageReference Include="Rotativa.AspNetCore" Version="1.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\ViewModels\Agency\" />
+    <Folder Include="Models\ViewModels\Branch\" />
+    <Folder Include="Models\ViewModels\Cemetery\" />
+    <Folder Include="Models\ViewModels\Inventory\" />
+    <Folder Include="Models\ViewModels\Notification\" />
+    <Folder Include="Models\ViewModels\Transport\" />
+  </ItemGroup>
+
 </Project>

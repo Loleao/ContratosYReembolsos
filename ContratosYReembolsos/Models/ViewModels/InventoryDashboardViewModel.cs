@@ -1,4 +1,7 @@
-﻿namespace ContratosYReembolsos.Models.ViewModels
+﻿using ContratosYReembolsos.Models.Entities.Branches;
+using ContratosYReembolsos.Models.Entities.Inventory;
+
+namespace ContratosYReembolsos.Models.ViewModels
 {
     public class InventoryDashboardViewModel
     {

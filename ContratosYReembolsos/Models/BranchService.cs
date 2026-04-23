@@ -1,4 +1,6 @@
-﻿namespace ContratosYReembolsos.Models
+﻿using ContratosYReembolsos.Models.Entities.Branches;
+
+namespace ContratosYReembolsos.Models
 {
     public class BranchMovilityService
     {
