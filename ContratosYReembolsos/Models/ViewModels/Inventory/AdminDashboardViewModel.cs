@@ -1,7 +1,7 @@
 ﻿using ContratosYReembolsos.Models.Entities.Branches;
 using static ContratosYReembolsos.Constants.Permissions;
 
-namespace ContratosYReembolsos.Models.ViewModels
+namespace ContratosYReembolsos.Models.ViewModels.Inventory
 {
     public class AdminDashboardViewModel
     {

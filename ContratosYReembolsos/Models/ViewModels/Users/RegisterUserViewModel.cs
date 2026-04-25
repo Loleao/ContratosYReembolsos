@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
-namespace ContratosYReembolsos.Models.ViewModels
+namespace ContratosYReembolsos.Models.ViewModels.Users
 {
     public class RegisterUserViewModel
     {

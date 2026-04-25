@@ -1,6 +1,6 @@
 ﻿using ContratosYReembolsos.Models.Entities.Branches;
 
-namespace ContratosYReembolsos.Models.ViewModels
+namespace ContratosYReembolsos.Models.ViewModels.Inventory
 {
     public class AssetDashboardViewModel
     {

@@ -1,6 +1,6 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
 using ContratosYReembolsos.Models.Entities.Transport;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.ViewModels.Transport;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

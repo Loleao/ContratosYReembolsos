@@ -173,10 +173,10 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>
+                    @* <td>
                         <span class="val">ATAÚD @Model.CoffinVariant?.Coffin?.ModelName</span><br />
                         <small>Color: @Model.CoffinVariant?.Color | Material: @Model.CoffinVariant?.Material</small>
-                    </td>
+                    </td> *@
                     <td>Suministro</td>
                     <td class="text-end fw-bold">Entregado</td>
                 </tr>
@@ -196,12 +196,6 @@
                     }
                 }
             </tbody>
-            <tfoot>
-                <tr class="total-row">
-                    <td colspan="2" class="text-end" style="padding: 10px;">TOTAL PAGADO / COBERTURA:</td>
-                    <td class="text-end" style="padding: 10px; font-size: 14px;">S/ @Model.TotalAmount.ToString("N2")</td>
-                </tr>
-            </tfoot>
         </table>
     </div>
 

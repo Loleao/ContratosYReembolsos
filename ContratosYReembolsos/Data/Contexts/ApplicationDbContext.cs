@@ -18,19 +18,9 @@ namespace ContratosYReembolsos.Data.Contexts
 
         public DbSet<Agency> Agencias { get; set; }
         public DbSet<Cemetery> Cementerios { get; set; }
-        public DbSet<Niche> Nichos { get; set; }
-        public DbSet<Pavilion> Pabellones { get; set; }
         public DbSet<Contract> Contratos { get; set; }
+        public DbSet<ContractProductDetail> DetallesProductosContrato { get; set; }
         public DbSet<ContractMovilityDetail> DetallesMovilidadContrato { get; set; }
-        public DbSet<Service> Servicios { get; set; }
-        public DbSet<ServiceCategory> CategoriasServicios { get; set; }
-        public DbSet<StockItem> StockItems { get; set; }
-        public DbSet<PhysicalUnit> UnidadesFisicas { get; set; }
-        public DbSet<Coffin> Ataudes { get; set; }
-        public DbSet<CoffinMovement> MovimientosAtaudes { get; set; }
-        public DbSet<BranchStock> StockFilial { get; set; }
-        public DbSet<CoffinVariant> AtaudVariantes { get; set; }
-        public DbSet<CoffinTransfer> AtaudTransferencias { get; set; }
         public DbSet<Driver> Conductores { get; set; }
         public DbSet<Vehicle> Vehiculos { get; set; }
         public DbSet<VehicleType> TiposVehiculo { get; set; }
@@ -55,16 +45,6 @@ namespace ContratosYReembolsos.Data.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // --- CONFIGURACIÓN DE TRASLADOS Y MOVIMIENTOS ---
-            modelBuilder.Entity<CoffinTransfer>()
-                .HasOne(t => t.OriginBranch).WithMany().HasForeignKey(t => t.OriginBranchId).OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<CoffinTransfer>()
-                .HasOne(t => t.TargetBranch).WithMany().HasForeignKey(t => t.TargetBranchId).OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<CoffinMovement>()
-                .HasOne(m => m.Branch).WithMany().HasForeignKey(m => m.BranchId).OnDelete(DeleteBehavior.Restrict);
 
             // --- CONFIGURACIÓN DE CONTRATOS (RELACIONES PRINCIPALES) ---
             modelBuilder.Entity<Contract>()

@@ -10,7 +10,7 @@
         // Identidad única solicitada
         public string PatrimonialCode { get; set; }
         public string SerialNumber { get; set; } // Placa o serie de fábrica
-        public string Status { get; set; } // "Disponible", "En Uso", "Mantenimiento"
+        public AssetStatus Status { get; set; } // "Disponible", "En Uso", "Mantenimiento"
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

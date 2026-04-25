@@ -1,5 +1,5 @@
 ﻿using ContratosYReembolsos.Models.Entities.Inventory;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.ViewModels.Inventory;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ContratosYReembolsos.Models.ViewModels
+namespace ContratosYReembolsos.Models.ViewModels.Contracts
 {
     public class ContractViewModel
     {
@@ -8,9 +8,9 @@ namespace ContratosYReembolsos.Models.ViewModels
         public SolicitorData Solicitor { get; set; }
         public DeceasedData Deceased { get; set; }
         public int AgencyId { get; set; }
-        public int CoffinVariantId { get; set; }
-        public List<int> RequiredVehicles { get; set; }
-        public decimal TotalAmount { get; set; }
+        public List<int> StockItems { get; set; }      // IDs de Productos (Ataúdes)
+        public List<int> AssetItems { get; set; }      // IDs de Activos Fijos (Capillas)
+        public List<int> MobilityItems { get; set; }
     }
 
     public class SolicitorData

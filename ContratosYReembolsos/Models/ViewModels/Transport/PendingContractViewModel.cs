@@ -1,6 +1,6 @@
 ﻿using ContratosYReembolsos.Models.Entities.Contracts;
 
-namespace ContratosYReembolsos.Models.ViewModels
+namespace ContratosYReembolsos.Models.ViewModels.Transport
 {
     public class PendingContractViewModel
     {

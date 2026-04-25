@@ -1,0 +1,2160 @@
+﻿@{
+	ViewData["Title"] = "Registro de Contratos";
+}
+
+<style>
+	:root {
+		--pnp-blue: #004a99;
+		--pnp-bg: #003366;
+		--pnp-gray: #f1f4f8;
+	}
+
+	body {
+		background-color: var(--pnp-bg);
+		font-family: 'Segoe UI', sans-serif;
+	}
+
+	/* Contenedor Principal */
+	.stepper-card {
+		background: white;
+		border-radius: 20px;
+		padding: 40px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+		/* max-width: 1000px;  <-- ELIMINA O COMENTA ESTA LÍNEA */
+		width: 95%;
+		margin: 30px auto;
+		min-height: calc(100vh - 100px);
+	}
+
+	.stepper-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		position: relative;
+		margin-bottom: 50px;
+		padding: 0 40px;
+	}
+
+		.stepper-header::before {
+			content: "";
+			position: absolute;
+			top: 25px; /* Centrado con el dot de 50px */
+			left: 60px; /* Ajuste para no sobresalir al inicio */
+			right: 60px; /* Ajuste para no sobresalir al final */
+			height: 3px;
+			background: #e2e8f0;
+			z-index: 1;
+		}
+
+	/* --- ESTILO DE LOS PASOS --- */
+	.step-item {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		z-index: 2;
+		position: relative;
+	}
+
+		/* Quitamos el .step-item::after porque la línea general la maneja el header::before */
+		.step-item::after {
+			display: none;
+		}
+
+	.step-dot {
+		width: 50px;
+		height: 50px;
+		background: white;
+		border: 2px solid #e2e8f0;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		font-size: 1.2rem;
+		z-index: 5;
+		margin-bottom: 10px; /* Espacio con el texto inferior */
+	}
+
+	/* Efecto cuando el paso está ACTIVO */
+	.step-item.active .step-dot {
+		border-color: var(--pnp-blue);
+		background-color: var(--pnp-blue);
+		color: white;
+		transform: scale(1.1);
+		box-shadow: 0 0 15px rgba(0, 74, 153, 0.3);
+		border-width: 4px;
+	}
+
+	/* Efecto cuando el paso está COMPLETADO */
+	.step-item.completed .step-dot {
+		background-color: #10b981;
+		border-color: #10b981;
+		color: white;
+	}
+
+	.step-label {
+		font-size: 11px;
+		font-weight: bold;
+		color: #94a3b8;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		transition: color 0.3s;
+	}
+
+	.step-item.active .step-label {
+		color: var(--pnp-blue);
+	}
+
+	#dynamic-content {
+		transition: opacity 0.3s ease-in-out, transform 0.3s ease-out;
+	}
+
+	.content-fade-out {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	.content-fade-in {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.step-dot {
+		width: 50px; /* Un poco más grande para los iconos */
+		height: 50px;
+		background: #fff;
+		border: 2px solid #e2e8f0;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		font-size: 1.2rem;
+		z-index: 5;
+	}
+
+	.step-item.active .step-dot {
+		border-color: var(--pnp-blue);
+		color: var(--pnp-blue);
+		border-width: 3px;
+	}
+
+	.step-item.completed .step-dot {
+		background: #28a745;
+		border-color: #28a745;
+		color: white;
+	}
+
+	.step-label {
+		font-size: 12px;
+		font-weight: bold;
+		color: #999;
+		text-transform: uppercase;
+	}
+
+	/* Estilo unificado de celdas (Igual a Details) */
+	.space-item-modal {
+		width: 34px;
+		height: 34px;
+		min-width: 34px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: 800;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		border: 1px solid rgba(0,0,0,0.05);
+		flex-shrink: 0;
+		color: white;
+	}
+
+		.space-item-modal:hover {
+			transform: scale(1.2);
+			z-index: 10;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+		}
+
+	/* Colores de estado */
+	.st-disponible {
+		background-color: #198754 !important;
+	}
+	/* bg-success */
+	.st-ocupado {
+		background-color: #dc3545 !important;
+	}
+	/* bg-danger */
+	.st-reservado {
+		background-color: #ffc107 !important;
+		color: #212529 !important;
+	}
+	/* bg-warning */
+	.st-otro {
+		background-color: #6c757d !important;
+	}
+
+	/* Contenedor de scroll para el mapa */
+	.map-scroll-container {
+		overflow-x: auto;
+		padding-bottom: 10px;
+	}
+
+		.map-scroll-container::-webkit-scrollbar {
+			height: 6px;
+		}
+
+		.map-scroll-container::-webkit-scrollbar-thumb {
+			background: #cbd5e0;
+			border-radius: 10px;
+		}
+
+	/* Asegura que las tarjetas de las caras ocupen todo el ancho y se vean iguales */
+	/* Forzar ancho del modal para el selector de nichos */
+	#ajaxTargetSearch {
+		max-width: 1200px !important; /* Aumentamos el ancho significativamente */
+		width: 90%;
+	}
+
+	/* Unificar el tamaño de las tarjetas de las caras */
+	.card-face {
+		min-height: 300px; /* Altura mínima para que sean iguales */
+		display: flex;
+		flex-direction: column;
+	}
+
+	.map-scroll-container {
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: 15px 5px;
+		background-color: #f8fafc; /* Un fondo muy sutil para delimitar el área */
+		border-radius: 8px;
+		flex-grow: 1; /* Hace que el área de scroll ocupe el resto de la tarjeta */
+	}
+
+	/* Paso 4 */
+
+	.time-slot {
+		border: 1px solid #f0f0f0 !important;
+		min-width: 90px;
+		transition: 0.2s;
+	}
+
+		.time-slot.available:hover {
+			background-color: var(--pnp-blue) !important;
+			color: white !important;
+			cursor: pointer;
+			transform: scale(1.05);
+			z-index: 5;
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+		}
+
+		.time-slot.occupied {
+			cursor: not-allowed;
+			opacity: 0.7;
+		}
+
+	.sticky-column {
+		background-color: #f8f9fa !important;
+		border-right: 2px solid #dee2e6 !important;
+	}
+
+	.slot.slot-green:hover {
+		background-color: #218838 !important; /* Un verde más oscuro */
+		cursor: pointer;
+		transform: scale(1.1); /* Se agranda un poquito */
+		z-index: 10;
+		box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+		border-radius: 4px;
+		transition: all 0.2s ease;
+	}
+
+	.slot.slot-red {
+		cursor: not-allowed;
+	}
+
+	/* Estilo para la celda que ya está seleccionada (la estrella) */
+	.slot[style*="border: 4px solid"] {
+		animation: pulse-blue 2s infinite;
+	}
+
+	@@keyframes pulse-blue {
+		0% {
+			box-shadow: 0 0 0 0 rgba(0, 74, 153, 0.7);
+		}
+
+		70% {
+			box-shadow: 0 0 0 10px rgba(0, 74, 153, 0);
+		}
+
+		100% {
+			box-shadow: 0 0 0 0 rgba(0, 74, 153, 0);
+		}
+	}
+
+
+	/* Overlay Personalizado (Tu lógica de Legajos) */
+	.custom-modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(15, 23, 42, 0.6);
+		backdrop-filter: blur(5px);
+		display: none;
+		justify-content: center;
+		align-items: center;
+		z-index: 3000;
+	}
+
+	.swal2-container {
+		z-index: 4000 !important;
+	}
+
+	#ajaxTargetSearch {
+		width: 95%; /* Ocupa casi todo el ancho en móviles */
+		max-width: 900px; /* Ancho cómodo para la tabla */
+		background: white;
+		border-radius: 20px;
+		padding: 25px;
+		box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+	}
+
+</style>
+
+<div class="container-fluid px-4">
+	<div class="stepper-card">
+		<div class="stepper-header">
+			<div class="step-item active" id="nav-1">
+				<div class="step-dot"><i class="fa-solid fa-user"></i></div>
+				<div class="step-label">Solicitante</div>
+			</div>
+			<div class="step-item" id="nav-2">
+				<div class="step-dot"><i class="fa-solid fa-dove"></i></div>
+				<div class="step-label">Difunto</div>
+			</div>
+			<div class="step-item" id="nav-3">
+				<div class="step-dot"><i class="fa-solid fa-handshake"></i></div>
+				<div class="step-label">Agencia</div>
+			</div>
+			<div class="step-item" id="nav-4">
+				<div class="step-dot"><i class="fa-solid fa-truck-ramp-box"></i></div>
+				<div class="step-label">Servicios</div>
+			</div>
+			<div class="step-item" id="nav-5">
+				<div class="step-dot"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+				<div class="step-label">Resumen</div>
+			</div>
+		</div>
+
+		<div id="dynamic-content" class="mt-4">
+			<div class="text-center py-5">
+				<i class="fa-solid fa-circle-notch fa-spin fa-2x text-primary"></i>
+				<p class="mt-2 text-muted">Cargando formulario...</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="modalOverlaySearch" class="custom-modal-overlay" onclick="handleOverlayClick(event)">
+	<div id="ajaxTargetSearch"></div>
+</div>
+
+@section Scripts {
+	<script>
+		const urls = {
+			actualStep: 1,
+			step1: '@Url.Action("GetStep1", "Contract")',
+			step2: '@Url.Action("GetStep2", "Contract")',
+			step3: '@Url.Action("GetStep3", "Contract")',
+			step4: '@Url.Action("GetStep4", "Contract")',
+			step5: '@Url.Action("GetStep5", "Contract")',
+			searchModal: '@Url.Action("GetSearchModal", "Contract")',
+			searchAction: '@Url.Action("SearchAffiliates", "Contract")',
+			searchBeneficiariesModal: '@Url.Action("GetSearchBeneficiary", "Contract")',
+			searchBeneficiaries: '@Url.Action("GetBeneficiariesByAffiliate", "Contract")',
+			getRegions: '@Url.Action("GetRegions", "Contract")',
+			getProvinces: '@Url.Action("GetProvinces", "Contract")',
+			getDistricts: '@Url.Action("GetDistricts", "Contract")',
+			getBranchCapabilities: '@Url.Action("GetBranchCapabilities", "Contract")',
+			getWakes: '@Url.Action("GetWakes", "Contract")',
+			getCemeteryModal: '@Url.Action("GetSearchCemetery", "Contract")',
+			getCemeteriesAction: '@Url.Action("GetCemeteries", "Contract")',
+			getAgencyModal: '@Url.Action("GetSearchAgency", "Contract")',
+			getAgenciesAction: '@Url.Action("GetAgencies", "Contract")',
+			getNicheSelectorModal: '@Url.Action("GetNicheSelector", "Contract")',
+			getStructures: '@Url.Action("GetStructures", "Contract")',
+			getSpaceMap: '@Url.Action("GetSpaceMap", "Contract")',
+			getServicesAction: '@Url.Action("GetServices", "Service")',
+			getAvailableUnits: '@Url.Action("GetAvailableUnits", "Service")',
+			getUnitPickerModal: '@Url.Action("GetUnitPicker", "Service")',
+			getDailyAvailability: '@Url.Action("GetDailyAvailability", "Service")',
+			getWeeklyAvailability: '@Url.Action("GetWeeklyAvailability", "Service")',
+			getPrefix: '@Url.Action("GetPrefix", "Contract")',
+			saveContract: '@Url.Action("Create", "Contract")',
+			downloadContract: '@Url.Action("DescargarContratoPDF", "Contract")',
+		};
+
+		let contractData = {
+			branchId: 0,
+			solicitor: { id: '', dni: '', name: '', cip: '', type: '' },
+			deceased: {
+				id: '', dni: '', name: '', deathDate: '',
+				burialDate: '', burialTime: '',
+				ubigeoFull: '', inei: '',
+				wakeId: '', wakeName: '',
+				cemeteryId: '', cemeteryName: '',
+				intermentStructureId: null,
+				intermentSpaceId: null,
+				burialType: '',
+				burialDetail: ''
+			},
+			agencyId: 0,
+			stockItems: [],      // Para Ataúdes (consumibles)
+			assetItems: [],      // Para Capillas, Biombos (activos fijos)
+			mobilityItems: [],
+		};
+
+		let searchTarget = 'Solicitor';
+
+		let branchCaps = { hasWake: false, hasCem: false };
+
+		async function handleStepInitialization(n) {
+			console.log("Inicializando paso:", n);
+
+			const container = document.getElementById('dynamic-content');
+
+			switch (n) {
+				case 1:
+					if (typeof toggleSolicitorType === 'function') {
+						toggleSolicitorType();
+					}
+					break;
+
+				case 2:
+					try {
+						const response = await fetch(`${urls.getBranchCapabilities}?branchId=${contractData.branchId}`);
+						if (response.ok) {
+							branchCaps = await response.json();
+
+							const $wakeSection = $('#sectionWakePlace');
+							if (branchCaps.hasWake) {
+								$wakeSection.fadeIn(300).removeClass('d-none');
+								if (typeof loadWakes === 'function') loadWakes();
+							} else {
+								$wakeSection.hide().addClass('d-none');
+								contractData.deceased.wakeId = "0";
+								contractData.deceased.wakeName = "Particular / Domicilio";
+							}
+
+							$('#sectionSpecificLocation').addClass('d-none');
+
+							if (!branchCaps.hasCem) {
+								contractData.deceased.intermentSpaceId = null;
+							}
+						}
+					} catch (e) {
+						console.error("Error al validar capacidades de filial:", e);
+					}
+
+					if (typeof filterDeceasedOptions === 'function') filterDeceasedOptions();
+					if (typeof loadRegions === 'function') loadRegions();
+					break;
+
+				case 3:
+					if (typeof executeAgencySearch === 'function') {
+						executeAgencySearch(true);
+					}
+					break;
+
+					case 4:
+						setTimeout(() => {
+							if (typeof renderCatalog === 'function') {
+								renderCatalog('Inventario');
+							}
+							if (typeof updateSelectionUI === 'function') {
+								updateSelectionUI();
+							}
+						}, 150); // 150ms es suficiente para que el navegador procese el nuevo HTML
+						break;
+
+				case 5:
+					if (typeof renderStep5 === 'function') {
+						await renderStep5();
+					}
+					break;
+			}
+		}
+
+		async function loadStep(n) {
+			const container = document.getElementById('dynamic-content');
+			container.style.opacity = '0';
+
+			setTimeout(async () => {
+				try {
+					const resp = await fetch(urls[`step${n}`]);
+					if (!resp.ok) throw new Error("No se pudo cargar el HTML");
+
+					const html = await resp.text();
+					container.innerHTML = html;
+
+					updateStepperHeader(n);
+
+					// LLAMADA A LA FUNCIÓN
+					handleStepInitialization(n);
+
+					container.style.opacity = '1';
+					actualStep = n;
+
+				} catch (e) {
+					console.error("Error crítico en loadStep:", e);
+					container.innerHTML = `<div class="alert alert-danger">Error: ${e.message}</div>`;
+					container.style.opacity = '1';
+				}
+			}, 200);
+		}
+
+		function updateStepperHeader(n) {
+			const icons = ['fa-user', 'fa-dove', 'fa-handshake', 'fa-truck-ramp-box', 'fa-file-invoice-dollar'];
+			document.querySelectorAll('.step-item').forEach((el, i) => {
+				const stepNum = i + 1;
+				const dot = el.querySelector('.step-dot');
+				el.classList.toggle('active', stepNum === n);
+				el.classList.toggle('completed', stepNum < n);
+				if (dot) {
+					dot.innerHTML = stepNum < n
+						? '<i class="fa-solid fa-check"></i>'
+						: `<i class="fa-solid ${icons[i]}"></i>`;
+				}
+			});
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			const initialBranch = @(ViewBag.UserBranchId ?? 0);
+			contractData.branchId = initialBranch;
+			console.log("Filial cargada en contractData:", contractData.branchId);
+			loadStep(1);
+		});
+
+		function openSearchAffiliate(target) {
+			searchTarget = target; // Guardamos si es para 'Solicitor' o 'Deceased'
+
+			$.ajax({
+				url: urls.searchModal,
+				type: 'GET',
+				success: function (html) {
+					$('#ajaxTargetSearch').html(html);
+					$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+				}
+			});
+		}
+
+		function closeSearchModal() {
+			$('#modalOverlaySearch').fadeOut(300);
+		}
+
+		function handleOverlayClick(e) {
+			if (e.target.id === 'modalOverlaySearch') closeSearchModal();
+		}
+
+		async function executeSearch() {
+			// 1. Obtenemos los filtros básicos
+			const filters = {
+				dni: $('#filterDni').val(),
+				cip: $('#filterCip').val(),
+				name: $('#filterName').val(),
+			};
+
+			const $tbody = $('#resultsTableBody');
+			$tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Filtrando beneficiarios...</td></tr>');
+
+			try {
+				// 2. Construimos la URL con el nuevo parámetro parentDni
+				const query = `dni=${filters.dni}&cip=${filters.cip}&name=${encodeURIComponent(filters.name)}&parentDni=${filters.parentDni}`;
+				const response = await fetch(`${urls.searchAction}?${query}`);
+				const data = await response.json();
+
+				$tbody.empty();
+
+				if (data.length === 0) {
+					$tbody.append('<tr><td colspan="4" class="text-center text-danger">No se encontraron beneficiarios asociados a este titular.</td></tr>');
+					return;
+				}
+
+				// 3. Renderizamos los resultados
+				data.forEach(item => {
+					const tr = $(`
+						<tr style="cursor:pointer" class="align-middle">
+							<td><b>${item.dni}</b></td>
+							<td>${item.relationship || 'Familiar'}</td> <td>${item.name}</td>
+							<td class="text-end"><button class="btn btn-sm btn-primary rounded-pill">Seleccionar</button></td>
+						</tr>
+					`);
+					tr.click(() => selectAffiliate(item));
+					$tbody.append(tr);
+				});
+			} catch (e) {
+				$tbody.html('<tr><td colspan="4" class="text-center text-danger">Error al conectar con la base de datos de beneficiarios.</td></tr>');
+			}
+		}
+
+		function selectAffiliate(item) {
+			if (searchTarget === 'Solicitor') {
+				contractData.solicitor.id = item.id;
+				contractData.solicitor.dni = item.dni;
+				contractData.solicitor.name = item.name;
+				contractData.solicitor.cip = item.cip;
+
+
+				$('#SolicitorDni').val(item.dni);
+				$('#SolicitorName').val(item.name);
+				$('#SolicitorCip').val(item.cip);
+			}
+			else if (searchTarget === 'Deceased') {
+				$('#DeceasedDni').val(item.dni);
+				$('#DeceasedName').val(item.name);
+				$('#DeceasedCip').val(item.cip);
+			}
+			closeSearchModal();
+		}
+
+		function toggleSolicitorType() {
+			const select = document.getElementById('SolicitorType');
+			if (!select) return;
+
+			const type = select.value;
+			contractData.solicitor.type = type;
+
+			const isTitular = (type === "Titular");
+			const btnLupa = document.getElementById('btnLupa');
+			const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
+
+			if (btnLupa) {
+				isTitular ? $(btnLupa).fadeIn(200) : $(btnLupa).fadeOut(200);
+			}
+
+			fields.forEach(id => {
+				const el = document.getElementById(id);
+				if (!el) return;
+
+				if (isTitular) {
+					el.readOnly = true;
+					el.classList.add('bg-light');
+				} else {
+					el.readOnly = false;
+					el.classList.remove('bg-light');
+				}
+			});
+		}
+
+		function validateStep1() {
+			const dni = $('#SolicitorDni').val();
+			const name = $('#SolicitorName').val();
+			const type = $('#SolicitorType').val();
+			const cip = $('#SolicitorCip').val();
+
+			if (!dni || !name) {
+				Swal.fire('Atención', 'Debe buscar y seleccionar un solicitante.', 'warning');
+				return false;
+			}
+
+			// PERSISTENCIA: Guardamos en nuestro "cerebro" global
+			contractData.solicitor.dni = dni;
+			contractData.solicitor.name = name;
+			contractData.solicitor.type = type;
+			contractData.solicitor.cip = cip;
+
+			return true;
+		}
+
+		async function nextStep(n, validationFn) {
+			if (validationFn && !validationFn()) {
+				return;
+			}
+			loadStep(n);
+		}
+
+		//PASO
+		//NUMERO
+		//2
+
+		$(document).on('change', '#BurialTime', function() {
+			contractData.deceased.burialTime = $(this).val();
+		});
+
+		function filterDeceasedOptions() {
+			// 1. Obtenemos el tipo de solicitante que guardamos en el Paso 1
+			const solType = contractData.solicitor.type; // "Titular" o "Familiar"
+			const $deceasedSelect = $('#DeceasedType');
+			const $alert = $('#alertRestriction');
+
+			if (!$deceasedSelect.length) return;
+
+			if (solType === "Titular") {
+				// --- ESCENARIO A: EL TITULAR FIRMA ---
+				// El fallecido obligatoriamente debe ser un Beneficiario (Familiar)
+				$deceasedSelect.find('option[value="Titular"]').attr('disabled', true).hide();
+				$deceasedSelect.val("Beneficiario"); // Forzamos la selección a familiar
+
+				$alert.removeClass('d-none').addClass('animate__animated animate__shakeX');
+
+				// Ejecutamos el cambio para que se limpie el DNI y se active la lupa de búsqueda de familiares
+				handleDeceasedTypeChange();
+			}
+			else {
+				$deceasedSelect.find('option[value="Titular"]').attr('disabled', false).show();
+				$deceasedSelect.val(""); // Dejamos que el usuario elija
+
+				$alert.addClass('d-none');
+			}
+		}
+
+		function openSearchBeneficiaries() {
+			searchTarget = 'Deceased'; // Marcamos que el destino es el fallecido
+
+			$.ajax({
+				url: urls.searchBeneficiariesModal, // Tu nueva vista parcial
+				type: 'GET',
+				success: function (html) {
+					// Inyectamos el HTML en el contenedor del modal
+					$('#ajaxTargetSearch').html(html);
+
+					// Mostramos el overlay con efecto
+					$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+
+					// Cargamos los datos automáticamente al abrir
+					executeBeneficiarySearch();
+				},
+				error: function() {
+					alert("Error al cargar el buscador de beneficiarios.");
+				}
+			});
+		}
+
+		async function executeBeneficiarySearch() {
+			const $tbody = $('#resultsBeneficiaryTableBody');
+
+
+			const titularId = contractData.solicitor.id; // El ID que capturamos en el Paso 1
+
+			$tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Buscando familiares...</td></tr>');
+
+			if (!titularId || titularId === 0) {
+				$tbody.html('<tr><td colspan="4" class="text-center text-danger">No se encontró el ID del titular. Regrese al paso 1.</td></tr>');
+				return;
+			}
+
+			try {
+				const query = `afiliadoId=${titularId}`;
+				const response = await fetch(`${urls.searchBeneficiaries}?${query}`);
+
+				const data = await response.json();
+				$tbody.empty();
+
+				if (data.length === 0) {
+					$tbody.html('<tr><td colspan="4" class="text-center text-muted">No existen beneficiarios registrados para este titular.</td></tr>');
+					return;
+				}
+
+				data.forEach(item => {
+					const tr = $(`
+						<tr style="cursor:pointer" class="align-middle">
+							<td><b>${item.dni}</b></td>
+							<td><span class="badge bg-info-subtle text-info border border-info-subtle px-3 rounded-pill">${item.relationship}</span></td>
+							<td class="text-uppercase">${item.name}</td>
+							<td class="text-end">
+								<button class="btn btn-sm btn-primary rounded-circle p-2">
+									<i class="fa-solid fa-check px-1"></i>
+								</button>
+							</td>
+						</tr>
+					`);
+					// Al hacer click, ejecuta la selección
+					tr.click(() => selectBeneficiary(item));
+					$tbody.append(tr);
+				});
+			} catch (e) {
+				$tbody.html('<tr><td colspan="4" class="text-center text-danger">Error de conexión.</td></tr>');
+			}
+		}
+
+		function selectBeneficiary(item) {
+			// 1. Guardamos en el objeto de datos global
+			contractData.deceased.id = item.id;
+			contractData.deceased.dni = item.dni;
+			contractData.deceased.name = item.name;
+
+			// 2. Llenamos los campos visibles del Paso 2
+			$('#DeceasedDni').val(item.dni);
+			$('#DeceasedName').val(item.name);
+
+			// 3. Cerramos el modal
+			closeSearchModal();
+		}
+
+		function handleDeceasedTypeChange() {
+			const type = $('#DeceasedType').val();
+			const $btnLupa = $('#btnLupaDeceased');
+
+			if (type === "Titular") {
+				$btnLupa.fadeOut(200);
+				// Sincronizar con datos del titular del Paso 1
+				$('#DeceasedDni').val(contractData.solicitor.dni);
+				$('#DeceasedName').val(contractData.solicitor.name);
+				contractData.deceased.id = contractData.solicitor.id;
+
+				// Pequeño efecto visual para confirmar carga
+				$('#DeceasedName').addClass('is-valid');
+				setTimeout(() => $('#DeceasedName').removeClass('is-valid'), 1500);
+			}
+			else if (type === "Beneficiario") {
+				$('#DeceasedDni').val('');
+				$('#DeceasedName').val('');
+				$btnLupa.fadeIn(200);
+			}
+		}
+
+		function validateDatesInline() {
+			const deathVal = $('#DeathDate').val();
+			const burialVal = $('#BurialDate').val();
+			const $errorDiv = $('#dateErrorMessage');
+			const $errorText = $('#dateErrorText');
+			const today = new Date().toISOString().split('T')[0];
+
+			$errorDiv.addClass('d-none');
+			$('#DeathDate, #BurialDate').removeClass('is-invalid');
+
+			if (!deathVal) return true;
+
+			// 1. No puede fallecer en el futuro
+			if (deathVal > today) {
+				showDateError("La fecha de fallecimiento no puede ser una fecha futura.");
+				$('#DeathDate').addClass('is-invalid');
+				return false;
+			}
+
+			if (burialVal) {
+				// 2. El entierro no puede ser antes que la muerte
+				if (burialVal < deathVal) {
+					showDateError("La fecha de sepelio no puede ser anterior al fallecimiento.");
+					$('#BurialDate').addClass('is-invalid');
+					return false;
+				}
+
+				// 3. Persistencia inmediata en el objeto global
+				contractData.deceased.deathDate = deathVal;
+				contractData.deceased.burialDate = burialVal;
+			}
+
+			return true;
+		}
+
+		function showDateError(msg) {
+			const $errorDiv = $('#dateErrorMessage');
+			$('#dateErrorText').text(msg);
+			$errorDiv.removeClass('d-none');
+		}
+
+		async function loadRegions() {
+			const resp = await fetch(`${urls.getRegions}`);
+			const data = await resp.json();
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(region => {
+				options += `<option value="${region}">${region}</option>`;
+			});
+			$('#DeathDept').html(options);
+		}
+
+		async function loadProvinces() {
+			const region = $('#DeathDept').val();
+			const $prov = $('#DeathProv');
+			const $dist = $('#DeathDist');
+
+			if (!region) { $prov.prop('disabled', true).html('<option value="">Seleccione Dept...</option>'); return; }
+
+			const query = `region=${encodeURIComponent(region)}`;
+			const resp = await fetch(`${urls.getProvinces}?${query}`);
+			const data = await resp.json();
+
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(prov => {
+				options += `<option value="${prov}">${prov}</option>`;
+			});
+
+			$prov.html(options).prop('disabled', false);
+			$dist.prop('disabled', true).html('<option value="">Seleccione Prov...</option>');
+		}
+
+		async function loadDistricts() {
+			const region = $('#DeathDept').val();
+			const province = $('#DeathProv').val();
+			const $dist = $('#DeathDist');
+
+			if (!province) { $dist.prop('disabled', true).val(''); return; }
+
+			const query = `region=${encodeURIComponent(region)}&province=${encodeURIComponent(province)}`;
+			const resp = await fetch(`${urls.getDistricts}?${query}`);
+
+			const data = await resp.json();
+
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(d => {
+				// Guardamos el INEI como valor, pero mostramos el nombre del distrito
+				options += `<option value="${d.inei}">${d.distrito}</option>`;
+			});
+
+			$dist.html(options).prop('disabled', false);
+		}
+
+		async function loadWakes() {
+			const $wakeSelect = $('#WakePlace');
+			try {
+				const resp = await fetch(`${urls.getWakes}`);
+				const data = await resp.json();
+
+				let options = '<option value="">Seleccione el local...</option>';
+				data.forEach(w => {
+					options += `<option value="${w.id}">${w.name}</option>`;
+				});
+				$wakeSelect.html(options);
+			} catch (e) {
+				$wakeSelect.html('<option value="">Error al cargar locales</option>');
+			}
+		}
+
+		function openSearchCemetery() {
+			$.ajax({
+				url: urls.getCemeteryModal,
+				type: 'GET',
+				success: function (html) {
+					$('#ajaxTargetSearch').html(html);
+					$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+
+					// Cargar los combos de departamentos del modal
+					loadCemRegions();
+
+					// CARGA INICIAL: Buscar cementerios de la sede del contrato
+					loadInitialCemeteries();
+				}
+			});
+		}
+
+		async function loadInitialCemeteries() {
+			const $tbody = $('#resultsCemeteryTableBody');
+			$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Cargando cementerios de la sede...</td></tr>');
+
+			try {
+				// Consultamos usando el branchId que ya tenemos en contractData
+				const resp = await fetch(`${urls.getCemeteriesAction}?branchId=${contractData.branchId}`);
+				const data = await resp.json();
+
+				renderCemeteryTable(data);
+			} catch (e) {
+				$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al cargar cementerios iniciales.</td></tr>');
+			}
+		}
+
+		async function loadCemRegions() {
+			const resp = await fetch(urls.getRegions);
+			const data = await resp.json();
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(r => options += `<option value="${r}">${r}</option>`);
+			$('#CemFilterRegion').html(options);
+		}
+
+		async function loadCemProvinces() {
+			const region = $('#CemFilterRegion').val();
+			if (!region) return;
+			const resp = await fetch(`${urls.getProvinces}?region=${encodeURIComponent(region)}`);
+			const data = await resp.json();
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(p => options += `<option value="${p}">${p}</option>`);
+			$('#CemFilterProvince').html(options).prop('disabled', false);
+			$('#CemFilterDistrict').prop('disabled', true).html('<option value="">Seleccione...</option>');
+		}
+
+		async function loadCemDistricts() {
+			const region = $('#CemFilterRegion').val();
+			const province = $('#CemFilterProvince').val();
+			if (!province) return;
+			const resp = await fetch(`${urls.getDistricts}?region=${encodeURIComponent(region)}&province=${encodeURIComponent(province)}`);
+			const data = await resp.json();
+			let options = '<option value="">Seleccione...</option>';
+			data.forEach(d => options += `<option value="${d.inei}">${d.distrito}</option>`);
+			$('#CemFilterDistrict').html(options).prop('disabled', false);
+		}
+
+		async function executeCemeterySearch() {
+			const inei = $('#CemFilterDistrict').val();
+			const $tbody = $('#resultsCemeteryTableBody');
+
+			if (!inei) {
+				Swal.fire('Atención', 'Seleccione un distrito para buscar cementerios.', 'warning');
+				return;
+			}
+
+			$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
+
+			try {
+				const resp = await fetch(`${urls.getCemeteriesAction}?inei=${inei}`);
+				const data = await resp.json();
+
+				renderCemeteryTable(data);
+			} catch (e) {
+				$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error de comunicación.</td></tr>');
+			}
+		}
+
+		function renderCemeteryTable(data) {
+			const $tbody = $('#resultsCemeteryTableBody');
+			$tbody.empty();
+
+			if (!data || data.length === 0) {
+				$tbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No se encontraron cementerios.</td></tr>');
+				return;
+			}
+
+			data.forEach(c => {
+				const tr = $(`
+					<tr style="cursor:pointer" class="align-middle">
+						<td><span class="badge bg-light text-dark border">${c.ruc}</span></td>
+						<td class="fw-bold text-uppercase small">${c.name}</td>
+						<td class="text-end">
+							<button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button>
+						</td>
+					</tr>
+				`);
+				// Usamos la lógica que ya tienes para seleccionar
+				tr.click(() => selectCemetery(c));
+				$tbody.append(tr);
+			});
+		}
+
+		function selectCemetery(c) {
+			contractData.deceased.cemeteryId = c.id;
+			contractData.deceased.cemeteryName = c.name;
+
+			$('#CemeteryNameDisplay').val(c.name);
+			$('#CemeteryId').val(c.id);
+
+			const $specificSection = $('#sectionSpecificLocation');
+
+			// Lógica Dinámica: Match de Sede + Capacidad de la Sede
+			if (c.branchId === contractData.branchId && branchCaps.hasCem) {
+				$specificSection.removeClass('d-none').addClass('animate__animated animate__fadeIn');
+				resetNicheSelection();
+			} else {
+				$specificSection.addClass('d-none');
+				contractData.deceased.intermentSpaceId = null;
+				contractData.deceased.burialDetail = "Cementerio Externo / Provincia";
+				$('#txtNicheSelected').text("No aplica para esta sede");
+			}
+
+			closeSearchModal();
+		}
+
+		async function openNicheSelector() {
+			const cemId = contractData.deceased.cemeteryId;
+			const type = $('input[name="BurialType"]:checked').val();
+
+			$.get(urls.getNicheSelectorModal, async function(html) {
+				$('#ajaxTargetSearch').html(html);
+
+				// Actualizamos el título del modal según el tipo
+				const titles = { 'Pabellon': 'Nichos', 'Columbario': 'Cinerarios', 'Tumba': 'Espacios en Tierra' };
+				$('.modal-title').html(`<i class="fa-solid fa-map me-2"></i> Selector de ${titles[type] || 'Espacios'}`);
+
+				$('#modalOverlaySearch').fadeIn(300).css('display', 'flex');
+
+				try {
+					// Llamada a la nueva ruta de estructuras
+					const resp = await fetch(`${urls.getStructures}?cemeteryId=${cemId}&type=${type}`);
+					const estructuras = await resp.json();
+
+					let options = `<option value="">-- Seleccione Estructura --</option>`;
+					estructuras.forEach(e => {
+						options += `<option value="${e.id}">${e.name}</option>`;
+					});
+					$('#cboPavilion').html(options); // Mantenemos el ID del combo por ahora para no romper el HTML
+				} catch (e) {
+					console.error("Error cargando estructuras:", e);
+				}
+			});
+		}
+
+		function resetNicheSelection() {
+			contractData.deceased.burialNicheId = null;
+			contractData.deceased.burialDetail = '';
+			$('#selectedNicheDisplay').addClass('d-none');
+			$('#txtNicheSelected').text('');
+		}
+
+		async function changePavilion() {
+			const pavId = $('#cboPavilion').val();
+			const selectedType = $('input[name="BurialType"]:checked').val();
+
+			if (!pavId) {
+				$('#nicheMapsContainer').addClass('d-none');
+				return;
+			}
+
+			$('#nicheLoader').removeClass('d-none');
+			$('#nicheMapsContainer').addClass('d-none');
+
+			try {
+				const resp = await fetch(`${urls.getSpaceMap}?structureId=${pavId}`);
+				const spaces = await resp.json();
+
+				// Dimensiones dinámicas
+				const dynamicRows = [...new Set(spaces.map(s => s.rowLetter.toUpperCase()))].sort();
+				const dynamicCols = [...new Set(spaces.map(s => parseInt(s.columnNumber)))].sort((a, b) => a - b);
+
+				const $col1 = $('#colCara1');
+				const $col2 = $('#colCara2');
+
+				if (selectedType === "Tumba" || selectedType === "MAUSOLEO") {
+					$col1.show();
+					$col2.addClass('d-none');
+					renderGrid('gridCara1', dynamicRows, dynamicCols, spaces, selectedType);
+				} else {
+					$col1.show();
+					$col2.removeClass('d-none'); // Se mostrará debajo de la otra por ser col-md-12
+
+					const middleIndex = Math.ceil(dynamicCols.length / 2);
+					const colsCara1 = dynamicCols.slice(0, middleIndex);
+					const colsCara2 = dynamicCols.slice(middleIndex);
+
+					renderGrid('gridCara1', dynamicRows, colsCara1, spaces, selectedType);
+					renderGrid('gridCara2', dynamicRows, colsCara2, spaces, selectedType);
+				}
+
+				$('#nicheLoader').addClass('d-none');
+				$('#nicheMapsContainer').removeClass('d-none');
+
+			} catch (e) {
+				console.error(e);
+				$('#nicheLoader').addClass('d-none');
+			}
+		}
+
+		async function loadNicheData(cemId) {
+			try {
+				const resp = await fetch(`${urls.getNicheMap}/${cemId}`);
+				const niches = await resp.json();
+
+				console.log("Nichos cargados:", niches);
+
+				if (!niches || niches.length === 0) {
+					console.warn("No hay nichos para este cementerio.");
+					return;
+				}
+
+				const rows = ['A', 'B', 'C', 'D', 'E'];
+
+				// Cara 1: Renderiza columnas del 1 al 5
+				renderGrid('gridCara1', rows, [1, 2, 3, 4, 5], niches);
+
+				// Cara 2: Renderiza columnas del 6 al 10
+				renderGrid('gridCara2', rows, [6, 7, 8, 9, 10], niches);
+
+			} catch (error) {
+				console.error("Error al cargar mapa de nichos:", error);
+			}
+		}
+
+		function renderGrid(containerId, rows, cols, allSpaces, type) {
+			const $container = $('#' + containerId);
+			if (!$container.length) return;
+			$container.empty();
+
+			const $mapBody = $('<div class="d-flex flex-column gap-2" style="min-width: max-content; padding: 10px;"></div>');
+
+			// --- 1. CABECERA DE NÚMEROS ---
+			const $headerRow = $('<div class="d-flex align-items-center mb-1"></div>');
+			// Espacio para la letra de la fila (debe ser igual al de abajo: 45px + margen)
+			$headerRow.append('<div style="width: 53px;"></div>');
+
+			const $numContainer = $('<div class="d-flex flex-nowrap gap-1"></div>');
+			cols.forEach(c => {
+				// Forzamos el ancho a 34px para que coincida con .space-item-modal
+				$numContainer.append(`<div class="text-center fw-bold text-muted x-small" style="width: 34px;">${c}</div>`);
+			});
+			$headerRow.append($numContainer);
+			$mapBody.append($headerRow);
+
+			// --- 2. FILAS DE NICHOS ---
+			rows.forEach(r => {
+				const $rowDiv = $('<div class="d-flex align-items-center"></div>');
+
+				// Letra de la fila
+				$rowDiv.append(`<div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px; font-size: 13px;">${r}</div>`);
+
+				const $spacesContainer = $('<div class="d-flex flex-nowrap gap-1"></div>');
+
+				cols.forEach(c => {
+					// Buscamos el espacio que coincida con la letra y EL NÚMERO DE COLUMNA exacto
+					const space = allSpaces.find(s =>
+						s.rowLetter.toString().trim().toUpperCase() === r.toUpperCase() &&
+						parseInt(s.columnNumber) === parseInt(c)
+					);
+
+					if (space) {
+						let statusClass = "st-otro";
+						let isSelectable = false;
+
+						// Normalizar status a minúsculas para evitar errores
+						const currentStatus = (space.status || "").toLowerCase();
+
+						if (currentStatus === "disponible") {
+							statusClass = "st-disponible";
+							isSelectable = true;
+						} else if (currentStatus === "ocupado") {
+							statusClass = "st-ocupado";
+						} else if (currentStatus === "reservado") {
+							statusClass = "st-reservado";
+						}
+
+						$spacesContainer.append(`
+							<div class="space-item-modal ${statusClass}"
+								 onclick="${isSelectable ? `confirmNicheSelection(${space.id}, '', '${r}', ${c})` : 'Swal.fire(\'No disponible\', \'Este espacio no está libre.\', \'warning\')'}"
+								 title="Fila ${r} - Col ${c} (${space.status})">
+								${c}
+							</div>
+						`);
+					} else {
+						// Celda vacía: Mantiene el ancho de 34px para que la cuadrícula no se rompa
+						$spacesContainer.append('<div style="width: 34px; height: 34px; background: #f1f5f9; border-radius: 6px; opacity: 0.3;"></div>');
+					}
+				});
+
+				$rowDiv.append($spacesContainer);
+				$mapBody.append($rowDiv);
+			});
+
+			$container.append($mapBody);
+		}
+
+		function confirmNicheSelection(id, dummy, row, col) {
+			const pavilionId = $('#cboPavilion').val();
+			const pavilionName = $('#cboPavilion option:selected').text();
+			const type = $('input[name="BurialType"]:checked').val();
+
+			// Sincronización directa con el objeto global
+			contractData.deceased.intermentSpaceId = parseInt(id);
+			contractData.deceased.structureId = parseInt(pavilionId); // Cambiado de intermentStructureId a structureId
+			contractData.deceased.burialDetail = `${pavilionName} - Fila ${row} - Nro ${col} (${type})`;
+
+			// UI Feedback
+			$('#txtNicheSelected').text(contractData.deceased.burialDetail);
+			$('#selectedNicheDisplay').removeClass('d-none');
+
+			closeSearchModal();
+		}
+
+		function validateStep2() {
+			const d = contractData.deceased; // Atajo al objeto global
+
+			// 1. Captura de inputs que no tienen 'onchange' automático
+			d.dni = $('#DeceasedDni').val();
+			d.name = $('#DeceasedName').val();
+			d.deathDate = $('#DeathDate').val();
+			d.burialDate = $('#BurialDate').val();
+			d.burialTime = $('#BurialTime').val();
+			d.inei = $('#DeathDist').val();
+			d.wakeId = $('#WakePlace').val() ? parseInt($('#WakePlace').val()) : null;
+
+			// 2. Validaciones Críticas
+			if (!d.dni) { Swal.fire('Atención', 'Debe seleccionar un difunto.', 'warning'); return false; }
+			if (!d.deathDate) { Swal.fire('Atención', 'La fecha de fallecimiento es obligatoria.', 'warning'); return false; }
+			if (!d.inei) { Swal.fire('Atención', 'Debe completar el lugar (Ubigeo).', 'warning'); return false; }
+			if (!d.cemeteryId) { Swal.fire('Atención', 'Debe seleccionar un cementerio.', 'warning'); return false; }
+
+			// 3. Validación de Cementerio Propio (Mapa)
+			// Si la sección de ubicación específica está visible, el spaceId es obligatorio
+			const isInternalCemetery = !$('#sectionSpecificLocation').hasClass('d-none');
+			if (isInternalCemetery && !d.intermentSpaceId) {
+				Swal.fire('Mapa Requerido', 'Debe elegir un lugar específico en el mapa para esta sede.', 'error');
+				return false;
+			}
+
+			// 4. Limpieza de datos si es cementerio externo
+			if (!isInternalCemetery) {
+				d.intermentSpaceId = null;
+				d.intermentStructureId = null;
+				d.burialDetail = "Cementerio Externo / Provincia";
+			}
+
+			// Guardamos el texto del Ubigeo solo para el resumen visual
+			d.ubigeoFull = `${$('#DeathDept').val()} - ${$('#DeathProv option:selected').text()} - ${$('#DeathDist option:selected').text()}`;
+
+			console.log("Paso 2 validado correctamente:", d);
+			return true;
+		}
+
+
+		//PASO 3
+
+		function openSearchAgency() {
+			$.ajax({
+				url: urls.getAgencyModal,
+				type: 'GET',
+				success: function (html) {
+					$('#ajaxTargetSearch').html(html);
+					$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+
+					executeAgencySearch(true);
+				}
+			});
+		}
+
+		async function executeAgencySearch(isInitialLoad = false) {
+			// 1. Capturamos valores
+			const ruc = $('#filterAgencyRuc').val()?.trim() || '';
+			const name = $('#filterAgencyName').val()?.trim() || '';
+			const branchId = contractData.branchId; // Obtenemos la filial del contrato actual
+
+			const $tbody = $('#agenciesTableBody');
+
+			// 2. Validación condicionada: Solo validamos si NO es carga inicial
+			if (!isInitialLoad && !ruc && !name) {
+				Swal.fire('Atención', 'Ingrese un RUC o Nombre para filtrar.', 'info');
+				return;
+			}
+
+			$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Cargando agencias...</td></tr>');
+
+			try {
+				// Añadimos branchId a la consulta
+				const queryParams = `ruc=${ruc}&name=${encodeURIComponent(name)}&branchId=${branchId}`;
+				const resp = await fetch(`${urls.getAgenciesAction}?${queryParams}`);
+				const data = await resp.json();
+
+				$tbody.empty();
+
+				if (data.length === 0) {
+					$tbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No se encontraron agencias para esta filial.</td></tr>');
+					return;
+				}
+
+				// 3. Renderizado de la tabla
+				data.forEach(a => {
+					const tr = $(`
+						<tr style="cursor:pointer" class="align-middle">
+							<td class="px-3"><b>${a.ruc}</b></td>
+							<td class="text-uppercase small">${a.name}</td>
+							<td class="text-end">
+								<button class="btn btn-sm btn-primary rounded-circle p-2">
+									<i class="fa-solid fa-check px-1"></i>
+								</button>
+							</td>
+						</tr>
+					`);
+					tr.click(() => selectAgency(a));
+					$tbody.append(tr);
+				});
+			} catch (e) {
+				console.error(e);
+				$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al conectar con el servidor.</td></tr>');
+			}
+		}
+
+		function selectAgency(a) {
+			// Persistencia global
+			contractData.agencyId = a.id; // Guardamos solo el ID para el contrato final
+			contractData.agency = { ...a }; // Mantenemos el objeto para el resumen (Paso 5)
+
+			// Llenado de etiquetas de texto (no inputs)
+			$('#txtAgencyRuc').text(a.ruc);
+			$('#txtAgencyName').text(a.name);
+			$('#txtAgencyAddress').text(a.address || 'Sin dirección registrada');
+			$('#txtAgencyPhone').text(a.phone || 'Sin teléfono');
+
+			// UI Toggle
+			$('#agencyInfoPanel').removeClass('d-none');
+			$('#noAgencySelected').addClass('d-none');
+
+			// Actualizar Badge de Estado
+			const $badge = $('#statusBadge');
+			$badge.removeClass('bg-secondary-subtle text-secondary')
+				  .addClass('bg-success-subtle text-success animate__animated animate__pulse');
+			$badge.html('<i class="fa-solid fa-circle-check me-1"></i>Agencia Vinculada');
+
+			closeSearchModal();
+
+			// Notificación de éxito
+			Swal.fire({
+				toast: true,
+				position: 'top-end',
+				icon: 'success',
+				title: 'Agencia seleccionada correctamente',
+				showConfirmButton: false,
+				timer: 2000
+			});
+		}
+
+		function validateStep3() {
+			if (!contractData.agencyId) {
+				Swal.fire({
+					title: 'Agencia Requerida',
+					text: 'Debe seleccionar una empresa funeraria para continuar con el contrato.',
+					icon: 'warning',
+					confirmButtonColor: '#004a99'
+				});
+				return false;
+			}
+			return true;
+		}
+
+		//PASO 4
+
+		let currentServiceId = null; // Para saber qué servicio estamos agendando
+
+		// async function initStep4() {
+		// 	const container = $('#catalogContainer');
+		// 	const type = contractData.deceased.burialType; // "Pabellon", "Tumba", etc.
+
+		// 	try {
+		// 		// 1. Llamar al controlador de Servicios
+		// 		const resp = await fetch(`${urls.getServicesAction}?burialType=${type}`);
+		// 		availableServices = await resp.json();
+
+		// 		// 2. Renderizar la primera categoría por defecto
+		// 		renderCatalog('Ataúdes');
+
+		// 		// 3. Actualizar el contador de la barrita azul que sale en tu imagen
+		// 		updateCounter();
+		// 	} catch (e) {
+		// 		console.error("Error cargando servicios:", e);
+		// 		container.html('<div class="alert alert-danger">No se pudo cargar el catálogo.</div>');
+		// 	}
+		// }
+
+		// function updateSelectionList() {
+		// 	const $list = $('#selectedServicesList');
+		// 	const $emptyMsg = $('#emptyCartMsg');
+		// 	const $totalDisplay = $('#totalAmountDisplay');
+
+		// 	// Si no existe el contenedor (porque no estamos en el paso 4), salimos
+		// 	if (!$list.length) return;
+
+		// 	$list.find('.selection-item').remove(); // Limpiamos items previos
+		// 	let total = 0;
+
+		// 	if (contractData.services.length === 0) {
+		// 		$emptyMsg.show();
+		// 	} else {
+		// 		$emptyMsg.hide();
+
+		// 		contractData.services.forEach(s => {
+		// 			total += s.price || 0;
+
+		// 			// Lógica para mostrar detalles extras según el LogicType
+		// 			let detailHtml = "";
+		// 			if (s.logicType === 'MOVILIDAD' && s.extraData?.scheduledDate) {
+		// 				detailHtml = `<div class="text-primary" style="font-size: 0.75rem;">
+		// 								<i class="fa-solid fa-calendar-day me-1"></i> ${s.extraData.scheduledDate} ${s.extraData.scheduledTime}
+		// 							  </div>`;
+		// 			} else if (s.logicType === 'ATAUD' && s.extraData?.serialNumber) {
+		// 				detailHtml = `<div class="text-muted" style="font-size: 0.75rem;">
+		// 								<i class="fa-solid fa-barcode me-1"></i> Serie: ${s.extraData.serialNumber}
+		// 							  </div>`;
+		// 			}
+
+		// 			const item = `
+		// 				<div class="selection-item bg-white p-2 rounded-3 mb-2 border shadow-sm animate__animated animate__fadeInRight">
+		// 					<div class="d-flex justify-content-between align-items-start">
+		// 						<div style="flex: 1;">
+		// 							<div class="fw-bold small" style="line-height: 1.1;">${s.name}</div>
+		// 							${detailHtml}
+		// 						</div>
+		// 						<button class="btn btn-link text-danger p-0 ms-2" onclick="handleSelection(${s.serviceId})">
+		// 							<i class="fa-solid fa-circle-xmark"></i>
+		// 						</button>
+		// 					</div>
+		// 					<div class="text-end fw-bold small mt-1">S/ ${(s.price || 0).toFixed(2)}</div>
+		// 				</div>
+		// 			`;
+		// 			$list.append(item);
+		// 		});
+		// 	}
+
+		// 	$totalDisplay.text(`S/ ${total.toFixed(2)}`);
+		// 	contractData.totalAmount = total;
+		// 	updateCounter();
+		// }
+
+
+		// async function openPhysicalUnitPicker(serviceId) {
+		// 	currentServiceId = serviceId;
+
+		// 	$.get(urls.getUnitPickerModal, function (html) {
+		// 		$('#ajaxTargetSearch').html(html);
+		// 		$('#modalOverlaySearch').fadeIn(300).css('display', 'flex');
+
+		// 		const fechaPaso2 = $('#BurialDate').val();
+		// 		const horaPaso2 = $('#BurialTime').val();
+
+		// 		setTimeout(() => {
+		// 			$('#pickerFilterDate').val(fechaPaso2);
+		// 			// Pasamos fechaPaso2 dos veces: una para la vista inicial y otra como referencia fija
+		// 			loadWeeklyData(serviceId, fechaPaso2, horaPaso2, fechaPaso2);
+		// 		}, 50);
+		// 	});
+		// }
+
+		// function selectUnit(id, name, plate, resolveFunc) {
+		// 	closeSearchModal();
+		// 	resolveFunc({ id, name, plate });
+		// }
+
+		// async function renderCatalog(category) {
+		// 	const container = document.getElementById('catalogContainer');
+		// 	const branchId = contractData.branchId;
+
+		// 	if (!branchId || branchId === 0) {
+		// 		container.innerHTML = '<div class="text-center py-5 w-100"><p>Seleccione una sede primero.</p></div>';
+		// 		return;
+		// 	}
+
+		// 	// --- CORRECCIÓN DE RESALTADO DE PESTAÑAS ---
+		// 	document.querySelectorAll('#pills-tab .nav-link').forEach(btn => {
+		// 		// Si el texto del botón contiene la categoría, activarlo
+		// 		if (btn.innerText.trim().includes(category)) {
+		// 			btn.classList.add('active');
+		// 		} else {
+		// 			btn.classList.remove('active');
+		// 		}
+		// 	});
+
+		// 	container.innerHTML = '<div class="text-center py-5 w-100"><div class="spinner-border text-primary"></div></div>';
+
+		// 	try {
+		// 		if (category === 'Ataúdes') {
+		// 			const resp = await fetch(`/Contract/GetCoffinsByBranch?branchId=${branchId}`);
+		// 			const data = await resp.json();
+		// 			renderCoffinCards(data);
+		// 		}
+		// 		else if (category === 'Movilidad') {
+		// 			const resp = await fetch(`/Contract/GetAvailableVehicleTypesByBranch?branchId=${branchId}`);
+		// 			const data = await resp.json();
+		// 			renderVehicleTypeCards(data);
+		// 		}
+		// 	} catch (error) {
+		// 		console.error("Error cargando catálogo:", error);
+		// 		container.innerHTML = '<div class="alert alert-danger">Error de conexión.</div>';
+		// 	}
+		// }
+
+		// function renderCoffinCards(coffins) {
+		// 	const container = document.getElementById('catalogContainer');
+		// 	container.innerHTML = coffins.length ? '' : '<p class="text-center py-5">No hay stock disponible.</p>';
+
+		// 	coffins.forEach(c => {
+		// 		const isSelected = contractData.coffin?.id === c.id;
+		// 		// Aseguramos que el objeto enviado tenga todas las propiedades
+		// 		const coffinJson = JSON.stringify(c).replace(/"/g, '&quot;');
+
+		// 		container.innerHTML += `
+		// 			<div class="col-md-6">
+		// 				<div class="card h-100 border-2 ${isSelected ? 'border-primary bg-primary-subtle shadow' : ''} shadow-sm rounded-4 item-card"
+		// 					 onclick="selectCoffin(${coffinJson})" style="cursor:pointer">
+		// 					<div class="card-body p-3">
+		// 						<div class="d-flex align-items-center">
+		// 							<i class="fa-solid fa-box-archive fa-2x text-primary me-3"></i>
+		// 							<div class="flex-grow-1">
+		// 								<h6 class="fw-bold mb-0">${c.name}</h6>
+		// 								<small class="text-success fw-bold">S/ ${(c.price || 0).toFixed(2)}</small>
+		// 							</div>
+		// 						</div>
+		// 					</div>
+		// 				</div>
+		// 			</div>`;
+		// 	});
+		// }
+
+		// function selectCoffin(coffin) {
+		// 	// Si ya estaba seleccionado, lo quitamos. Si no, lo asignamos.
+		// 	if (contractData.coffin?.id === coffin.id) {
+		// 		contractData.coffin = null;
+		// 		contractData.totalAmount = 0;
+		// 	} else {
+		// 		contractData.coffin = coffin;
+		// 		// CORRECCIÓN: Aseguramos que el precio se sume correctamente
+		// 		contractData.totalAmount = parseFloat(coffin.price || 0);
+		// 	}
+
+		// 	renderCatalog('Ataúdes');
+		// 	updateSelectionUI();
+		// }
+
+		// function renderVehicleTypeCards(types) {
+		// 	const container = document.getElementById('catalogContainer');
+		// 	container.innerHTML = types.length ? '' : '<p class="text-center py-5">No hay vehículos en esta sede.</p>';
+
+		// 	types.forEach(t => {
+		// 		// CORRECCIÓN: Referencia a la raíz
+		// 		const isSelected = contractData.requiredVehicles.includes(t.id);
+
+		// 		container.innerHTML += `
+		// 			<div class="col-md-6">
+		// 				<div class="card h-100 border-2 ${isSelected ? 'border-primary bg-primary-subtle shadow' : ''} shadow-sm rounded-4 item-card"
+		// 					 data-id="${t.id}" data-name="${t.name}"
+		// 					 onclick="toggleVehicleType(${t.id}, '${t.name}')" style="cursor:pointer">
+		// 					<div class="card-body p-3">
+		// 						<div class="d-flex align-items-center">
+		// 							<div class="flex-shrink-0 bg-white border rounded-circle p-2 me-3 d-flex align-items-center justify-content-center shadow-sm" style="width:45px;height:45px">
+		// 								<i class="fa-solid ${t.icon} text-primary"></i>
+		// 							</div>
+		// 							<div class="flex-grow-1">
+		// 								<h6 class="fw-bold mb-0">${t.name}</h6>
+		// 								<small class="text-muted">Requerimiento logístico</small>
+		// 							</div>
+		// 						</div>
+		// 					</div>
+		// 				</div>
+		// 			</div>`;
+		// 	});
+		// }
+
+		// function toggleVehicleType(id, name) {
+		// 	const index = contractData.requiredVehicles.indexOf(id);
+
+		// 	if (index === -1) {
+		// 		contractData.requiredVehicles.push(id);
+		// 	} else {
+		// 		contractData.requiredVehicles.splice(index, 1);
+		// 	}
+
+		// 	// IMPORTANTE: Refrescar la vista para ver el resaltado
+		// 	renderCatalog('Movilidad');
+		// 	updateSelectionUI();
+		// }
+
+		// function updateSelectionUI() {
+		// 	const list = document.getElementById('selectedServicesList');
+		// 	const emptyMsg = document.getElementById('emptyCartMsg');
+		// 	const totalDisplay = document.getElementById('totalAmountDisplay');
+
+		// 	if (!list) return;
+		// 	list.innerHTML = '';
+		// 	let hasItems = false;
+
+		// 	// --- SECCIÓN ATAÚD ---
+		// 	if (contractData.coffin) {
+		// 		hasItems = true;
+		// 		// CORRECCIÓN: Validación de seguridad para toFixed
+		// 		const price = parseFloat(contractData.coffin.price || 0);
+
+		// 		list.innerHTML += `
+		// 			<div class="bg-light rounded-3 p-3 mb-2 border-start border-primary border-4">
+		// 				<div class="d-flex justify-content-between">
+		// 					<div class="fw-bold small">${contractData.coffin.name}</div>
+		// 					<button class="btn btn-sm text-danger p-0" onclick="removeCoffin()"><i class="fa-solid fa-xmark"></i></button>
+		// 				</div>
+		// 				<div class="text-primary fw-bold">S/ ${price.toFixed(2)}</div>
+		// 			</div>`;
+		// 	}
+
+		// 	// --- SECCIÓN MOVILIDAD ---
+		// 	contractData.requiredVehicles.forEach((id, index) => {
+		// 		hasItems = true;
+		// 		// Buscamos el nombre en el DOM si está disponible
+		// 		const card = document.querySelector(`.item-card[data-id="${id}"]`);
+		// 		const name = card ? card.getAttribute('data-name') : "Servicio Logístico";
+
+		// 		list.innerHTML += `
+		// 			<div class="bg-light rounded-3 p-3 mb-2 border-start border-dark border-4">
+		// 				<div class="d-flex justify-content-between align-items-center">
+		// 					<div class="fw-bold small">${name}</div>
+		// 					<button class="btn btn-sm text-danger p-0" onclick="toggleVehicleType(${id})"><i class="fa-solid fa-xmark"></i></button>
+		// 				</div>
+		// 			</div>`;
+		// 	});
+
+		// 	if (emptyMsg) emptyMsg.classList.toggle('d-none', hasItems);
+		// 	if (totalDisplay) totalDisplay.innerText = `S/ ${contractData.totalAmount.toFixed(2)}`;
+		// }
+
+		// function removeCoffin() {
+		// 	contractData.coffin = null;
+		// 	contractData.totalAmount = 0;
+		// 	renderCatalog('Ataúdes');
+		// 	updateSelectionUI();
+		// }
+
+		// function toggleVehicleType(id, name) {
+		// 	const index = contractData.requiredVehicles.indexOf(id);
+
+		// 	if (index === -1) {
+		// 		contractData.requiredVehicles.push(id);
+		// 	} else {
+		// 		contractData.requiredVehicles.splice(index, 1);
+		// 	}
+
+		// 	// Solo refrescamos la UI
+		// 	renderCatalog('Movilidad');
+		// 	updateSelectionUI();
+		// }
+
+
+		// function validateStep4() {
+		// 	// 1. Verificamos si hay un ataúd seleccionado (Propiedad de la raíz)
+		// 	const tieneAtaud = contractData.coffin !== null;
+
+		// 	// 2. Verificamos si hay vehículos seleccionados (Propiedad de la raíz)
+		// 	const tieneMovilidad = contractData.requiredVehicles.length > 0;
+
+		// 	// Lógica de validación: Al menos debe haber un ataúd
+		// 	if (!tieneAtaud) {
+		// 		Swal.fire({
+		// 			title: 'Selección incompleta',
+		// 			text: 'Debe seleccionar al menos un ataúd para continuar con el contrato.',
+		// 			icon: 'warning',
+		// 			confirmButtonColor: '#004a99'
+		// 		});
+		// 		return false;
+		// 	}
+
+		// 	// Opcional: Advertencia si no hay movilidad, pero permitimos pasar
+		// 	if (!tieneMovilidad) {
+		// 		console.log("Aviso: No se han seleccionado vehículos para este contrato.");
+		// 	}
+
+		// 	console.log("Paso 4 validado con éxito. Datos:", contractData);
+		// 	return true;
+		// }
+
+
+		async function renderCatalog(category) {
+			const container = document.getElementById('catalogContainer');
+
+			// Validación de sede
+			if (!contractData.branchId || contractData.branchId === 0) {
+				if (container) container.innerHTML = '<div class="alert alert-warning">Seleccione una sede primero.</div>';
+				return;
+			}
+
+			let activeCategory = category;
+			if (category.includes('Inventario')) activeCategory = 'Inventario';
+			if (category.includes('Movilidad')) activeCategory = 'Movilidad';
+			if (category.includes('Adicionales')) activeCategory = 'Adicionales';
+
+			document.querySelectorAll('#pills-tab .nav-link').forEach(btn => {
+				const btnText = btn.innerText.trim();
+				btn.classList.toggle('active', btnText.includes(activeCategory));
+			});
+
+			if (container) {
+				container.innerHTML = '<div class="text-center py-5 w-100"><div class="spinner-border text-primary"></div></div>';
+			}
+
+			const routes = {
+				'Inventario': '@Url.Action("GetInventoryStock", "Contract")',
+				'Movilidad': '@Url.Action("GetAvailableVehicleTypesByBranch", "Contract")',
+				'Adicionales': '@Url.Action("GetAvailableAssets", "Contract")'
+			};
+
+			const baseUrl = routes[activeCategory];
+			if (!baseUrl) {
+				console.error("No se encontró una ruta para la categoría:", activeCategory);
+				return;
+			}
+
+			try {
+				const url = `${baseUrl}?branchId=${contractData.branchId}`;
+				const response = await fetch(url);
+				if (!response.ok) throw new Error("Error en servidor");
+				const data = await response.json();
+
+				if (container) {
+					container.innerHTML = data.length ? '' : '<p class="text-center py-5 w-100 text-muted small">No hay elementos disponibles en esta categoría.</p>';
+
+					// AHORA AGRUPAMOS TANTO INVENTARIO COMO ADICIONALES
+					if (activeCategory === 'Inventario' || activeCategory === 'Adicionales') {
+						const grouped = data.reduce((acc, item) => {
+							// Si el item no tiene categoría por algún error, lo mandamos a "Otros"
+							const catName = item.category || "Otros";
+							acc[catName] = acc[catName] || [];
+							acc[catName].push(item);
+							return acc;
+						}, {});
+
+						for (const catName in grouped) {
+							// Icono dinámico según la pestaña activa
+							const icon = activeCategory === 'Inventario' ? 'fa-tag' : 'fa-layer-group';
+
+							container.innerHTML += `
+								<div class="col-12 mt-3 mb-2">
+									<h6 class="text-uppercase fw-bold text-muted small border-bottom pb-2">
+										<i class="fa-solid ${icon} me-2 text-primary"></i>${catName}
+									</h6>
+								</div>`;
+
+							grouped[catName].forEach(item => {
+								container.innerHTML += createProductCard(item, activeCategory);
+							});
+						}
+					} else {
+						// Movilidad se lista directo (sin grupos)
+						data.forEach(item => {
+							container.innerHTML += createProductCard(item, activeCategory);
+						});
+					}
+				}
+			} catch (error) {
+				console.error("Error en renderCatalog:", error);
+				if (container) container.innerHTML = '<div class="alert alert-danger">Error al cargar datos.</div>';
+			}
+		}
+
+		function createProductCard(item, type) {
+			let isSelected = false;
+			if (type === 'Inventario') isSelected = contractData.stockItems.some(x => x.id === item.id);
+			else if (type === 'Movilidad') isSelected = contractData.mobilityItems.includes(item.id);
+			else if (type === 'Adicionales') isSelected = contractData.assetItems.some(x => x.id === item.id);
+
+			const itemData = JSON.stringify(item).replace(/"/g, '&quot;');
+			const detail = item.stock ? `Stock: ${item.stock}` : (item.patrimonialCode || 'Servicio');
+
+			return `
+				<div class="col-md-6 mb-2">
+					<div class="card h-100 border-2 ${isSelected ? 'border-primary bg-primary-subtle' : 'border-light'}"
+						 onclick="handleSelection('${type}', ${itemData})" style="cursor:pointer">
+						<div class="card-body p-2 px-3">
+							<div class="d-flex justify-content-between align-items-center">
+								<div>
+									<p class="fw-bold mb-0 small">${item.name}</p>
+									<span class="text-muted small" style="font-size:0.7rem">${detail}</span>
+								</div>
+								${isSelected ? '<i class="fa-solid fa-check-circle text-primary"></i>' : ''}
+							</div>
+						</div>
+					</div>
+				</div>`;
+		}
+
+		function handleSelection(type, item) {
+			if (type === 'Inventario') {
+				// Buscamos si el item ya está seleccionado
+				const idx = contractData.stockItems.findIndex(x => x.id === item.id);
+
+				if (idx === -1) {
+					// LÓGICA DE SELECCIÓN ÚNICA PARA ATAÚDES
+					if (item.category === 'Ataudes') {
+						// Filtramos la lista para ELIMINAR cualquier otro producto que sea de la categoría 'Ataúdes'
+						contractData.stockItems = contractData.stockItems.filter(x => x.category !== 'Ataudes');
+						console.log("Se ha reemplazado el ataúd anterior por:", item.name);
+					}
+
+					// Agregamos el nuevo item (sea ataúd o cualquier otro consumible)
+					contractData.stockItems.push(item);
+				} else {
+					// Si ya existía y le volvieron a dar click, lo quitamos (deseleccionar)
+					contractData.stockItems.splice(idx, 1);
+				}
+			}
+			else if (type === 'Movilidad') {
+				const idx = contractData.mobilityItems.indexOf(item.id);
+				if (idx === -1) contractData.mobilityItems.push(item.id);
+				else contractData.mobilityItems.splice(idx, 1);
+			}
+			else if (type === 'Adicionales') {
+				const idx = contractData.assetItems.findIndex(x => x.id === item.id);
+				if (idx === -1) contractData.assetItems.push(item);
+				else contractData.assetItems.splice(idx, 1);
+			}
+
+			// Refrescar UI
+			renderCatalog(type);
+			updateSelectionUI();
+		}
+
+		function updateSelectionUI() {
+			// Apuntamos al contenido interno para no borrar los contenedores fijos
+			const cartContent = document.getElementById('cartContent');
+			const emptyMsg = document.getElementById('emptyCartMsg');
+			const totalBadge = document.getElementById('totalItemsBadge');
+
+			if (!cartContent || !emptyMsg) return;
+
+			// Limpiamos solo el área donde van los tickets
+			cartContent.innerHTML = '';
+
+			const hasStock = contractData.stockItems.length > 0;
+			const hasAssets = contractData.assetItems.length > 0;
+			const hasMobility = contractData.mobilityItems.length > 0;
+
+			const totalCount = contractData.stockItems.length + contractData.assetItems.length + contractData.mobilityItems.length;
+
+			// Control del mensaje "Vacío"
+			emptyMsg.style.display = totalCount > 0 ? 'none' : 'block';
+
+			// Actualizar el contador del badge
+			if (totalBadge) totalBadge.innerText = totalCount;
+
+			if (totalCount === 0) return;
+
+			// --- GRUPO 1: INVENTARIO ---
+			if (hasStock) {
+				cartContent.innerHTML += `<div class="text-muted fw-bold mb-2 mt-1" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Bienes e Inventario</div>`;
+				contractData.stockItems.forEach(item => {
+					const isAtaud = item.category === 'Ataúdes' || item.name.toUpperCase().includes('ATAUD');
+					const color = isAtaud ? "bg-primary" : "bg-secondary";
+					const icon = isAtaud ? "fa-vault" : "fa-box";
+
+					cartContent.innerHTML += createCartTicket(
+						item.name,
+						item.category,
+						color,
+						`handleSelection('Inventario', ${JSON.stringify(item).replace(/"/g, '&quot;')})`,
+						icon
+					);
+				});
+			}
+
+			// --- GRUPO 2: ACTIVOS FIJOS ---
+			if (hasAssets) {
+				cartContent.innerHTML += `<div class="text-muted fw-bold mb-2 mt-3" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Equipamiento (Activos)</div>`;
+				contractData.assetItems.forEach(a => {
+					cartContent.innerHTML += createCartTicket(
+						a.name,
+						`Patrimonio: ${a.patrimonialCode}`,
+						"bg-info text-dark",
+						`handleSelection('Adicionales', ${JSON.stringify(a).replace(/"/g, '&quot;')})`,
+						"fa-couch"
+					);
+				});
+			}
+
+			// --- GRUPO 3: MOVILIDAD ---
+			if (hasMobility) {
+				cartContent.innerHTML += `<div class="text-muted fw-bold mb-2 mt-3" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Logística / Transporte</div>`;
+				contractData.mobilityItems.forEach(id => {
+					cartContent.innerHTML += createCartTicket(
+						"Servicio de Transporte",
+						"Programado",
+						"bg-dark",
+						`handleSelection('Movilidad', {id:${id}})`,
+						"fa-car-side"
+					);
+				});
+			}
+		}
+
+		// Función auxiliar para crear un diseño tipo "Ticket" más elegante que un simple badge
+		function createCartTicket(title, subtitle, colorClass, removeAction, icon) {
+			const isDark = colorClass.includes('bg-primary') || colorClass.includes('bg-dark') || colorClass.includes('bg-secondary');
+			const textColor = isDark ? 'text-white' : 'text-dark';
+
+			return `
+				<div class="card border-0 shadow-sm mb-2 animate__animated animate__fadeInRight" style="border-radius: 10px; overflow: hidden;">
+					<div class="d-flex align-items-center ${colorClass} ${textColor} p-2">
+						<div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+							<i class="fa-solid ${icon} fw-bold" style="font-size: 0.8rem;"></i>
+						</div>
+						<div class="flex-grow-1 overflow-hidden">
+							<div class="fw-bold text-truncate" style="font-size: 0.75rem; line-height: 1;">${title}</div>
+							<small class="opacity-75" style="font-size: 0.65rem;">${subtitle}</small>
+						</div>
+						<button class="btn btn-sm ${textColor} p-0 ms-2" onclick="${removeAction}">
+							<i class="fa-solid fa-circle-xmark opacity-75"></i>
+						</button>
+					</div>
+				</div>`;
+		}
+
+		function createSelectionBadge(label, type, color, action) {
+			return `<div class="d-flex justify-content-between align-items-center ${color} text-white p-2 rounded-3 mb-2 shadow-sm">
+						<div style="font-size: 0.8rem;"><small class="d-block opacity-75">${type}</small><b>${label}</b></div>
+						<button class="btn btn-sm text-white p-0" onclick="${action}"><i class="fa-solid fa-xmark"></i></button>
+					</div>`;
+		}
+
+		function validateStep4() {
+			// 1. Validar que exista al menos un ataúd (Buscamos en stockItems)
+			const tieneAtaud = contractData.stockItems.some(item =>
+				item.category === 'Ataúdes' || item.name.toUpperCase().includes('ATAUD')
+			);
+
+			if (!tieneAtaud) {
+				Swal.fire({
+					title: 'Atención',
+					text: 'Es obligatorio seleccionar un ataúd para continuar con el contrato.',
+					icon: 'warning',
+					confirmButtonColor: '#004a99'
+				});
+				return false; // Detiene el avance al paso 5
+			}
+
+			// Si todo está correcto
+			console.log("Validación del Paso 4 exitosa.");
+			return true; // Permite avanzar al paso 5
+		}
+
+		//PASO
+		//NUMERO
+		//5
+
+		async function renderStep5() {
+			console.log("Generando resumen final con datos:", contractData);
+
+			// 1. Prefijo de Contrato
+			$('#resContractPreview').text("Cargando...");
+			let previewPrefix = "GEN";
+			try {
+				const resp = await fetch(`/Contract/GetBranchPrefix?branchId=${contractData.branchId}`);
+				if (resp.ok) {
+					const data = await resp.json();
+					previewPrefix = data.prefix || "GEN";
+				}
+			} catch (e) { console.warn("Fallo al obtener prefijo", e); }
+
+			const year = new Date().getFullYear();
+			$('#resContractPreview').text(`${previewPrefix}${year}-XXXXX`);
+
+			// 2. Datos Personales (Usando tus objetos de pasos anteriores)
+			$('#resSolicitorName').text(contractData.solicitor?.name || "---");
+			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor?.dni || "---"}`);
+			$('#resDeceasedName').text(contractData.deceased?.name || "---");
+			$('#resDeceasedDni').text(`DNI: ${contractData.deceased?.dni || "---"}`);
+
+			// 3. Logística (Paso 3)
+			const d = contractData.deceased;
+			$('#resBurialDateTime').text(`${d?.burialDate || '---'} ${d?.burialTime || ''}`);
+			$('#resWakePlace').text(d?.wakeName || "Particular / Domicilio");
+			$('#resCemetery').text(d?.cemeteryName || "No seleccionado");
+
+			if (d?.burialDetail) {
+				$('#resNicheRow').removeClass('d-none').show();
+				$('#resNicheDetail').text(d.burialDetail);
+			} else {
+				$('#resNicheRow').hide();
+			}
+
+			// 4. Detalle de Beneficios (Tabla/Lista)
+			const $container = $('#resServicesTable');
+			$container.empty();
+
+			if (contractData.stockItems.length > 0) {
+				$container.append(createSummarySectionHeader("Bienes e Inventario (Suministros)", "fa-box-open", "text-primary"));
+				contractData.stockItems.forEach(item => {
+					const isAtaud = item.category === 'Ataúdes' || item.name.toUpperCase().includes('ATAUD');
+					$container.append(createSummaryRow(item.name, item.category, isAtaud ? 'primary' : 'secondary', isAtaud ? 'fa-vault' : 'fa-box', "Entregado"));
+				});
+			}
+
+			// --- GRUPO 2: EQUIPAMIENTO Y ACTIVOS (PRÉSTAMOS) ---
+			if (contractData.assetItems.length > 0) {
+				$container.append(createSummarySectionHeader("Equipamiento en Préstamo (Activos Fijos)", "fa-couch", "text-info"));
+				contractData.assetItems.forEach(item => {
+					$container.append(createSummaryRow(item.name, `Código Patrimonial: ${item.patrimonialCode}`, 'info', 'fa-fingerprint', "En Préstamo"));
+				});
+			}
+
+			// --- GRUPO 3: LOGÍSTICA Y MOVILIDAD ---
+			if (contractData.mobilityItems.length > 0) {
+				$container.append(createSummarySectionHeader("Logística de Transporte", "fa-car-side", "text-dark"));
+				contractData.mobilityItems.forEach(id => {
+					// Aquí puedes buscar el nombre real si lo tienes, o usar un genérico
+					$container.append(createSummaryRow("Unidad de Transporte Programada", "Servicio Logístico", 'dark', 'fa-clock', "Programado"));
+				});
+			}
+
+			if ($container.children().length === 0) {
+				$container.append('<div class="text-center py-4 text-muted border rounded-4">No hay beneficios asignados.</div>');
+			}
+		}
+
+		function createSummarySectionHeader(title, icon, textColor) {
+			return `
+				<div class="mt-4 mb-2 d-flex align-items-center">
+					<div class="border-bottom flex-grow-1"></div>
+					<span class="mx-3 fw-bold small ${textColor} text-uppercase" style="letter-spacing: 1px;">
+						<i class="fa-solid ${icon} me-2"></i>${title}
+					</span>
+					<div class="border-bottom flex-grow-1"></div>
+				</div>`;
+		}
+
+		// Función auxiliar para las filas (Ajustada para que se vea más como tabla)
+		function createSummaryRow(title, subtitle, color, icon, tag) {
+			return `
+				<div class="d-flex justify-content-between align-items-center py-2 px-3 mb-1 bg-white border rounded-3 shadow-sm animate__animated animate__fadeInUp">
+					<div class="d-flex align-items-center">
+						<div class="text-${color} me-3" style="width: 25px; text-align: center;">
+							<i class="fa-solid ${icon} fs-5"></i>
+						</div>
+						<div>
+							<span class="fw-bold d-block text-dark small" style="line-height: 1.2;">${title}</span>
+							<small class="text-muted" style="font-size: 0.65rem;">${subtitle}</small>
+						</div>
+					</div>
+					<span class="badge bg-${color}-subtle text-${color} border border-${color} rounded-pill" style="font-size: 0.6rem; padding: 0.4em 0.8em;">
+						${tag.toUpperCase()}
+					</span>
+				</div>`;
+		}
+
+		async function saveFinalContract() {
+			const result = await Swal.fire({
+				title: '¿Confirmar Registro?',
+				text: "Se generará el contrato legal y se actualizará el inventario.",
+				icon: 'question',
+				showCancelButton: true,
+				confirmButtonText: 'Sí, Registrar',
+				cancelButtonText: 'Revisar',
+				confirmButtonColor: '#004a99'
+			});
+
+			if (result.isConfirmed) {
+				Swal.fire({
+					title: 'Procesando...',
+					allowOutsideClick: false,
+					didOpen: () => { Swal.showLoading(); }
+				});
+
+				// --- MAPEO DE DATOS PARA EL VIEWMODEL ---
+				// Extraemos solo los IDs porque el servidor espera List<int>
+				const payload = {
+					branchId: parseInt(contractData.branchId),
+					agencyId: parseInt(contractData.agencyId || 0),
+					solicitor: contractData.solicitor,
+					deceased: contractData.deceased,
+					stockItems: contractData.stockItems.map(item => item.id), // Solo IDs
+					assetItems: contractData.assetItems.map(item => item.id),   // Solo IDs
+					mobilityItems: contractData.mobilityItems // Ya es una lista de IDs
+				};
+
+				try {
+					const response = await fetch('@Url.Action("Create", "Contract")', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() // Opcional: si usas AntiForgeryToken
+						},
+						body: JSON.stringify(payload)
+					});
+
+					// Si el servidor responde con error 400, 404 o 500
+					if (!response.ok) {
+						const errorData = await response.json();
+						throw new Error(errorData.message || `Error del servidor (${response.status})`);
+					}
+
+					const data = await response.json();
+
+					if (data.success) {
+						Swal.fire('¡Éxito!', 'El contrato ha sido registrado correctamente.', 'success')
+							.then(() => {
+								window.location.href = '@Url.Action("Index", "Contract")';
+							});
+					} else {
+						Swal.fire('Error', data.message || 'No se pudo registrar el contrato.', 'error');
+					}
+				} catch (error) {
+					console.error("Error en la petición:", error);
+					Swal.fire('Error', error.message || 'Ocurrió un fallo en la conexión.', 'error');
+				}
+			}
+		}
+
+	</script>
+}

@@ -1,5 +1,4 @@
-﻿using ContratosYReembolsos.Models.ViewModels;
-using ContratosYReembolsos.Models;
+﻿using ContratosYReembolsos.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ContratosYReembolsos.Constants;
 using System.Linq;
 using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Models.ViewModels.Users;
 
 [Authorize(Roles = "Admin")]
 public class UserController : Controller

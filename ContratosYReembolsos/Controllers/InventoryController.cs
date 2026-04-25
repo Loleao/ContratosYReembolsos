@@ -1418,6 +1418,7 @@ using Rotativa.AspNetCore;
 using System;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using ContratosYReembolsos.Models.ViewModels.Inventory;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -1671,9 +1672,9 @@ namespace ContratosYReembolsos.Controllers
                 {
                     ProductName = g.Key,
                     Total = g.Count(),
-                    Disponibles = g.Count(x => x.Status == "Available" || x.Status == "Disponible"),
-                    Asignados = g.Count(x => x.Status == "Assigned" || x.Status == "Asignado"),
-                    EnMantenimiento = g.Count(x => x.Status == "Maintenance" || x.Status == "Mantenimiento" || x.Status == "InTransit")
+                    Disponibles = g.Count(x => x.Status == AssetStatus.Available),
+                    Asignados = g.Count(x => x.Status == AssetStatus.InUse),
+                    EnMantenimiento = g.Count(x => x.Status == AssetStatus.Maintenance)
                 }).ToListAsync();
 
             return View(model);
@@ -1831,7 +1832,7 @@ namespace ContratosYReembolsos.Controllers
             // 2. Activos Disponibles
             var assets = await _context.ActivosFijos
                 .Include(a => a.Product)
-                .Where(a => a.BranchId == branchId && a.Status == "Available")
+                .Where(a => a.BranchId == branchId && a.Status == AssetStatus.Available)
                 .Select(a => new {
                     id = a.Id,
                     productId = a.ProductId,

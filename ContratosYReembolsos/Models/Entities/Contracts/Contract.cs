@@ -40,16 +40,12 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         public int? IntermentSpaceId { get; set; }
         public virtual IntermentSpace? IntermentSpace { get; set; }
 
-        // Servicios
-        public int CoffinVariantId { get; set; }
-        public virtual CoffinVariant? CoffinVariant { get; set; }
-
         public int AgencyId { get; set; }
         public virtual Agency? Agency { get; set; }
 
-        public decimal TotalAmount { get; set; }
 
         // Relación Detallada
+        public virtual ICollection<ContractProductDetail> ProductDetails { get; set; }
         public virtual ICollection<ContractMovilityDetail> MovilityDetails { get; set; }
     }
 }

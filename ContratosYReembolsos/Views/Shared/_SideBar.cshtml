@@ -42,16 +42,6 @@
             </a>
         }
 
-        @* Ataúdes *@
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver"))
-        {
-            <a href="@Url.Action("Index", "Coffin")"
-               class="nav-link @(currentController == "Coffin" ? "active" : "")">
-                <i class="fa-solid fa-box"></i>
-                <span class="sidebar-text ms-2">Ataúdes</span>
-            </a>
-        }
-
         @* @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver")) *@
         @* { *@
             <a href="@Url.Action("Index", "Inventory")"

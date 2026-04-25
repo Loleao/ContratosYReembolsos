@@ -1,4 +1,4 @@
-﻿namespace ContratosYReembolsos.Models.ViewModels
+﻿namespace ContratosYReembolsos.Models.ViewModels.Users
 {
     public class UserClaimViewModel
     {

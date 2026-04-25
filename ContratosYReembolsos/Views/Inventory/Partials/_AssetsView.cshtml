@@ -12,7 +12,7 @@
                         <div class="bg-primary bg-opacity-10 p-2 rounded-3">
                             <i class="fa-solid fa-barcode text-primary"></i>
                         </div>
-                        <span class="badge @(asset.Status == "Available" ? "bg-success" : "bg-warning") x-small">
+                        <span class="badge @(asset.Status == AssetStatus.Available ? "bg-success" : "bg-warning") x-small">
                             @asset.Status
                         </span>
                     </div>
@@ -57,7 +57,7 @@
                                 @asset.AcquisitionDate.ToString("dd/MM/yyyy")
                             </td> *@
                             <td>
-                                @if (asset.Status == "Available")
+                                @if (asset.Status == AssetStatus.Available)
                                 {
                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Disponible</span>
                                 }

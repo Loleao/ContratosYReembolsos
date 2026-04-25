@@ -594,12 +594,12 @@
 //    }
 //}
 
-using ContratosYReembolsos.Models.ViewModels;
 using ContratosYReembolsos.Models;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
+using ContratosYReembolsos.Models.ViewModels.Contracts;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -614,7 +614,32 @@ namespace ContratosYReembolsos.Controllers
             _userManager = userManager;
         }
 
+
+        [HttpGet]
         public async Task<IActionResult> Index()
+        {
+            // 1. Llamada al Service (Capa Application)
+            var dtos = await _contractService.GetContractListAsync();
+
+            // 2. Mapeo a ViewModel (Capa UI)
+            var viewModels = dtos.Select(d => new ContractListViewModel
+            {
+                Id = d.Id,
+                ContractNumber = d.ContractNumber,
+                DeceasedName = d.DeceasedName,
+                FullBurialDetail = $"{d.BurialDate:dd/MM/yyyy} - {d.BurialTime:hh\\:mm}",
+                BranchName = d.BranchName,
+                Status = d.Status
+            }).ToList();
+
+            return View(viewModels);
+        }
+
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> Create()
         {
             var user = await _userManager.GetUserAsync(User);
             ViewBag.UserBranchId = user?.BranchId ?? 0;
@@ -644,7 +669,6 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet] public async Task<IActionResult> GetStructures(int cemeteryId, string type) => Json(await _contractService.GetStructures(cemeteryId, type));
         [HttpGet] public async Task<IActionResult> GetSpaceMap(int structureId) => Json(await _contractService.GetSpaceMap(structureId));
         [HttpGet] public async Task<IActionResult> GetAgencies(string ruc, string name, int? branchId) => Json(await _contractService.GetAgencies(ruc, name, branchId));
-        [HttpGet] public async Task<IActionResult> GetCoffinsByBranch(int branchId) => Json(await _contractService.GetCoffinsByBranch(branchId));
         [HttpGet] public async Task<IActionResult> GetAvailableVehicleTypesByBranch(int branchId) => Json(await _contractService.GetAvailableVehicleTypesByBranch(branchId));
         [HttpGet] public async Task<IActionResult> GetBranchPrefix(int branchId) => Json(new { prefix = await _contractService.GetBranchAbbreviation(branchId) });
 
@@ -673,11 +697,19 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> DescargarContratoPDF(int id)
-        {
-            var contrato = await _contractService.GetContractForPdf(id);
-            if (contrato == null) return NotFound();
-            return new ViewAsPdf("ContractPrint", contrato) { FileName = $"Contrato_{contrato.ContractNumber}.pdf" };
-        }
+        public async Task<IActionResult> GetInventoryStock(int branchId)
+            => Json(await _contractService.GetStockItemsByBranch(branchId));
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableAssets(int branchId)
+            => Json(await _contractService.GetAvailableAssets(branchId));
+
+        //[HttpGet]
+        //public async Task<IActionResult> DescargarContratoPDF(int id)
+        //{
+        //    var contrato = await _contractService.GetContractForPdf(id);
+        //    if (contrato == null) return NotFound();
+        //    return new ViewAsPdf("ContractPrint", contrato) { FileName = $"Contrato_{contrato.ContractNumber}.pdf" };
+        //}
     }
 }

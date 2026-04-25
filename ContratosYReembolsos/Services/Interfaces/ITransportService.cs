@@ -1,5 +1,5 @@
 ﻿using ContratosYReembolsos.Models.Entities.Transport;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.ViewModels.Transport;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {

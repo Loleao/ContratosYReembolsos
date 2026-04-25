@@ -1,7 +1,9 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
 using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Contracts;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.Entities.Inventory;
+using ContratosYReembolsos.Models.ViewModels.Contracts;
+using ContratosYReembolsos.Services.DTOs.Contracts;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,7 +71,6 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
             return await query.Select(a => new { id = a.Id, ruc = a.RUC, name = a.Name, address = a.Address, phone = a.Phone }).Take(20).Cast<object>().ToListAsync();
         }
 
-        public async Task<List<object>> GetCoffinsByBranch(int branchId) => await _context.StockFilial.Include(s => s.CoffinVariant).ThenInclude(v => v.Coffin).Where(s => s.BranchId == branchId && s.Quantity > 0).Select(s => new { id = s.CoffinVariantId, name = $"{s.CoffinVariant.Coffin.ModelName} - {s.CoffinVariant.Color}", stock = s.Quantity, image = s.CoffinVariant.ImageUrl }).Cast<object>().ToListAsync();
         public async Task<List<object>> GetAvailableVehicleTypesByBranch(int branchId) => await _context.Vehiculos.Include(v => v.VehicleType).Where(v => v.BranchId == branchId && v.IsActive).Select(v => new { id = v.VehicleType.Id, name = v.VehicleType.Name, icon = v.VehicleType.Icon }).Distinct().Cast<object>().ToListAsync();
 
         public async Task<string> GetBranchAbbreviation(int branchId)
@@ -81,64 +82,216 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
             return ubigeo?.Abbreviation ?? "GEN";
         }
 
+
+        // 1. Obtener Inventario (Stock) filtrado para Contratos
+        public async Task<List<object>> GetStockItemsByBranch(int branchId)
+        {
+            return await _context.ProductosStock
+                .Include(s => s.Product)
+                    .ThenInclude(p => p.Category)
+                .Include(s => s.Product)
+                    .ThenInclude(p => p.SubCategory)
+                .Where(s => s.BranchId == branchId &&
+                            s.Product.ControlType == ControlType.Stock &&
+                            s.Quantity > 0 &&
+                            // --- FILTROS DE VISIBILIDAD ---
+                            s.Product.IsAvailableForContract &&
+                            s.Product.Category.ShowInContracts &&
+                            s.Product.SubCategory.ShowInContracts)
+                .Select(s => new {
+                    id = s.ProductId,
+                    name = s.Product.Name,
+                    category = s.Product.Category.Name,
+                    stock = s.Quantity
+                })
+                .ToListAsync()
+                .ContinueWith(t => t.Result.Cast<object>().ToList());
+        }
+
+        // 2. Obtener Adicionales (Activos) filtrados para Contratos
+        public async Task<List<object>> GetAvailableAssets(int branchId)
+        {
+            return await _context.ActivosFijos
+                .Include(a => a.Product)
+                    .ThenInclude(p => p.Category)
+                .Include(a => a.Product)
+                    .ThenInclude(p => p.SubCategory)
+                .Where(a => a.BranchId == branchId &&
+                            a.Status == AssetStatus.Available &&
+                            a.Product.IsAvailableForContract &&
+                            a.Product.Category.ShowInContracts &&
+                            a.Product.SubCategory.ShowInContracts)
+                .Select(a => new {
+                    id = a.Id,
+                    name = a.Product.Name,
+                    category = a.Product.Category.Name,
+                    patrimonialCode = a.PatrimonialCode
+                })
+                .ToListAsync()
+                .ContinueWith(t => t.Result.Cast<object>().ToList());
+        }
+
+        private async Task<string> GenerateContractNumber(int branchId)
+        {
+            // 1. Obtener el prefijo de la sede (ej. LIM, ARE)
+            string prefix = await GetBranchAbbreviation(branchId);
+            int year = DateTime.Now.Year;
+
+            // 2. Contar cuántos contratos existen en el año actual para esa sede
+            // Usamos StartsWith para filtrar por el prefijo de la sede
+            int count = await _context.Contratos
+                .CountAsync(c => c.ContractNumber.StartsWith(prefix) &&
+                                 c.CreatedAt.Year == year) + 1;
+
+            // 3. Retornar el formato: PREFIX2026-00001
+            return $"{prefix}{year}-{count:D5}";
+        }
+
         public async Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                string prefix = await GetBranchAbbreviation(model.BranchId);
-                int year = DateTime.Now.Year;
-                int count = await _context.Contratos.CountAsync(c => c.ContractNumber.StartsWith(prefix) && c.CreatedAt.Year == year) + 1;
-                string contractNumber = $"{prefix}{year}-{count:D5}";
+                // 1. Generar Cabecera y Número de Contrato
+                string contractNumber = await GenerateContractNumber(model.BranchId);
 
                 var contract = new Contract
                 {
                     ContractNumber = contractNumber,
-                    CreatedAt = DateTime.Now,
-                    Status = "ACTIVO",
                     BranchId = model.BranchId,
+                    UbigeoId = model.Deceased.Inei,
+                    AgencyId = model.AgencyId,
+
                     SolicitorDni = model.Solicitor.Dni,
                     SolicitorName = model.Solicitor.Name,
-                    SolicitorType = model.Solicitor.Type,
+                    SolicitorType = model.Solicitor.Type, // <-- AGREGA ESTA LÍNEA
+
                     DeceasedDni = model.Deceased.Dni,
                     DeceasedName = model.Deceased.Name,
-                    DeathDate = model.Deceased.DeathDate,
+                    DeathDate = model.Deceased.DeathDate ,
                     BurialDate = model.Deceased.BurialDate,
-                    BurialTime = TimeSpan.Parse(model.Deceased.BurialTime),
-                    UbigeoId = model.Deceased.Inei,
-                    WakeId = model.Deceased.WakeId > 0 ? model.Deceased.WakeId : null,
+
+                    // CONVERSIÓN DE STRING A TIMESPAN
+                    BurialTime = string.IsNullOrEmpty(model.Deceased.BurialTime)
+                        ? TimeSpan.Zero: TimeSpan.Parse(model.Deceased.BurialTime),
+
                     CemeteryId = model.Deceased.CemeteryId,
-                    IntermentStructureId = model.Deceased.StructureId > 0 ? model.Deceased.StructureId : null,
-                    IntermentSpaceId = model.Deceased.IntermentSpaceId > 0 ? model.Deceased.IntermentSpaceId : null,
-                    CoffinVariantId = model.CoffinVariantId,
-                    AgencyId = model.AgencyId,
-                    TotalAmount = model.TotalAmount
+                    WakeId = model.Deceased.WakeId,
+                    IntermentStructureId = model.Deceased.StructureId,
+                    IntermentSpaceId = model.Deceased.IntermentSpaceId,
+
+                    CreatedAt = DateTime.Now,
+                    Status = "ACTIVO"
                 };
 
-                _context.Contratos.Add(contract); await _context.SaveChangesAsync();
+                _context.Contratos.Add(contract);
 
-                if (model.RequiredVehicles != null)
+                // Guardamos primero para que contract.Id se genere y esté disponible para los detalles
+                await _context.SaveChangesAsync();
+
+                // 2. Procesar Stock (Ataúdes y consumibles)
+                if (model.StockItems != null)
                 {
-                    foreach (var vId in model.RequiredVehicles)
-                        _context.DetallesMovilidadContrato.Add(new ContractMovilityDetail { ContractId = contract.Id, VehicleTypeId = vId, Status = "PENDIENTE" });
+                    foreach (var prodId in model.StockItems)
+                    {
+                        var stock = await _context.ProductosStock
+                            .FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.ProductId == prodId);
+
+                        if (stock != null && stock.Quantity > 0)
+                        {
+                            stock.Quantity--; // Restamos del inventario de la sede
+                            _context.DetallesProductosContrato.Add(new ContractProductDetail
+                            {
+                                ContractId = contract.Id,
+                                ProductId = prodId,
+                                Quantity = 1
+                            });
+                        }
+                        else
+                        {
+                            throw new Exception($"No hay stock suficiente para el producto ID: {prodId}");
+                        }
+                    }
                 }
 
-                if (contract.IntermentSpaceId.HasValue)
+                // 3. Procesar Activos (Capillas y equipos en préstamo)
+                if (model.AssetItems != null)
                 {
-                    var space = await _context.SepulturasNichos.FindAsync(contract.IntermentSpaceId);
-                    if (space != null) { space.Status = IntermentStatus.Ocupado; _context.Update(space); }
+                    foreach (var assetId in model.AssetItems)
+                    {
+                        var asset = await _context.ActivosFijos.FindAsync(assetId);
+                        if (asset != null)
+                        {
+                            asset.Status = AssetStatus.InUse; // Cambiamos a "En Uso"
+                            _context.DetallesProductosContrato.Add(new ContractProductDetail
+                            {
+                                ContractId = contract.Id,
+                                ProductId = asset.ProductId,
+                                FixedAssetId = asset.Id,
+                                Quantity = 1
+                            });
+                        }
+                    }
                 }
 
-                var stock = await _context.StockFilial.FirstOrDefaultAsync(s => s.BranchId == model.BranchId && s.CoffinVariantId == model.CoffinVariantId);
-                if (stock == null || stock.Quantity <= 0) throw new Exception("Sin stock de ataúd.");
-                stock.Quantity--; _context.Update(stock);
+                // 4. Procesar Movilidad (Logística)
+                if (model.MobilityItems != null)
+                {
+                    foreach (var vTypeId in model.MobilityItems)
+                    {
+                        _context.DetallesMovilidadContrato.Add(new ContractMovilityDetail
+                        {
+                            ContractId = contract.Id,
+                            VehicleTypeId = vTypeId,
+                            Status = "PENDIENTE"
+                        });
+                    }
+                }
 
-                await _context.SaveChangesAsync(); await transaction.CommitAsync();
-                return (true, "OK", contract.Id, contractNumber);
+                // 5. MARCAR ESPACIO COMO OCUPADO
+                if (model.Deceased.IntermentSpaceId.HasValue)
+                {
+                    var space = await _context.SepulturasNichos
+                        .FindAsync(model.Deceased.IntermentSpaceId.Value);
+
+                    if (space != null)
+                    {
+                        space.Status = IntermentStatus.Ocupado;
+                        _context.SepulturasNichos.Update(space);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return (true, "Contrato registrado con éxito", contract.Id, contractNumber);
             }
-            catch (Exception ex) { await transaction.RollbackAsync(); return (false, ex.Message, 0, ""); }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                // Obtenemos el mensaje de la excepción interna si existe para mayor detalle
+                var errorMsg = ex.InnerException?.Message ?? ex.Message;
+                return (false, errorMsg, 0, "");
+            }
+        }
+        public async Task<List<ContractListDto>> GetContractListAsync()
+        {
+            return await _context.Contratos
+                .Include(c => c.Branch) // Traemos la data de la sede vinculada
+                .OrderByDescending(c => c.CreatedAt)
+                .Select(c => new ContractListDto
+                {
+                    Id = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    DeceasedName = c.DeceasedName,
+                    BurialDate = c.BurialDate,
+                    BurialTime = c.BurialTime,
+                    BranchName = c.Branch.Name,
+                    Status = c.Status
+                })
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task<Contract?> GetContractForPdf(int id) => await _context.Contratos.Include(c => c.Branch).Include(c => c.CoffinVariant).ThenInclude(v => v.Coffin).Include(c => c.Cemetery).Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType).FirstOrDefaultAsync(c => c.Id == id);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
 using ContratosYReembolsos.Models.Entities.Inventory;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.ViewModels.Inventory;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -122,7 +122,7 @@ namespace ContratosYReembolsos.Services.Implementations.Inventory
 
                         for (int i = 0; i < item.Quantity; i++)
                         {
-                            var newAsset = new FixedAsset { ProductId = finalProductId, BranchId = model.BranchId, SerialNumber = item.SerialNumber ?? "S/N", PatrimonialCode = $"{prefixFilter}{nextNumber:D5}", Status = "Available", CreatedAt = DateTime.Now };
+                            var newAsset = new FixedAsset { ProductId = finalProductId, BranchId = model.BranchId, SerialNumber = item.SerialNumber ?? "S/N", PatrimonialCode = $"{prefixFilter}{nextNumber:D5}", Status = AssetStatus.Available, CreatedAt = DateTime.Now };
                             _context.ActivosFijos.Add(newAsset);
                             await _context.SaveChangesAsync();
 
@@ -167,7 +167,7 @@ namespace ContratosYReembolsos.Services.Implementations.Inventory
                 {
                     for (int i = 0; i < quantity; i++)
                     {
-                        var asset = new FixedAsset { ProductId = productId, BranchId = branchId, SerialNumber = serialNumber ?? "S/N", PatrimonialCode = await GeneratePatrimonialCode(productId), Status = "Available" };
+                        var asset = new FixedAsset { ProductId = productId, BranchId = branchId, SerialNumber = serialNumber ?? "S/N", PatrimonialCode = await GeneratePatrimonialCode(productId), Status = AssetStatus.Available };
                         _context.ActivosFijos.Add(asset); await _context.SaveChangesAsync();
                         _context.MovimientosInventario.Add(new InventoryMovement { ProductId = productId, BranchId = branchId, FixedAssetId = asset.Id, Quantity = 1, MovementType = MovementType.Entry, Description = $"Alta | {observation}", CreatedAt = DateTime.Now, UserId = userId });
                     }
@@ -191,7 +191,7 @@ namespace ContratosYReembolsos.Services.Implementations.Inventory
                     if (item.IsAsset)
                     {
                         var asset = await _context.ActivosFijos.FindAsync(item.FixedAssetId);
-                        asset.Status = "InTransit";
+                        asset.Status = AssetStatus.Maintenance;
                         transfer.Details.Add(new ProductTransferDetail { ProductId = item.ProductId, FixedAssetId = item.FixedAssetId, Quantity = 1 });
                         _context.MovimientosInventario.Add(new InventoryMovement { ProductId = item.ProductId, BranchId = model.OriginBranchId, FixedAssetId = item.FixedAssetId, Quantity = 1, PreviousQuantity = 1, NewQuantity = 0, Concept = Concept.Transfer, MovementType = MovementType.Exit, InternalControlNumber = finalCode, TransferId = transfer.Id, Description = $"Salida TR {finalCode}", UserId = userId });
                     }
@@ -220,7 +220,7 @@ namespace ContratosYReembolsos.Services.Implementations.Inventory
                     if (det.FixedAssetId.HasValue)
                     {
                         var asset = await _context.ActivosFijos.FindAsync(det.FixedAssetId);
-                        asset.BranchId = transfer.TargetBranchId; asset.Status = "Available";
+                        asset.BranchId = transfer.TargetBranchId; asset.Status = AssetStatus.Available;
                         _context.MovimientosInventario.Add(new InventoryMovement { ProductId = det.ProductId, BranchId = transfer.TargetBranchId, FixedAssetId = det.FixedAssetId, Quantity = 1, NewQuantity = 1, Concept = Concept.Transfer, MovementType = MovementType.Entry, InternalControlNumber = transfer.InternalControlNumber, TransferId = transfer.Id, Description = $"Recepcion {transfer.InternalControlNumber}", UserId = userId });
                     }
                     else
@@ -246,7 +246,7 @@ namespace ContratosYReembolsos.Services.Implementations.Inventory
                 var transfer = await _context.ProductosTransferencias.Include(t => t.Details).FirstOrDefaultAsync(t => t.Id == id);
                 foreach (var det in transfer.Details)
                 {
-                    if (det.FixedAssetId.HasValue) { var asset = await _context.ActivosFijos.FindAsync(det.FixedAssetId); asset.Status = "Disponible"; }
+                    if (det.FixedAssetId.HasValue) { var asset = await _context.ActivosFijos.FindAsync(det.FixedAssetId); asset.Status = AssetStatus.Available; }
                     else { var stock = await _context.ProductosStock.FirstOrDefaultAsync(s => s.BranchId == transfer.OriginBranchId && s.ProductId == det.ProductId); stock.Quantity += det.Quantity; }
                     _context.MovimientosInventario.Add(new InventoryMovement { ProductId = det.ProductId, BranchId = transfer.OriginBranchId, Quantity = det.Quantity, Concept = Concept.Adjustment, MovementType = MovementType.Entry, InternalControlNumber = transfer.InternalControlNumber, Description = $"ANULACIÓN: {reason}", UserId = userId });
                 }

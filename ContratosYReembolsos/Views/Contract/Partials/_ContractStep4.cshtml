@@ -1,21 +1,26 @@
 ﻿<div class="animate__animated animate__fadeIn">
     <div class="mb-4">
-        <h5 class="fw-bold text-primary"><i class="fa-solid fa-box-open me-2"></i> Selección de Servicios Logísticos</h5>
-        <p class="text-muted small">Seleccione los elementos necesarios para el servicio funerario.</p>
+        <h5 class="fw-bold text-primary"><i class="fa-solid fa-box-open me-2"></i> Asignación de Beneficios Funerarios</h5>
+        <p class="text-muted small">Seleccione los elementos de inventario, activos y logística para este contrato.</p>
     </div>
 
     <div class="row g-4">
-
         <div class="col-md-8">
             <ul class="nav nav-pills nav-fill gap-2 p-1 small bg-light rounded-pill mb-4" id="pills-tab">
                 <li class="nav-item">
-                    <button class="nav-link active rounded-pill" onclick="renderCatalog('Ataúdes')">Ataúdes / Urnas</button>
+                    <button class="nav-link active rounded-pill" onclick="renderCatalog('Inventario')">
+                        <i class="fa-solid fa-vault me-1"></i> Inventario
+                    </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link rounded-pill" onclick="renderCatalog('Movilidad')">Movilidad</button>
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Movilidad')">
+                        <i class="fa-solid fa-car-side me-1"></i> Movilidad
+                    </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link rounded-pill" onclick="renderCatalog('Adicionales')">Adicionales</button>
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Adicionales')">
+                        <i class="fa-solid fa-couch me-1"></i> Adicionales (Activos)
+                    </button>
                 </li>
             </ul>
 
@@ -25,37 +30,44 @@
 
         <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden sticky-top" style="top: 20px; z-index: 10;">
-                <div class="card-header bg-white border-0 pt-3">
-                    <h6 class="fw-bold mb-0 text-primary">
-                        <i class="fa-solid fa-cart-shopping me-2"></i> Mi Selección
+                <div class="card-header bg-primary text-white border-0 py-3">
+                    <h6 class="fw-bold mb-0">
+                        <i class="fa-solid fa-list-check me-2"></i> Beneficios a Otorgar
                     </h6>
                 </div>
 
-                <div class="card-body">
-                    <div id="selectedServicesList" style="max-height: 400px; overflow-y: auto;">
+                <div class="card-body p-0">
+                    <div id="selectedServicesList" class="p-3" style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa;">
                         <div class="text-center text-muted py-5 small" id="emptyCartMsg">
-                            No hay servicios seleccionados.
+                            <i class="fa-solid fa-cart-plus fa-3x mb-3 opacity-25"></i>
+                            <p>No se han asignado beneficios todavía.</p>
                         </div>
+
+                        <div id="cartContent"></div>
                     </div>
 
-                    <div class="border-top mt-3 pt-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="fw-bold small text-muted">Total Estimado:</span>
-                            <span class="fw-bold text-primary h5 mb-0" id="totalAmountDisplay">S/ 0.00</span>
+                    <div class="p-3 border-top bg-white">
+                        <div class="d-flex justify-content-between mb-3 small fw-bold">
+                            <span>Total Items:</span>
+                            <span id="totalItemsBadge" class="badge bg-primary rounded-pill">0</span>
+                        </div>
+
+                        <div class="alert alert-info py-2 mb-3" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-circle-info me-2"></i>
+                            Asignación directa de beneficios (Sin costo).
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary rounded-pill py-2 fw-bold" onclick="nextStep(5, validateStep4)">
-                                Continuar al Resumen <i class="fa-solid fa-arrow-right ms-2"></i>
+                            <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" onclick="nextStep(5, validateStep4)">
+                                Confirmar Selección <i class="fa-solid fa-arrow-right ms-2"></i>
                             </button>
-                            <button class="btn btn-link text-muted btn-sm" onclick="loadStep(3)">
-                                Anterior
+                            <button class="btn btn-link text-muted btn-sm text-decoration-none" onclick="loadStep(3)">
+                                <i class="fa-solid fa-chevron-left me-1"></i> Regresar
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 </div>

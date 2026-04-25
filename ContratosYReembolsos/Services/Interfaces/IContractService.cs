@@ -1,5 +1,6 @@
 ﻿using ContratosYReembolsos.Models.Entities.Contracts;
-using ContratosYReembolsos.Models.ViewModels;
+using ContratosYReembolsos.Models.ViewModels.Contracts;
+using ContratosYReembolsos.Services.DTOs.Contracts;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {
@@ -22,11 +23,12 @@ namespace ContratosYReembolsos.Services.Interfaces
         Task<List<object>> GetStructures(int cemeteryId, string type);
         Task<List<object>> GetSpaceMap(int structureId);
         Task<List<object>> GetAgencies(string ruc, string name, int? branchId);
-        Task<List<object>> GetCoffinsByBranch(int branchId);
+        
+        Task<List<object>> GetStockItemsByBranch(int branchId);
+        Task<List<object>> GetAvailableAssets(int branchId);
         Task<List<object>> GetAvailableVehicleTypesByBranch(int branchId);
-
-        // Operación Principal
         Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model);
-        Task<Contract?> GetContractForPdf(int id);
+        Task<List<ContractListDto>> GetContractListAsync();
+
     }
 }
