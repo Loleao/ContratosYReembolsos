@@ -293,5 +293,88 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .ToListAsync();
         }
 
+        public async Task<ContractReportDto> GetContractForPDFAsync(int id)
+        {
+            // 1. Consulta con todos los Includes necesarios para evitar valores nulos
+            var contract = await _context.Contratos
+                .Include(c => c.Branch)
+                .Include(c => c.Agency)
+                .Include(c => c.Cemetery)
+                .Include(c => c.IntermentStructure)
+                .Include(c => c.IntermentSpace)
+                .Include(c => c.Ubigeo)
+                .Include(c => c.ProductDetails).ThenInclude(p => p.Product)
+                .Include(c => c.MovilityDetails)
+                    .ThenInclude(m => m.VehicleType) // Asumiendo que existe para el nombre del vehículo
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contract == null) return null;
+
+            // 2. Mapeo al DTO de Impresión
+            var dto = new ContractReportDto
+            {
+                Id = contract.Id,
+                ContractNumber = contract.ContractNumber,
+                CreatedAt = contract.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss"),
+                BranchName = contract.Branch?.Name ?? "N/A",
+                AgencyName = contract.Agency?.Name ?? "FONAFUN - SEDE CENTRAL",
+                AgencyAddress = contract.Agency?.Address ?? "-",
+
+                SolicitorName = contract.SolicitorName,
+                SolicitorDni = contract.SolicitorDni,
+                SolicitorType = contract.SolicitorType,
+
+                DeceasedName = contract.DeceasedName,
+                DeceasedDni = contract.DeceasedDni,
+                DeathDate = contract.DeathDate.ToShortDateString(),
+
+                BurialDate = contract.BurialDate.ToShortDateString(),
+                BurialTime = contract.BurialTime.ToString(@"hh\:mm"),
+                UbigeoFull = contract.Ubigeo != null
+                    ? $"{contract.Ubigeo.Region} - {contract.Ubigeo.District}"
+                    : "No especificado",
+
+                CemeteryName = contract.Cemetery?.Name ?? "Externo",
+
+                // Formateamos la ubicación específica (Nicho/Tumba)
+                BurialLocationDetail = contract.IntermentSpace != null
+                    ? $"{contract.IntermentStructure?.Name} - Fila: {contract.IntermentSpace.RowLetter} Col: {contract.IntermentSpace.ColumnNumber}"
+                    : (contract.IntermentStructure?.Type ?? "Ubicación por confirmar"),
+
+                Services = new List<OrderItemDto>()
+            };
+
+            // 3. Mapeo de Productos (Ataúdes, Capillas, etc.)
+            if (contract.ProductDetails != null)
+            {
+                foreach (var prod in contract.ProductDetails)
+                {
+                    dto.Services.Add(new OrderItemDto
+                    {
+                        Description = prod.Product.Name, // O la propiedad que guarde el nombre
+                        Category = "Suministro",
+                        Status = "Entregado"
+                    });
+                }
+            }
+
+            // 4. Mapeo de Movilidades
+            if (contract.MovilityDetails != null)
+            {
+                foreach (var mov in contract.MovilityDetails)
+                {
+                    dto.Services.Add(new OrderItemDto
+                    {
+                        Description = $"Servicio de Movilidad: {mov.VehicleType?.Name ?? "Cortejo"}",
+                        Category = "Transporte",
+                        Status = "Programado"
+                    });
+                }
+            }
+
+            return dto;
+        }
+
     }
 }

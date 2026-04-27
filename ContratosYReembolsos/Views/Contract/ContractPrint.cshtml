@@ -1,22 +1,20 @@
-﻿@using ContratosYReembolsos.Models.Entities.Contracts
-@model Contract
+﻿@model ContratosYReembolsos.Services.DTOs.Contracts.ContractReportDto
 @{
     Layout = null;
 }
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
+    <title>Contrato @Model.ContractNumber</title>
     <style>
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11px;
             color: #333;
             line-height: 1.4;
-        }
-
-        .p-4 {
+            margin: 0;
             padding: 30px;
         }
 
@@ -32,6 +30,12 @@
             font-weight: bold;
         }
 
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
         .border-section {
             border: 1px solid #dee2e6;
             padding: 12px;
@@ -43,7 +47,7 @@
             font-weight: bold;
             color: #004a99;
             border-bottom: 1px solid #004a99;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
             font-size: 10px;
         }
@@ -51,12 +55,6 @@
         .val {
             font-weight: bold;
             color: #000;
-        }
-
-        .header-table {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
         }
 
         .table-services {
@@ -70,6 +68,7 @@
                 border: 1px solid #dee2e6;
                 padding: 8px;
                 text-align: left;
+                font-size: 10px;
             }
 
             .table-services td {
@@ -78,50 +77,64 @@
             }
 
         .row {
-            display: table;
+            display: block;
             width: 100%;
-            clear: both;
         }
 
         .col-6 {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
+            float: left;
+            width: 48%;
         }
 
-        .text-end {
-            text-align: right;
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
         }
 
-        .total-row {
-            background-color: #004a99;
-            color: white;
-            font-weight: bold;
+        .signature-box {
+            margin-top: 60px;
+            width: 100%;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 80%;
+            margin: 0 auto 5px;
+        }
+
+        .footer-note {
+            margin-top: 30px;
+            text-align: center;
+            color: #888;
+            font-size: 8px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
         }
     </style>
 </head>
-<body class="p-4">
+<body>
     <table class="header-table">
         <tr>
-            <td style="width: 70%">
-                <h2 class="fw-bold mb-0 text-primary">FONAFUN PERÚ</h2>
-                <p style="margin:0;">FONDO DE APOYO FUNERARIO - PNP</p>
-                <p style="margin:0; font-size: 9px;" class="text-muted">
-                    Sede de Registro: <span class="val">@Model.Branch?.Name</span><br />
-                    Agencia: <span class="val">@Model.Agency?.Name</span> - @Model.Agency?.Address
+            <td style="width: 65%">
+                <h2 class="fw-bold mb-0 text-primary" style="margin:0;">FONAFUN PERÚ</h2>
+                <p style="margin:2px 0; font-weight:bold;">FONDO DE APOYO FUNERARIO - PNP</p>
+                <p style="margin:0; font-size: 9px; color: #666;">
+                    Sede de Registro: <span class="val">@Model.BranchName</span><br />
+                    Agencia: <span class="val">@Model.AgencyName</span> - @Model.AgencyAddress
                 </p>
             </td>
-            <td style="width: 30%; text-align: right;">
-                <div style="border: 2px solid #004a99; padding: 10px; border-radius: 8px;">
-                    <span class="text-danger fw-bold" style="font-size: 12px;">CONTRATO DE SERVICIO</span>
-                    <h2 style="margin: 5px 0 0 0; color: #000;">@Model.ContractNumber</h2>
+            <td style="width: 35%; text-align: right;">
+                <div style="border: 2px solid #004a99; padding: 10px; border-radius: 8px; text-align: center;">
+                    <span class="text-danger fw-bold" style="font-size: 11px;">CONTRATO DE SERVICIO</span>
+                    <h2 style="margin: 5px 0 0 0; color: #000; font-size: 20px;">@Model.ContractNumber</h2>
                 </div>
             </td>
         </tr>
     </table>
 
-    <div class="row">
-        <div class="col-6" style="padding-right: 10px;">
+    <div class="row clearfix">
+        <div class="col-6" style="margin-right: 4%;">
             <div class="border-section">
                 <div class="title-label">Datos del Titular / Solicitante</div>
                 <div>Nombre: <span class="val">@Model.SolicitorName</span></div>
@@ -129,35 +142,28 @@
                 <div>Parentesco: <span class="val">@Model.SolicitorType</span></div>
             </div>
         </div>
-
         <div class="col-6">
             <div class="border-section">
                 <div class="title-label">Datos del Fallecido</div>
                 <div>Nombre: <span class="val">@Model.DeceasedName</span></div>
                 <div>DNI: <span class="val">@Model.DeceasedDni</span></div>
-                <div>Fecha Fallecimiento: <span class="val">@Model.DeathDate.ToShortDateString()</span></div>
+                <div>Fecha Fallecimiento: <span class="val">@Model.DeathDate</span></div>
             </div>
         </div>
     </div>
 
     <div class="border-section">
         <div class="title-label">Logística y Ubicación de Sepelio</div>
-        <table style="width: 100%;">
+        <table style="width: 100%; border-spacing: 0;">
             <tr>
-                <td style="width: 33%;">Fecha Sepelio: <span class="val">@Model.BurialDate.ToShortDateString()</span></td>
-                <td style="width: 33%;">Hora: <span class="val">@Model.BurialTime.ToString(@"hh\:mm")</span></td>
-                <td style="width: 33%;">Ubigeo: <span class="val">@(Model.Ubigeo?.Region) - @Model.Ubigeo?.District</span></td>
+                <td style="width: 33%;">Fecha Sepelio: <span class="val">@Model.BurialDate</span></td>
+                <td style="width: 33%;">Hora: <span class="val">@Model.BurialTime</span></td>
+                <td style="width: 33%;">Ubigeo: <span class="val">@Model.UbigeoFull</span></td>
             </tr>
             <tr>
-                <td colspan="2">Cementerio: <span class="val">@Model.Cemetery?.Name</span></td>
-                <td>Ubicación: <span class="val">@Model.IntermentStructure?.Type</span></td>
+                <td colspan="2" style="padding-top: 5px;">Cementerio: <span class="val">@Model.CemeteryName</span></td>
+                <td style="padding-top: 5px;">Ubicación: <span class="val">@Model.BurialLocationDetail</span></td>
             </tr>
-            @if (Model.IntermentSpace != null)
-            {
-                <tr>
-                    <td colspan="3">Espacio Asignado: <span class="val">@Model.IntermentStructure?.Name - Fila: @Model.IntermentSpace.RowLetter Col: @Model.IntermentSpace.ColumnNumber</span></td>
-                </tr>
-            }
         </table>
     </div>
 
@@ -168,59 +174,43 @@
                 <tr>
                     <th>Descripción del Servicio / Producto</th>
                     <th>Categoría</th>
-                    <th class="text-end">Estado</th>
+                    <th style="text-align: right;">Estado</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    @* <td>
-                        <span class="val">ATAÚD @Model.CoffinVariant?.Coffin?.ModelName</span><br />
-                        <small>Color: @Model.CoffinVariant?.Color | Material: @Model.CoffinVariant?.Material</small>
-                    </td> *@
-                    <td>Suministro</td>
-                    <td class="text-end fw-bold">Entregado</td>
-                </tr>
-
-                @if (Model.MovilityDetails != null)
+                @foreach (var item in Model.Services)
                 {
-                    foreach (var mov in Model.MovilityDetails)
-                    {
-                        <tr>
-                            <td>
-                                <span class="val">@mov.VehicleType?.Name</span><br />
-                                <small>Servicio de movilidad logística para cortejo</small>
-                            </td>
-                            <td>Transporte</td>
-                            <td class="text-end">Programado</td>
-                        </tr>
-                    }
+                    <tr>
+                        <td><span class="val">@item.Description</span></td>
+                        <td>@item.Category</td>
+                        <td style="text-align: right;" class="fw-bold">@item.Status</td>
+                    </tr>
                 }
             </tbody>
         </table>
     </div>
 
-    <div style="margin-top: 80px;">
-        <table style="width: 100%; text-align: center;">
-            <tr>
-                <td style="width: 40%">
-                    <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto;"></div>
-                    <p style="margin-top: 5px;"><strong>@Model.SolicitorName</strong></p>
-                    <p style="margin: 0; font-size: 9px;">Firma del Solicitante</p>
-                    <p style="margin: 0; font-size: 9px;">DNI: @Model.SolicitorDni</p>
-                </td>
-                <td style="width: 20%"></td>
-                <td style="width: 40%">
-                    <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto;"></div>
-                    <p style="margin-top: 5px;"><strong>FONAFUN PERÚ</strong></p>
-                    <p style="margin: 0; font-size: 9px;">Firma Autorizada y Sello</p>
-                    <p style="margin: 0; font-size: 9px;">Sede: @Model.Branch?.Name</p>
-                </td>
-            </tr>
-        </table>
-    </div>
+    <table class="signature-box">
+        <tr>
+            <td style="width: 45%; text-align: center;">
+                <div class="signature-line"></div>
+                <p style="margin: 0;"><strong>@Model.SolicitorName</strong></p>
+                <p style="margin: 0; font-size: 9px;">DNI: @Model.SolicitorDni</p>
+                <p style="margin: 0; font-size: 8px; color: #666;">Firma del Solicitante</p>
+            </td>
+            <td style="width: 10%;"></td>
+            <td style="width: 45%; text-align: center;">
+                <div class="signature-line"></div>
+                <p style="margin: 0;"><strong>FONAFUN PERÚ</strong></p>
+                <p style="margin: 0; font-size: 9px;">Sede: @Model.BranchName</p>
+                <p style="margin: 0; font-size: 8px; color: #666;">Firma Autorizada y Sello</p>
+            </td>
+        </tr>
+    </table>
 
-    <div style="margin-top: 40px; text-align: center; color: #888; font-size: 8px; border-top: 1px dashed #ccc; padding-top: 10px;">
-        Documento generado electrónicamente el @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss") - Código de Verificación: @Model.Id.ToString("D8")
+    <div class="footer-note">
+        Documento generado electrónicamente el @Model.CreatedAt - Código de Verificación: @Model.Id.ToString("D8")<br>
+        <strong>FONAFUN - Vocación de Servicio al Personal Policial</strong>
     </div>
 </body>
 </html>

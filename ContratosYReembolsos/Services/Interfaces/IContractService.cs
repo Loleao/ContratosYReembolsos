@@ -30,5 +30,7 @@ namespace ContratosYReembolsos.Services.Interfaces
         Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model);
         Task<List<ContractListDto>> GetContractListAsync();
 
+        Task<ContractReportDto> GetContractForPDFAsync(int id);
+
     }
 }

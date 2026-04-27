@@ -58,7 +58,7 @@
                                 </td>
                                 <td class="text-end pe-3">
                                     <div class="btn-group shadow-sm">
-                                        <button class="btn btn-sm btn-white border" onclick="printContract(@item.Id)" title="Imprimir">
+                                        <button class="btn btn-sm btn-white border" onclick="generatePDF(@item.Id)" title="Imprimir">
                                             <i class="fa-solid fa-print text-primary"></i>
                                         </button>
                                         <button class="btn btn-sm btn-white border" onclick="viewDetails(@item.Id)" title="Ver Detalles">
@@ -89,15 +89,22 @@
             });
         });
 
-        function printContract(id) {
+        function generatePDF(id) {
+            // 1. Opcional: Mostrar una alerta de carga
             Swal.fire({
-                title: 'Generando PDF',
-                text: 'Espere un momento mientras se prepara el documento...',
+                title: 'Preparando documento',
+                text: 'Generando el formato oficial FONAFUN...',
                 icon: 'info',
+                timer: 2000,
                 showConfirmButton: false,
-                timer: 1500
+                didOpen: () => {
+                    Swal.showLoading();
+                }
             });
-            // Próximo paso: window.location.href = `/Contract/DownloadPdf/${id}`;
+
+            // 2. Abrir el PDF en una pestaña nueva
+            const url = '@Url.Action("PrintContract", "Contract")' + '?id=' + id;
+            window.open(url, '_blank');
         }
 
         function viewDetails(id) {

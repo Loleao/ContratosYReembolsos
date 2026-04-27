@@ -635,7 +635,29 @@ namespace ContratosYReembolsos.Controllers
             return View(viewModels);
         }
 
+        public async Task<IActionResult> PrintContract(int id)
+        {
+            var model = await _contractService.GetContractForPDFAsync(id);
 
+            if (model == null) return NotFound();
+
+            // 1. Definimos el nombre del archivo de forma dinámica
+            string fileName = $"Contrato_{model.ContractNumber.Replace("/", "-")}.pdf";
+
+            // 2. Agregamos el encabezado Content-Disposition
+            // 'inline' permite que se abra en el navegador.
+            // 'filename' sugiere el nombre al momento de descargar.
+            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{fileName}\"");
+
+            // 3. Retornamos la vista como PDF sin la propiedad FileName de Rotativa
+            return new ViewAsPdf("ContractPrint", model)
+            {
+                PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                PageMargins = new Rotativa.AspNetCore.Options.Margins(15, 15, 15, 15),
+                // Esto también ayuda a que el título de la pestaña del navegador cambie
+                CustomSwitches = "--page-offset 0 --footer-center [page] --footer-font-size 8"
+            };
+        }
 
 
         [HttpGet]
