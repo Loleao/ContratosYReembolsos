@@ -1,72 +1,70 @@
 ﻿<div class="animate__animated animate__fadeIn">
-    <div class="mb-4">
-        <h5 class="fw-bold text-primary"><i class="fa-solid fa-box-open me-2"></i> Asignación de Beneficios Funerarios</h5>
-        <p class="text-muted small">Seleccione los elementos de inventario, activos y logística para este contrato.</p>
+    <div class="mb-4 d-flex justify-content-between align-items-end border-bottom pb-3">
+        <div>
+            <h4 class="fw-bold text-primary mb-1">Verificación de Contrato</h4>
+            <p class="text-muted mb-0"><i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> Revise los datos antes de emitir el comprobante legal.</p>
+        </div>
+        <div class="text-end">
+            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 10px;">N° Correlativo Previsto</small>
+            <span class="badge bg-primary fs-5 px-3 rounded-pill shadow-sm" id="resContractPreview">---</span>
+        </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-8">
-            <ul class="nav nav-pills nav-fill gap-2 p-1 small bg-light rounded-pill mb-4" id="pills-tab">
-                <li class="nav-item">
-                    <button class="nav-link active rounded-pill" onclick="renderCatalog('Inventario')">
-                        <i class="fa-solid fa-vault me-1"></i> Inventario
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link rounded-pill" onclick="renderCatalog('Movilidad')">
-                        <i class="fa-solid fa-car-side me-1"></i> Movilidad
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link rounded-pill" onclick="renderCatalog('Adicionales')">
-                        <i class="fa-solid fa-couch me-1"></i> Adicionales (Activos)
-                    </button>
-                </li>
-            </ul>
-
-            <div id="catalogContainer" class="row g-3">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card border-0 shadow-sm rounded-4 mb-3 border-top border-primary border-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-uppercase small text-primary"><i class="fa-solid fa-id-card-clip me-2"></i>Información Personal</h6>
+                    <div class="row">
+                        <div class="col-md-6 border-end">
+                            <label class="text-muted small d-block">Titular / Solicitante</label>
+                            <span class="fw-bold d-block h6" id="resSolicitorName">---</span>
+                            <span class="badge bg-light text-dark border" id="resSolicitorDni">DNI: ---</span>
+                        </div>
+                        <div class="col-md-6 ps-md-4">
+                            <label class="text-muted small d-block">Beneficiario / Fallecido</label>
+                            <span class="fw-bold d-block h6" id="resDeceasedName">---</span>
+                            <span class="badge bg-light text-dark border" id="resDeceasedDni">DNI: ---</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden sticky-top" style="top: 20px; z-index: 10;">
-                <div class="card-header bg-primary text-white border-0 py-3">
-                    <h6 class="fw-bold mb-0">
-                        <i class="fa-solid fa-list-check me-2"></i> Beneficios a Otorgar
-                    </h6>
-                </div>
-
-                <div class="card-body p-0">
-                    <div id="selectedServicesList" class="p-3" style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa;">
-                        <div class="text-center text-muted py-5 small" id="emptyCartMsg">
-                            <i class="fa-solid fa-cart-plus fa-3x mb-3 opacity-25"></i>
-                            <p>No se han asignado beneficios todavía.</p>
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-uppercase small text-primary"><i class="fa-solid fa-map-location-dot me-2"></i>Itinerario de Sepelio</h6>
+                    <div class="row g-4">
+                        <div class="col-md-4 text-center text-md-start">
+                            <label class="text-muted small d-block mb-1">Programación</label>
+                            <span class="d-block fw-bold small text-primary"><i class="fa-regular fa-calendar-check me-1"></i> <span id="resBurialDateTime">---</span></span>
                         </div>
-
-                        <div id="cartContent"></div>
-                    </div>
-
-                    <div class="p-3 border-top bg-white">
-                        <div class="d-flex justify-content-between mb-3 small fw-bold">
-                            <span>Total Items:</span>
-                            <span id="totalItemsBadge" class="badge bg-primary rounded-pill">0</span>
+                        <div class="col-md-4 text-center text-md-start border-start border-end">
+                            <label class="text-muted small d-block mb-1">Velatorio</label>
+                            <span class="d-block fw-bold small"><i class="fa-solid fa-house-chimney-window me-1"></i> <span id="resWakePlace">---</span></span>
                         </div>
-
-                        <div class="alert alert-info py-2 mb-3" style="font-size: 0.75rem;">
-                            <i class="fa-solid fa-circle-info me-2"></i>
-                            Asignación directa de beneficios (Sin costo).
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" onclick="nextStep(5, validateStep4)">
-                                Confirmar Selección <i class="fa-solid fa-arrow-right ms-2"></i>
-                            </button>
-                            <button class="btn btn-link text-muted btn-sm text-decoration-none" onclick="loadStep(3)">
-                                <i class="fa-solid fa-chevron-left me-1"></i> Regresar
-                            </button>
+                        <div class="col-md-4 text-center text-md-start">
+                            <label class="text-muted small d-block mb-1">Destino Final</label>
+                            <span class="d-block fw-bold small"><i class="fa-solid fa-monument me-1"></i> <span id="resCemetery">---</span></span>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-uppercase small text-primary"><i class="fa-solid fa-receipt me-2"></i>Servicios y Logística Seleccionada</h6>
+                    <div id="resServicesTable">
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <button class="btn btn-link text-muted text-decoration-none" onclick="loadStep(4)">
+                    <i class="fa-solid fa-chevron-left me-1"></i> Regresar al Catálogo
+                </button>
+                <button class="btn btn-primary px-5 rounded-pill py-3 fw-bold shadow-lg" onclick="saveFinalContract()">
+                    <i class="fa-solid fa-check-double me-2"></i> CONFIRMAR REGISTRO FINAL
+                </button>
             </div>
         </div>
     </div>

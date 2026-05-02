@@ -6,9 +6,7 @@ namespace ContratosYReembolsos.Models.ViewModels.Inventory
     public class StockEntryFormViewModel
     {
         public List<Product> StockProducts { get; set; } = new();
-        public List<Product> AssetProducts { get; set; } = new();
         public List<Branch> Branches { get; set; } = new();
-
         public string ServerDate => DateTime.Now.ToString("dd/MM/yyyy");
     }
 }

@@ -1,0 +1,39 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
+
+<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-file-signature me-2"></i>Resumen y Confirmación Final</h5>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="table-responsive">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted">Fallecido:</td>
+                        <td class="fw-bold" id="sumDeceased">---</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Origen:</td>
+                        <td class="fw-bold text-danger" id="sumOrigin">---</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Destino:</td>
+                        <td class="fw-bold text-success" id="sumDestination">---</td>
+                    </tr>
+                    <tr class="border-top">
+                        <td class="text-muted pt-2">Costo Total:</td>
+                        <td class="fw-bold text-primary h5 pt-2">S/ <span id="sumCost">0.00</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label small fw-bold">Observaciones del Trámite</label>
+            <textarea asp-for="Observations" class="form-control" rows="4" placeholder="Indique detalles adicionales de la exhumación..."></textarea>
+        </div>
+    </div>
+
+    <div class="alert alert-warning mt-4 py-2 small border-0 shadow-sm">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        Al finalizar, el espacio de origen quedará marcado como <strong>DISPONIBLE</strong> en el sistema de forma inmediata.
+    </div>
+</div>

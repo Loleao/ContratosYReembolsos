@@ -1,0 +1,44 @@
+﻿@model List<ContratosYReembolsos.Models.Entities.FixedAssets.AssetCategory>
+@{
+    ViewData["Title"] = "Clasificación de Activos";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold m-0"><i class="fa-solid fa-tags me-2"></i>Categorías y Subcategorías</h4>
+        <button class="btn btn-dark rounded-pill px-4" onclick="openCreateCategoryModal()">
+            <i class="fa-solid fa-plus me-1"></i> Nueva Categoría
+        </button>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var cat in Model)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold m-0 text-primary">@cat.Name</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="editCategory(@cat.Id)">Editar</a></li>
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="addSubCategory(@cat.Id)">Añadir Subcategoría</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="list-group list-group-flush small">
+                            @foreach (var sub in cat.Subcategories)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="fa-solid fa-chevron-right x-small me-2 text-muted"></i>@sub.Name</span>
+                                    <button class="btn btn-link btn-sm text-muted p-0" onclick="editSubCategory(@sub.Id)"><i class="fa-solid fa-pen-to-square"></i></button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

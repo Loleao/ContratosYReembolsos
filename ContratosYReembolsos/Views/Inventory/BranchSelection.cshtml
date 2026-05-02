@@ -1,6 +1,14 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Branches
 @model IEnumerable<Branch>
 
+<style>
+    .select2-container--bootstrap-5 .select2-selection {
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+</style>
+
 <div class="container py-4 animate__animated animate__fadeIn">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -46,9 +54,7 @@
     <script>
         // 1. VARIABLES Y MAPEOS
         let globalStockProducts = [];
-        let globalAssetProducts = [];
         let availableStock = [];
-        let availableAssets = [];
         let entryRowIndex = 0;
         let transferRowIndex = 0;
 
@@ -140,45 +146,44 @@
         function addNewEntryRow() {
             const idx = entryRowIndex;
             const stockOptions = globalStockProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            const assetOptions = globalAssetProducts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
             const html = `
                 <tr id="row-entry-${idx}" class="animate__animated animate__fadeIn">
                     <td>
-                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm border-0 bg-light fw-bold" onchange="toggleRowType(${idx}, this.value)">
-                            <option value="false">CONSUMIBLE</option>
-                            <option value="true">ACTIVO FIJO</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div id="wrapper-stock-${idx}">
-                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-entry" data-idx="${idx}" required>
-                                <option value="">-- Seleccione Producto --</option>
-                                ${stockOptions}
-                            </select>
-                        </div>
-                        <div id="wrapper-asset-${idx}" style="display:none;">
-                            <select name="Items[${idx}].ProductIdAsset" class="form-select form-select-sm">
-                                <option value="">-- Seleccione Activo --</option>
-                                ${assetOptions}
-                            </select>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 38px; border: 1px solid #dee2e6;">
+                                <i class="fa-solid fa-box text-muted"></i>
+                            </div>
+                            <div style="flex-grow: 1; min-width: 0;"> @* min-width evita que el texto largo empuje la tabla *@
+                                <select name="Items[${idx}].ProductId" class="form-select select-product-entry" data-idx="${idx}" required>
+                                    <option value="">-- Seleccione Producto --</option>
+                                    ${stockOptions}
+                                </select>
+                            </div>
                         </div>
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="Items[${idx}].Quantity" id="quantity-${idx}" class="form-control text-center fw-bold" value="1" min="1" step="1" data-type="int" required />
+                            <input type="number" name="Items[${idx}].Quantity" id="quantity-${idx}"
+                                   class="form-control text-center fw-bold" value="1" min="0.01" step="0.01" required />
                             <span class="input-group-text x-small bg-light" id="unit-label-${idx}">-</span>
                         </div>
                     </td>
-                    <td>
-                        <input type="text" name="Items[${idx}].SerialNumber" id="serial-${idx}" class="form-control form-control-sm border-0 bg-light" placeholder="N/A" disabled />
-                    </td>
                     <td class="text-center">
-                        <button type="button" onclick="removeEntryRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" onclick="removeEntryRow(${idx})" class="btn btn-link text-danger p-0">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
+
             $('#bulkEntryTableBody').append(html);
+
+            $(`#row-entry-${idx} .select-product-entry`).select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalStockEntryContainer'),
+                width: '100%'
+            });
+
             entryRowIndex++;
         }
 
@@ -239,42 +244,46 @@
         function addTransferRow() {
             const idx = transferRowIndex;
             const stockOptions = availableStock.map(s => `<option value="${s.productId}" data-max="${s.quantity}">${s.name}</option>`).join('');
-            const assetOptions = availableAssets.map(a => `<option value="${a.id}" data-productid="${a.productId}">${a.productName} [SN: ${a.serialNumber}]</option>`).join('');
 
             const html = `
                 <tr id="row-transfer-${idx}" class="animate__animated animate__fadeIn">
                     <td>
-                        <select name="Items[${idx}].IsAsset" class="form-select form-select-sm fw-bold border-0 bg-light" onchange="toggleTransferRowType(${idx}, this.value)">
-                            <option value="false">MERCADERÍA</option>
-                            <option value="true">ACTIVO</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div id="wrapper-t-stock-${idx}">
-                            <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-transfer shadow-sm border-warning" data-idx="${idx}" required>
-                                <option value="">-- Seleccione Producto --</option>
-                                ${stockOptions}
-                            </select>
-                        </div>
-                        <div id="wrapper-t-asset-${idx}" style="display:none;">
-                            <select name="Items[${idx}].FixedAssetId" class="form-select form-select-sm shadow-sm border-primary">
-                                <option value="">-- Seleccione Activo --</option>
-                                ${assetOptions}
-                            </select>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width: 35px; height: 38px; border: 1px solid #dee2e6;">
+                                <i class="fa-solid fa-truck-moving text-muted"></i>
+                            </div>
+                            <div style="flex-grow: 1; min-width: 0;">
+                                <select name="Items[${idx}].ProductId" class="form-select form-select-sm select-product-transfer shadow-sm" data-idx="${idx}" required>
+                                    <option value="">-- Seleccione Producto --</option>
+                                    ${stockOptions}
+                                </select>
+                            </div>
                         </div>
                     </td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}" class="form-control text-center fw-bold" value="1" min="1" step="1" data-type="int" required />
+                            <input type="number" name="Items[${idx}].Quantity" id="qty-transfer-${idx}"
+                                   class="form-control text-center fw-bold" value="1" min="0.01" step="0.01" required />
                             <span class="input-group-text x-small bg-white" id="max-label-${idx}">/ -</span>
                         </div>
                     </td>
                     <td class="text-center">
-                        <button type="button" onclick="removeTransferRow(${idx})" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" onclick="removeTransferRow(${idx})" class="btn btn-link text-danger p-0">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
+
             $('#transferTableBody').append(html);
+
+            // Inicializar Select2 con el ancho al 100% del contenedor flexible
+            $(`#row-transfer-${idx} .select-product-transfer`).select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransferContainer'),
+                width: '100%'
+            });
+
             transferRowIndex++;
         }
 
@@ -338,7 +347,7 @@
             } catch (e) { $btn.prop('disabled', false).text('CONFIRMAR'); }
         });
 
-                // 7.5 SUBMIT DE TRASLADOS (Faltante en tu código)
+        // 7.5 SUBMIT DE TRASLADOS (Faltante en tu código)
         $(document).on('submit', '#formProductTransfer', async function (e) {
             e.preventDefault();
 
@@ -453,6 +462,7 @@
         }
 
         function removeEntryRow(idx) { $(`#row-entry-${idx}`).remove(); }
+
         function removeTransferRow(idx) { $(`#row-transfer-${idx}`).remove(); }
     </script>
 }

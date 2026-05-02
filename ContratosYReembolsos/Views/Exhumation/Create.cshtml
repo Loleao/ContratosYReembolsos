@@ -1,0 +1,195 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
+@{
+    ViewData["Title"] = "Registro de Exhumaciones";
+}
+
+<style>
+    :root {
+        --pnp-blue: #004a99;
+        --pnp-bg: #003366;
+        --pnp-gray: #f1f4f8;
+    }
+
+    body {
+        background-color: var(--pnp-bg);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .stepper-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 95%;
+        margin: 30px auto;
+        min-height: calc(100vh - 100px);
+    }
+
+    .stepper-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        margin-bottom: 50px;
+        padding: 0 100px; /* Más aire al ser menos pasos */
+    }
+
+        .stepper-header::before {
+            content: "";
+            position: absolute;
+            top: 25px;
+            left: 120px;
+            right: 120px;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+    .step-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step-dot {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.2rem;
+        z-index: 5;
+        margin-bottom: 10px;
+    }
+
+    .step-item.active .step-dot {
+        border-color: var(--pnp-blue);
+        background-color: var(--pnp-blue);
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 74, 153, 0.3);
+        border-width: 4px;
+    }
+
+    .step-item.completed .step-dot {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 11px;
+        font-weight: bold;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .step-item.active .step-label {
+        color: var(--pnp-blue);
+    }
+
+    /* Animación de carga */
+    #dynamic-content {
+        transition: opacity 0.3s ease-in-out;
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="stepper-card">
+        <div class="stepper-header">
+            <div class="step-item active" id="nav-1">
+                <div class="step-dot"><i class="fa-solid fa-magnifying-glass"></i></div>
+                <div class="step-label">Origen</div>
+            </div>
+            <div class="step-item" id="nav-2">
+                <div class="step-dot"><i class="fa-solid fa-truck-moving"></i></div>
+                <div class="step-label">Destino</div>
+            </div>
+            <div class="step-item" id="nav-3">
+                <div class="step-dot"><i class="fa-solid fa-file-signature"></i></div>
+                <div class="step-label">Resumen</div>
+            </div>
+        </div>
+
+        <div id="dynamic-content" class="mt-4">
+            <div class="text-center py-5">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x text-primary"></i>
+                <p class="mt-2 text-muted">Iniciando proceso de exhumación...</p>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+            <button type="button" id="btnPrev" class="btn btn-outline-secondary rounded-pill px-4" disabled>
+                <i class="fa-solid fa-chevron-left me-2"></i> Anterior
+            </button>
+            <button type="button" id="btnNext" class="btn btn-primary rounded-pill px-5 shadow">
+                Siguiente <i class="fa-solid fa-chevron-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentStep = 1;
+
+        $(document).ready(function () {
+            // Cargar el primer paso al iniciar
+            loadStep(1);
+
+            $('#btnNext').click(function () {
+                if (currentStep < 3) {
+                    currentStep++;
+                    loadStep(currentStep);
+                } else {
+                    submitExhumation();
+                }
+            });
+
+            $('#btnPrev').click(function () {
+                if (currentStep > 1) {
+                    currentStep--;
+                    loadStep(currentStep);
+                }
+            });
+        });
+
+        function loadStep(step) {
+            // Efecto visual de transición
+            $('#dynamic-content').css('opacity', '0');
+
+            // Actualizar Header del Stepper
+            updateStepperHeader(step);
+
+            // Simulación de carga de contenido dinámico (aquí irían tus PartialViews)
+            setTimeout(() => {
+                // Aquí llamarías a: $.get('/Exhumation/GetStep/' + step, function(html) { ... });
+                $('#dynamic-content').html(`<div class="p-4"><h5>Contenido del Paso ${step}</h5><p class="text-muted">Cargando campos específicos...</p></div>`);
+                $('#dynamic-content').css('opacity', '1');
+
+                // Control de botones
+                $('#btnPrev').prop('disabled', step === 1);
+                $('#btnNext').html(step === 3 ? 'Finalizar Registro <i class="fa-solid fa-check ms-2"></i>' : 'Siguiente <i class="fa-solid fa-chevron-right ms-2"></i>');
+                if(step === 3) $('#btnNext').addClass('btn-success').removeClass('btn-primary');
+                else $('#btnNext').addClass('btn-primary').removeClass('btn-success');
+
+            }, 300);
+        }
+
+        function updateStepperHeader(step) {
+            $('.step-item').removeClass('active completed');
+            for (let i = 1; i <= 3; i++) {
+                if (i < step) $(`#nav-${i}`).addClass('completed');
+                if (i === step) $(`#nav-${i}`).addClass('active');
+            }
+        }
+    </script>
+}

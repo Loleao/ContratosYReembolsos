@@ -40,7 +40,7 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         public int? IntermentSpaceId { get; set; }
         public virtual IntermentSpace? IntermentSpace { get; set; }
 
-        public int AgencyId { get; set; }
+        public int? AgencyId { get; set; }
         public virtual Agency? Agency { get; set; }
 
 

@@ -17,7 +17,7 @@ namespace ContratosYReembolsos.Models.Entities.Agencies
 
         public string ContactPerson { get; set; }
         public string Phone { get; set; }
-        public string Email { get; set; } // Útil para enviar liquidaciones automáticas
+        public string Email { get; set; }
 
         public string Address { get; set; }
 

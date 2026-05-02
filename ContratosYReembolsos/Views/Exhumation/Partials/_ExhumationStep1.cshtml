@@ -1,0 +1,43 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
+
+<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-magnifying-glass me-2"></i>Localizar Registro del Fallecido</h5>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <label class="form-label small fw-bold text-muted">Búsqueda por DNI o Nombre Completo</label>
+            <div class="input-group shadow-sm">
+                <input type="text" id="contractSearchInput" class="form-control border-0" placeholder="Ej: 45678912 o Juan Perez...">
+                <button class="btn btn-primary px-4" type="button" id="btnDoSearch">
+                    <i class="fa-solid fa-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="searchPlaceholder" class="py-4 text-center border rounded-3 border-dashed">
+        <p class="text-muted mb-0">Ingrese los datos para localizar el contrato original</p>
+    </div>
+
+    <div id="contractResultCard" class="d-none">
+        <div class="card border-0 bg-light shadow-sm p-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary text-white rounded-circle p-3 me-3">
+                    <i class="fa-solid fa-dove fa-lg"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-1" id="lblDeceasedName">---</h6>
+                    <p class="text-muted small mb-0">
+                        DNI: <span id="lblDeceasedDni">---</span> |
+                        Contrato: <span id="lblContractNum" class="fw-bold text-primary">---</span>
+                    </p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-danger">Ubicación Actual</span>
+                    <div class="fw-bold small" id="lblCurrentLocation">---</div>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" asp-for="OriginalContractId" id="hfOriginalContractId" />
+    </div>
+</div>

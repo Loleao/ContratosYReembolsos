@@ -1,4 +1,6 @@
-﻿namespace ContratosYReembolsos.Models.Entities.Inventory
+﻿using ContratosYReembolsos.Models.Entities.FixedAssets;
+
+namespace ContratosYReembolsos.Models.Entities.Inventory
 {
     public class ProductTransferDetail
     {

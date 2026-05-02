@@ -17,9 +17,7 @@ namespace ContratosYReembolsos.Services.Interfaces
 
         // Operaciones de Stock e Internamiento
         Task<string> GenerateInternalCode();
-        Task<string> GeneratePatrimonialCode(int productId);
         Task<(bool success, string message)> ProcessBulkEntry(BulkEntryViewModel model, string userId);
-        Task<(bool success, string message)> RegisterEntry(int productId, int branchId, int quantity, string? observation, string? serialNumber, string userId);
         Task<(bool success, string message)> UpdateMinimumStocks(List<ProductStockUpdateViewModel> model);
 
         // Transferencias

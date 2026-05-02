@@ -55,19 +55,17 @@
                         </button>
                     </div>
 
-                    <div class="table-responsive" style="max-height: 400px;">
-                        <table class="table table-bordered align-middle" id="tableBulkEntry">
+                    <div class="table-responsive" style="max-height: 400px; overflow-x: hidden;">
+                        <table class="table table-bordered align-middle" id="tableBulkEntry" style="table-layout: fixed; width: 100%;">
                             <thead class="table-dark x-small">
                                 <tr>
-                                    <th style="width: 150px;">Tipo</th>
-                                    <th>Producto / Activo</th>
-                                    <th style="width: 120px;">Cantidad</th>
-                                    <th style="width: 250px;">N° Serie (Solo Activos)</th>
-                                    <th style="width: 50px;"></th>
+                                    <th style="width: 78%;">Producto / Suministro</th>
+                                    <th style="width: 12%;">Cantidad</th>
+                                    <th style="width: 10%;"></th>
                                 </tr>
                             </thead>
                             <tbody id="bulkEntryTableBody">
-                                @* Aquí se insertarán las filas mediante JS *@
+                                @* Las filas insertadas por JS deben manejar el texto largo *@
                             </tbody>
                         </table>
                     </div>

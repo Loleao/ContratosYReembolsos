@@ -6,8 +6,7 @@ namespace ContratosYReembolsos.Models.Entities.Inventory
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Sku { get; set; } // Código de referencia genérico
-        public ControlType ControlType { get; set; }
+        public string Sku { get; set; }
         public UnitOfMeasure Unit { get; set; } = UnitOfMeasure.UND;
 
         public int CategoryId { get; set; }
@@ -40,7 +39,10 @@ namespace ContratosYReembolsos.Models.Entities.Inventory
         KGS = 3,
 
         [Display(Name = "Galones")]
-        GLN = 4
+        GLN = 4,
+
+        [Display(Name = "Metros Cúbicos")]
+        M3C = 5
     }
 
 }

@@ -1,0 +1,22 @@
+﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.AssetCategory
+
+<form id="formCategory">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="modal-body p-4">
+        <div class="mb-3">
+            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Categoría</label>
+            <input asp-for="Name" class="form-control border-2 shadow-sm" placeholder="Ej: Equipos de Cómputo" required />
+        </div>
+        <div class="mb-0">
+            <label class="form-label x-small fw-bold text-muted text-uppercase">Descripción</label>
+            <textarea asp-for="Description" class="form-control border-2 shadow-sm" rows="3" placeholder="Opcional..."></textarea>
+        </div>
+    </div>
+    <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold">
+            @(Model.Id == 0 ? "Guardar Categoría" : "Actualizar Cambios")
+        </button>
+    </div>
+</form>

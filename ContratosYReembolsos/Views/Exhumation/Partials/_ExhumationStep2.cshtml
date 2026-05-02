@@ -1,0 +1,35 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
+
+<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-truck-moving me-2"></i>Información del Nuevo Destino</h5>
+
+    <div class="form-check form-switch p-3 bg-light rounded-3 mb-4 border">
+        <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsInternalRelocation" id="chkIsInternal">
+        <label class="form-check-label fw-bold" for="chkIsInternal">¿El traslado será a un cementerio de FONAFUN?</label>
+    </div>
+
+    <div id="sectionInternal" class="@(Model.IsInternalRelocation ? "" : "d-none")">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label small fw-bold">Seleccionar Nuevo Espacio</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-location-dot"></i></span>
+                    <select asp-for="NewIntermentSpaceId" class="form-select select2" id="selNewSpace">
+                        <option value="">-- Buscar espacio disponible --</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Costo de Re-ubicación (S/)</label>
+                <input asp-for="RelocationCost" type="number" class="form-control fw-bold text-primary" placeholder="0.00">
+            </div>
+        </div>
+    </div>
+
+    <div id="sectionExternal" class="@(Model.IsInternalRelocation ? "d-none" : "")">
+        <div class="mb-3">
+            <label class="form-label small fw-bold">Nombre del Cementerio o Lugar Destino</label>
+            <input asp-for="ExternalDestination" class="form-control" placeholder="Ej: Cementerio General de Jauja">
+        </div>
+    </div>
+</div>

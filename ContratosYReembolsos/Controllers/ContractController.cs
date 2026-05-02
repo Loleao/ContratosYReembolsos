@@ -659,6 +659,16 @@ namespace ContratosYReembolsos.Controllers
             };
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var dto = await _contractService.GetContractDetailsAsync(id);
+
+            if (dto == null) return NotFound();
+
+            return View(dto);
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> Create()
@@ -673,7 +683,6 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet] public IActionResult GetStep2() => PartialView("Partials/_ContractStep2");
         [HttpGet] public IActionResult GetStep3() => PartialView("Partials/_ContractStep3");
         [HttpGet] public IActionResult GetStep4() => PartialView("Partials/_ContractStep4");
-        [HttpGet] public IActionResult GetStep5() => PartialView("Partials/_ContractStep5");
         [HttpGet] public IActionResult GetSearchModal() => PartialView("Partials/_SearchAffiliate");
         [HttpGet] public IActionResult GetSearchBeneficiary() => PartialView("Partials/_SearchBeneficiary");
         [HttpGet] public IActionResult GetSearchCemetery() => PartialView("Partials/_SearchCemetery");
@@ -690,10 +699,16 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet] public async Task<IActionResult> GetCemeteries(string? inei, int? branchId) => Json(await _contractService.GetCemeteries(inei, branchId));
         [HttpGet] public async Task<IActionResult> GetStructures(int cemeteryId, string type) => Json(await _contractService.GetStructures(cemeteryId, type));
         [HttpGet] public async Task<IActionResult> GetSpaceMap(int structureId) => Json(await _contractService.GetSpaceMap(structureId));
-        [HttpGet] public async Task<IActionResult> GetAgencies(string ruc, string name, int? branchId) => Json(await _contractService.GetAgencies(ruc, name, branchId));
-        [HttpGet] public async Task<IActionResult> GetAvailableVehicleTypesByBranch(int branchId) => Json(await _contractService.GetAvailableVehicleTypesByBranch(branchId));
         [HttpGet] public async Task<IActionResult> GetBranchPrefix(int branchId) => Json(new { prefix = await _contractService.GetBranchAbbreviation(branchId) });
 
+
+        [HttpGet]
+        public async Task<IActionResult> GetAgencies(int branchId)
+        {
+            // Usamos el servicio que ya tienes implementado
+            var agencies = await _contractService.GetAgencies(null, null, branchId);
+            return Json(agencies);
+        }
         [HttpGet]
         public async Task<IActionResult> GetBranchCapabilities(int branchId)
         {
@@ -709,6 +724,13 @@ namespace ContratosYReembolsos.Controllers
 
             return Json(capabilities);
         }
+        public async Task<IActionResult> GetInventoryStock(int branchId)
+            => Json(await _contractService.GetStockItemsByBranch(branchId));
+        [HttpGet] public async Task<IActionResult> GetAvailableVehicleTypesByBranch(int branchId) => Json(await _contractService.GetAvailableVehicleTypesByBranch(branchId));
+
+        [HttpGet]
+        public async Task<IActionResult> GetFuneralServices()
+            => Json(await _contractService.GetFuneralServices());
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ContractViewModel model)
@@ -717,21 +739,5 @@ namespace ContratosYReembolsos.Controllers
             var res = await _contractService.CreateContract(model);
             return Json(new { success = res.success, message = res.message, id = res.contractId, contractNumber = res.contractNumber });
         }
-
-        [HttpGet]
-        public async Task<IActionResult> GetInventoryStock(int branchId)
-            => Json(await _contractService.GetStockItemsByBranch(branchId));
-
-        [HttpGet]
-        public async Task<IActionResult> GetAvailableAssets(int branchId)
-            => Json(await _contractService.GetAvailableAssets(branchId));
-
-        //[HttpGet]
-        //public async Task<IActionResult> DescargarContratoPDF(int id)
-        //{
-        //    var contrato = await _contractService.GetContractForPdf(id);
-        //    if (contrato == null) return NotFound();
-        //    return new ViewAsPdf("ContractPrint", contrato) { FileName = $"Contrato_{contrato.ContractNumber}.pdf" };
-        //}
     }
 }

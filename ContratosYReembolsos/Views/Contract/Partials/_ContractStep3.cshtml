@@ -1,97 +1,161 @@
-﻿<div class="animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="text-primary fw-bold mb-0">
-            <i class="fa-solid fa-building-shield me-2"></i>Agencia Funeraria
-        </h4>
-        @* Badge de estado del paso *@
-        <div id="statusBadge" class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">
-            <i class="fa-solid fa-circle-dot me-1"></i>Pendiente de selección
-        </div>
+﻿@* <div class="animate__animated animate__fadeIn">
+    <div class="mb-4">
+        <h5 class="fw-bold text-primary"><i class="fa-solid fa-box-open me-2"></i> Asignación de Beneficios Funerarios</h5>
+        <p class="text-muted small">Seleccione los elementos de inventario, activos y logística para este contrato.</p>
     </div>
 
-    @* Buscador Principal *@
-    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-        <div class="card-body p-0">
-            <div class="row g-0">
-                <div class="col-md-8 p-4">
-                    <h5 class="fw-bold mb-1">Empresa de Servicios Funerarios</h5>
-                    <p class="text-muted small mb-0">Vincule el contrato con una de las agencias autorizadas por FONAFUN.</p>
-                </div>
-                <div class="col-md-4 bg-light d-flex align-items-center justify-content-center p-4">
-                    <button class="btn btn-primary rounded-pill px-4 fw-bold shadow" onclick="openSearchAgency()">
-                        <i class="fa-solid fa-magnifying-glass me-2"></i>Buscar Empresa
+    <div class="row g-4">
+        <div class="col-md-8">
+            <ul class="nav nav-pills nav-fill gap-2 p-1 small bg-light rounded-pill mb-4" id="pills-tab">
+                <li class="nav-item">
+                    <button class="nav-link active rounded-pill" onclick="renderCatalog('Inventario')">
+                        <i class="fa-solid fa-vault me-1"></i> Inventario
                     </button>
-                </div>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Movilidad')">
+                        <i class="fa-solid fa-car-side me-1"></i> Movilidad
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Adicionales')">
+                        <i class="fa-solid fa-couch me-1"></i> Adicionales (Activos)
+                    </button>
+                </li>
+            </ul>
+
+            <div id="catalogContainer" class="row g-3">
             </div>
         </div>
-    </div>
 
-    @* Panel de Información de Agencia Seleccionada *@
-    <div id="agencyInfoPanel" class="d-none animate__animated animate__fadeInUp">
-        <div class="row g-4">
-            @* Tarjeta de Identidad *@
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
-                    <div class="card-body">
-                        <label class="text-primary x-small fw-bold text-uppercase tracking-wider mb-2">Identificación Fiscal</label>
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary-subtle text-primary rounded-3 p-3 me-3">
-                                <i class="fa-solid fa-address-card fa-xl"></i>
-                            </div>
-                            <div>
-                                <span class="d-block text-muted small">Número de RUC</span>
-                                <h5 class="fw-bold mb-0" id="txtAgencyRuc">---</h5>
-                            </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden sticky-top" style="top: 20px; z-index: 10;">
+                <div class="card-header bg-primary text-white border-0 py-3">
+                    <h6 class="fw-bold mb-0">
+                        <i class="fa-solid fa-list-check me-2"></i> Beneficios a Otorgar
+                    </h6>
+                </div>
+
+                <div class="card-body p-0">
+                    <div id="selectedServicesList" class="p-3" style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-5 small" id="emptyCartMsg">
+                            <i class="fa-solid fa-cart-plus fa-3x mb-3 opacity-25"></i>
+                            <p>No se han asignado beneficios todavía.</p>
+                        </div>
+
+                        <div id="cartContent"></div>
+                    </div>
+
+                    <div class="p-3 border-top bg-white">
+                        <div class="d-flex justify-content-between mb-3 small fw-bold">
+                            <span>Total Items:</span>
+                            <span id="totalItemsBadge" class="badge bg-primary rounded-pill">0</span>
+                        </div>
+
+                        <div class="alert alert-info py-2 mb-3" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-circle-info me-2"></i>
+                            Asignación directa de beneficios (Sin costo).
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" onclick="nextStep(5, validateStep4)">
+                                Confirmar Selección <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                            <button class="btn btn-link text-muted btn-sm text-decoration-none" onclick="loadStep(3)">
+                                <i class="fa-solid fa-chevron-left me-1"></i> Regresar
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div> *@
 
-            @* Tarjeta de Contacto *@
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
-                    <div class="card-body">
-                        <label class="text-primary x-small fw-bold text-uppercase tracking-wider mb-2">Detalles de la Empresa</label>
-                        <div class="row">
-                            <div class="col-md-7 border-end">
-                                <span class="d-block text-muted small">Razón Social</span>
-                                <h5 class="fw-bold text-dark" id="txtAgencyName">---</h5>
-                                <span class="d-block text-muted small mt-2"><i class="fa-solid fa-location-dot me-1"></i> Dirección</span>
-                                <p class="small mb-0" id="txtAgencyAddress">---</p>
-                            </div>
-                            <div class="col-md-5 ps-md-4">
-                                <span class="d-block text-muted small">Teléfono / Celular</span>
-                                <h5 class="fw-bold text-dark" id="txtAgencyPhone">---</h5>
-                                <div class="mt-2">
-                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                                        <i class="fa-solid fa-circle-check me-1"></i>Agencia Activa
-                                    </span>
-                                </div>
-                            </div>
+
+<div class="animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="fw-bold text-primary"><i class="fa-solid fa-box-open me-2"></i> Asignación de Beneficios Funerarios</h5>
+            <p class="text-muted small">Seleccione inventario, transporte y servicios adicionales.</p>
+        </div>
+
+        <div class="form-check form-switch p-3 bg-light border rounded-pill shadow-sm">
+            <input class="form-check-input ms-0 me-2" type="checkbox" id="chkUseAgreement" onchange="toggleAgreementSection()">
+            <label class="form-check-label fw-bold text-primary small" for="chkUseAgreement">¿USAR CONVENIO?</label>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <ul class="nav nav-pills nav-fill gap-2 p-1 small bg-light rounded-pill mb-4" id="pills-tab">
+                <li class="nav-item">
+                    <button class="nav-link active rounded-pill" onclick="renderCatalog('Inventario')">
+                        <i class="fa-solid fa-vault me-1"></i> Inventario
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Movilidad')">
+                        <i class="fa-solid fa-car-side me-1"></i> Movilidad
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link rounded-pill" onclick="renderCatalog('Servicios')">
+                        <i class="fa-solid fa-bell-concierge me-1"></i> Servicios
+                    </button>
+                </li>
+                <li class="nav-item d-none" id="li-tab-convenio">
+                    <button class="nav-link rounded-pill border border-success text-success" onclick="renderCatalog('Convenio')">
+                        <i class="fa-solid fa-handshake me-1"></i> Convenio
+                    </button>
+                </li>
+            </ul>
+
+            <div id="agreementAgencySection" class="mb-3 d-none animate__animated animate__fadeIn">
+                <label class="form-label small fw-bold text-success">Agencia del Convenio</label>
+                <select id="selAgreementAgency" class="form-select border-success shadow-sm" onchange="onAgencyChange()">
+                    <option value="">-- Seleccione una agencia --</option>
+                </select>
+            </div>
+
+            <div id="catalogContainer" class="row g-3"></div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden sticky-top" style="top: 20px; z-index: 10;">
+                <div class="card-header bg-primary text-white border-0 py-3">
+                    <h6 class="fw-bold mb-0">
+                        <i class="fa-solid fa-list-check me-2"></i> Beneficios a Otorgar
+                    </h6>
+                </div>
+
+                <div class="card-body p-0">
+                    <div id="selectedServicesList" class="p-3" style="max-height: 500px; overflow-y: auto; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-5 small" id="emptyCartMsg">
+                            <i class="fa-solid fa-cart-plus fa-3x mb-3 opacity-25"></i>
+                            <p>No se han asignado beneficios todavía.</p>
+                        </div>
+
+                        <div id="cartContent"></div>
+                    </div>
+
+                    <div class="p-3 border-top bg-white">
+                        <div class="d-flex justify-content-between mb-3 small fw-bold">
+                            <span>Total Items:</span>
+                            <span id="totalItemsBadge" class="badge bg-primary rounded-pill">0</span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" onclick="nextStep(4, validateStep3)">
+                                Confirmar Selección <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                            <button class="btn btn-link text-muted btn-sm text-decoration-none" onclick="loadStep(2)">
+                                <i class="fa-solid fa-chevron-left me-1"></i> Regresar
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    @* Estado Vacío *@
-    <div id="noAgencySelected" class="text-center py-5 border border-2 border-dashed rounded-4 bg-white opacity-75">
-        <div class="py-4">
-            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                <i class="fa-solid fa-store-slash fa-2x text-muted"></i>
-            </div>
-            <h5 class="text-muted fw-bold">Esperando selección</h5>
-            <p class="text-muted small">Haga clic en el botón superior para buscar una agencia.</p>
-        </div>
-    </div>
-
-    <div class="d-flex justify-content-between mt-5 pt-4 border-top">
-        <button type="button" class="btn btn-light rounded-pill px-5 fw-bold" onclick="loadStep(2)">
-            <i class="fa-solid fa-arrow-left me-2"></i>Regresar
-        </button>
-        <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="if(validateStep3()) loadStep(4)">
-            Siguiente<i class="fa-solid fa-arrow-right ms-2"></i>
-        </button>
     </div>
 </div>

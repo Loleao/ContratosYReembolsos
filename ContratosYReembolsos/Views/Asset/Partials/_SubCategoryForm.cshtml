@@ -1,0 +1,21 @@
+﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.AssetSubcategory
+
+<form id="formSubCategory">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CategoryId" />
+    <div class="modal-body p-4">
+        <div class="mb-3">
+            <label class="form-label x-small fw-bold text-muted text-uppercase">Categoría Superior</label>
+            <input type="text" class="form-control bg-light border-0 fw-bold" value="@ViewBag.CategoryName" readonly />
+        </div>
+        <div class="mb-0">
+            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Subcategoría</label>
+            <input asp-for="Name" class="form-control border-2 shadow-sm" placeholder="Ej: Laptops, Escritorios, etc." required />
+        </div>
+    </div>
+    <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Guardar Subcategoría</button>
+    </div>
+</form>

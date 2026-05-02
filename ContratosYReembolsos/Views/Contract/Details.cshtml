@@ -1,0 +1,89 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Contracts.ContractDetailDto
+
+@{
+    ViewData["Title"] = "Detalle del Contrato";
+}
+
+<div class="container animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary">Contrato @Model.ContractNumber</h2>
+            <span class="badge bg-primary rounded-pill">@Model.Status</span>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-pill">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <a href="@Url.Action("PrintContract", new { id = Model.Id })" target="_blank" class="btn btn-danger rounded-pill">
+                <i class="fas fa-file-pdf"></i> Imprimir PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold"><i class="fas fa-user me-2"></i> Información de las Personas</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="text-muted small d-block">TITULAR / SOLICITANTE</label>
+                            <span class="fw-bold">@Model.SolicitorName</span>
+                            <div class="small text-muted">DNI: @Model.SolicitorDni (@Model.SolicitorType)</div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="text-muted small d-block">FALLECIDO</label>
+                            <span class="fw-bold">@Model.DeceasedName</span>
+                            <div class="small text-muted">DNI: @Model.DeceasedDni</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold"><i class="fas fa-truck me-2"></i> Logística de Sepelio</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-4 mb-3">
+                            <label class="text-muted small d-block">FECHA Y HORA</label>
+                            <span>@Model.BurialDate.ToShortDateString() - @Model.BurialTime.ToString(@"hh\:mm")</span>
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label class="text-muted small d-block">CEMENTERIO</label>
+                            <span>@Model.CemeteryName</span>
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label class="text-muted small d-block">UBICACIÓN</label>
+                            <span>@Model.FullLocation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold"><i class="fas fa-box me-2"></i> Suministros</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var prod in Model.Products)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @prod
+                            <i class="fas fa-check-circle text-success"></i>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold"><i class="fas fa-car me-2"></i> Movilidad</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var mov in Model.Movilities)
+                    {
+                        <li class="list-group-item">@mov</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

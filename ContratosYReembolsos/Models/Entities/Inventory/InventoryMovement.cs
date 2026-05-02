@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using ContratosYReembolsos.Models.Entities.Branches;
+using ContratosYReembolsos.Models.Entities.FixedAssets;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContratosYReembolsos.Models.Entities.Inventory

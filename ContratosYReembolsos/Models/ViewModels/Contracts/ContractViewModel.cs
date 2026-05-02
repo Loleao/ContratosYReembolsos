@@ -4,12 +4,28 @@ namespace ContratosYReembolsos.Models.ViewModels.Contracts
 {
     public class ContractViewModel
     {
+        public ContractViewModel()
+        {
+            // Inicializar listas para evitar NullReferenceException
+            StockItems = new List<int>();
+            ServiceItems = new List<int>();
+            ExternalServiceItems = new List<int>();
+            MobilityItems = new List<int>();
+            Solicitor = new SolicitorData();
+            Deceased = new DeceasedData();
+        }
+
         public int BranchId { get; set; }
         public SolicitorData Solicitor { get; set; }
         public DeceasedData Deceased { get; set; }
-        public int AgencyId { get; set; }
-        public List<int> StockItems { get; set; }      // IDs de Productos (Ataúdes)
-        public List<int> AssetItems { get; set; }      // IDs de Activos Fijos (Capillas)
+
+        // Propiedades para Convenio
+        public bool UseAgreement { get; set; } // Viene del Checkbox del Step 3
+        public int? AgencyId { get; set; }     // Puede ser null si no hay convenio
+
+        public List<int> StockItems { get; set; }
+        public List<int> ServiceItems { get; set; }         // Servicios FONAFUN
+        public List<int> ExternalServiceItems { get; set; } // Servicios Agencia/Convenio
         public List<int> MobilityItems { get; set; }
     }
 

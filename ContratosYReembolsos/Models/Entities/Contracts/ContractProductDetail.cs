@@ -1,4 +1,5 @@
-﻿using ContratosYReembolsos.Models.Entities.Inventory;
+﻿using ContratosYReembolsos.Models.Entities.FixedAssets;
+using ContratosYReembolsos.Models.Entities.Inventory;
 
 namespace ContratosYReembolsos.Models.Entities.Contracts
 {

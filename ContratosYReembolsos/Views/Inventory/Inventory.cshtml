@@ -1,5 +1,5 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Inventory
-@model (List<ProductStock> Stock, List<FixedAsset> Assets)
+@model List<ProductStock>
 
 @{
     ViewData["Title"] = "Gestión de Sede - " + ViewBag.BranchName;
@@ -100,9 +100,6 @@
             <button id="btnStock" class="btn active" onclick="switchView('stock')">
                 <i class="fa-solid fa-boxes-stacked me-2"></i>Stock Consumible
             </button>
-            <button id="btnAssets" class="btn" onclick="switchView('assets')">
-                <i class="fa-solid fa-laptop-medical me-2"></i>Activos Fijos
-            </button>
             <button id="btnPending" class="btn position-relative" onclick="switchView('pending')">
                 <i class="fa-solid fa-truck-ramp-box me-2"></i>Transferencias
                 @if (ViewBag.TotalPendientes > 0)
@@ -134,7 +131,6 @@
         const branchId = '@ViewBag.BranchId';
         const urls = {
             stock: '@Url.Action("GetStockView", "Inventory")',
-            assets: '@Url.Action("GetAssetsView", "Inventory")',
             pending: '@Url.Action("GetPendingView", "Inventory")',
             kardex: '@Url.Action("GetKardexView", "Inventory")',
         };

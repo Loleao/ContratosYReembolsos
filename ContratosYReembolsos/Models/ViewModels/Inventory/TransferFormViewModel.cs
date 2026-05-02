@@ -9,7 +9,6 @@ namespace ContratosYReembolsos.Models.ViewModels.Inventory
         public int? UserBranchId { get; set; }
         public string? UserBranchName { get; set; }
         public List<Branch> AllBranches { get; set; } = new();
-        public List<ProductStock> AvailableStock { get; set; } // Lo que hay en stock para enviar
-        public List<FixedAsset> AvailableAssets { get; set; } // Activos disponibles en Central
+        public List<ProductStock> AvailableStock { get; set; }
     }
 }

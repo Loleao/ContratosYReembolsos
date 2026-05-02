@@ -9,6 +9,7 @@ using ContratosYReembolsos.Models.Entities.Agencies;
 using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Models.Entities.Notifications;
+using ContratosYReembolsos.Models.Entities.FixedAssets;
 
 namespace ContratosYReembolsos.Data.Contexts
 {
@@ -19,8 +20,13 @@ namespace ContratosYReembolsos.Data.Contexts
         public DbSet<Agency> Agencias { get; set; }
         public DbSet<Cemetery> Cementerios { get; set; }
         public DbSet<Contract> Contratos { get; set; }
+        public DbSet<FuneralService> ServiciosFunerarios { get; set; }
+        public DbSet<Exhumation> Exhumaciones { get; set; }
         public DbSet<ContractProductDetail> DetallesProductosContrato { get; set; }
         public DbSet<ContractMovilityDetail> DetallesMovilidadContrato { get; set; }
+        public DbSet<ContractServiceDetail> DetallesServiciosContrato { get; set; }
+        public DbSet<ContractExternalServiceDetail> DetallesServiciosExternoContrato { get; set; }
+
         public DbSet<Driver> Conductores { get; set; }
         public DbSet<Vehicle> Vehiculos { get; set; }
         public DbSet<VehicleType> TiposVehiculo { get; set; }
@@ -37,8 +43,14 @@ namespace ContratosYReembolsos.Data.Contexts
         public DbSet<ProductStock> ProductosStock { get; set; } 
         public DbSet<ProductTransfer> ProductosTransferencias { get; set; } 
         public DbSet<ProductTransferDetail> ProductosTransferenciasDetalles { get; set; } 
-        public DbSet<FixedAsset> ActivosFijos { get; set; } 
         public DbSet<InventoryMovement> MovimientosInventario { get; set; }
+
+        public DbSet<FixedAsset> ActivosFijos { get; set; }
+        public DbSet<AssetHistory> ActivosHistorial { get; set; }
+        public DbSet<AssetCategory> ActivosCategorias { get; set; }
+        public DbSet<AssetSubcategory> ActivosSubcategorias { get; set; }
+        public DbSet<AssetCatalog> ActivosCatalogo { get; set; }
+
 
         public DbSet<Notification> Notificaciones { get; set; }
 

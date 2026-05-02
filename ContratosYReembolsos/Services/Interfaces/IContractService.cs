@@ -25,12 +25,14 @@ namespace ContratosYReembolsos.Services.Interfaces
         Task<List<object>> GetAgencies(string ruc, string name, int? branchId);
         
         Task<List<object>> GetStockItemsByBranch(int branchId);
-        Task<List<object>> GetAvailableAssets(int branchId);
         Task<List<object>> GetAvailableVehicleTypesByBranch(int branchId);
+        Task<List<object>> GetFuneralServices();
+
         Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model);
         Task<List<ContractListDto>> GetContractListAsync();
 
         Task<ContractReportDto> GetContractForPDFAsync(int id);
+        Task<ContractDetailDto> GetContractDetailsAsync(int id);
 
     }
 }

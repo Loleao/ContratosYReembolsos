@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿@* <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -58,6 +58,76 @@
 
     <script src="~/lib/microsoft/signalr/signalr.min.js"></script>
 
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html> *@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ContratosYReembolsos</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- 1. AGREGAR CSS DE SELECT2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+    <link rel="stylesheet" href="~/ContratosYReembolsos.styles.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="main-wrapper d-flex">
+        @await Html.PartialAsync("_Sidebar")
+
+        <main role="main" class="content-area flex-grow-1">
+            <header class="d-flex justify-content-end align-items-center px-4 py-2 bg-white border-bottom sticky-top shadow-sm" style="z-index: 1030; min-height: 60px;">
+                @await Html.PartialAsync("_Notifications")
+
+                <div class="user-info d-flex align-items-center ms-3 ps-3 border-start">
+                    <div class="text-end me-2 d-none d-sm-block">
+                        <div class="fw-bold small text-dark" style="line-height: 1;">@User.Identity?.Name</div>
+                        <div class="x-small text-muted">@User.FindFirst("BranchName")?.Value</div>
+                    </div>
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px;">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div class="container-fluid p-4">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script>
+        window.AppUrls = {
+            getNotifications: '@Url.Action("GetLatest", "Notification")',
+            markNotificationRead: '@Url.Action("MarkAsRead", "Notification")'
+        };
+
+        window.UserContext = {
+            branchId: '@User.FindFirst("BranchId")?.Value'
+        };
+    </script>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 2. AGREGAR JS DE SELECT2 (DEBE IR DESPUÉS DE JQUERY) -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/lib/microsoft/signalr/signalr.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

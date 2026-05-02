@@ -1,0 +1,55 @@
+﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.FixedAsset
+
+<form id="formRegisterAsset">
+    <div class="modal-body p-4">
+        <div class="row g-3">
+            <div class="col-md-12">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Modelo del Catálogo</label>
+                <select name="AssetCatalogId" id="select-catalog" class="form-select border-2" onchange="updatePatrimonialCode(this.value)" required>
+                    <option value="">-- Seleccione el modelo --</option>
+                    @* Se cargará vía JS o ViewBag *@
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Código Patrimonial</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-barcode"></i></span>
+                    <input type="text" id="patrimonial-code-display" class="form-control border-start-0 fw-bold text-primary" readonly />
+                    <input type="hidden" name="PatrimonialCode" id="patrimonial-code-hidden" />
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Número de Serie (Fábrica)</label>
+                <input type="text" name="SerialNumber" class="form-control border-2" placeholder="S/N o Placa" required />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Estado de Conservación</label>
+                <select name="Condition" class="form-select border-2">
+                    <option value="0">Nuevo</option>
+                    <option value="1">Excelente</option>
+                    <option value="2">Bueno</option>
+                    <option value="3">Regular</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Fecha de Compra</label>
+                <input type="date" name="PurchaseDate" class="form-control border-2" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label x-small fw-bold text-muted text-uppercase">Observaciones Iniciales</label>
+                <textarea name="Observation" class="form-control border-2" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow">
+            <i class="fa-solid fa-check-double me-2"></i>DAR DE ALTA
+        </button>
+    </div>
+</form>

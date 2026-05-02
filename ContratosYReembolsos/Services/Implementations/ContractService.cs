@@ -1,7 +1,7 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
 using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Contracts;
-using ContratosYReembolsos.Models.Entities.Inventory;
+using ContratosYReembolsos.Models.Entities.FixedAssets;
 using ContratosYReembolsos.Models.ViewModels.Contracts;
 using ContratosYReembolsos.Services.DTOs.Contracts;
 using ContratosYReembolsos.Services.Interfaces;
@@ -92,9 +92,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .Include(s => s.Product)
                     .ThenInclude(p => p.SubCategory)
                 .Where(s => s.BranchId == branchId &&
-                            s.Product.ControlType == ControlType.Stock &&
                             s.Quantity > 0 &&
-                            // --- FILTROS DE VISIBILIDAD ---
                             s.Product.IsAvailableForContract &&
                             s.Product.Category.ShowInContracts &&
                             s.Product.SubCategory.ShowInContracts)
@@ -108,25 +106,18 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .ContinueWith(t => t.Result.Cast<object>().ToList());
         }
 
-        // 2. Obtener Adicionales (Activos) filtrados para Contratos
-        public async Task<List<object>> GetAvailableAssets(int branchId)
+        public async Task<List<object>> GetFuneralServices()
         {
-            return await _context.ActivosFijos
-                .Include(a => a.Product)
-                    .ThenInclude(p => p.Category)
-                .Include(a => a.Product)
-                    .ThenInclude(p => p.SubCategory)
-                .Where(a => a.BranchId == branchId &&
-                            a.Status == AssetStatus.Available &&
-                            a.Product.IsAvailableForContract &&
-                            a.Product.Category.ShowInContracts &&
-                            a.Product.SubCategory.ShowInContracts)
-                .Select(a => new {
-                    id = a.Id,
-                    name = a.Product.Name,
-                    category = a.Product.Category.Name,
-                    patrimonialCode = a.PatrimonialCode
+            // Asumiendo que tienes una tabla FuneralServices en tu ApplicationDbContext
+            return await _context.ServiciosFunerarios
+                .Where(s => s.IsActive)
+                .Select(s => new {
+                    id = s.Id,
+                    name = s.Name,
+                    category = s.Category,
+                    price = s.Price
                 })
+                .OrderBy(s => s.category)
                 .ToListAsync()
                 .ContinueWith(t => t.Result.Cast<object>().ToList());
         }
@@ -214,27 +205,35 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     }
                 }
 
-                // 3. Procesar Activos (Capillas y equipos en préstamo)
-                if (model.AssetItems != null)
+                // 3. PROCESAR SERVICIOS INTERNOS (NUEVA TABLA DE DETALLE)
+                if (model.ServiceItems != null)
                 {
-                    foreach (var assetId in model.AssetItems)
+                    foreach (var serviceId in model.ServiceItems)
                     {
-                        var asset = await _context.ActivosFijos.FindAsync(assetId);
-                        if (asset != null)
+                        _context.DetallesServiciosContrato.Add(new ContractServiceDetail
                         {
-                            asset.Status = AssetStatus.InUse; // Cambiamos a "En Uso"
-                            _context.DetallesProductosContrato.Add(new ContractProductDetail
-                            {
-                                ContractId = contract.Id,
-                                ProductId = asset.ProductId,
-                                FixedAssetId = asset.Id,
-                                Quantity = 1
-                            });
-                        }
+                            ContractId = contract.Id,
+                            FuneralServiceId = serviceId,
+                            Quantity = 1
+                        });
                     }
                 }
 
-                // 4. Procesar Movilidad (Logística)
+                // 4. PROCESAR SERVICIOS CONVENIO (NUEVA TABLA DE DETALLE)
+                if (model.UseAgreement && model.ExternalServiceItems != null)
+                {
+                    foreach (var serviceId in model.ExternalServiceItems)
+                    {
+                        _context.DetallesServiciosExternoContrato.Add(new ContractExternalServiceDetail
+                        {
+                            ContractId = contract.Id,
+                            FuneralServiceId = serviceId,
+                            Quantity = 1
+                        });
+                    }
+                }
+
+                // 5. Procesar Movilidad (Logística)
                 if (model.MobilityItems != null)
                 {
                     foreach (var vTypeId in model.MobilityItems)
@@ -248,7 +247,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     }
                 }
 
-                // 5. MARCAR ESPACIO COMO OCUPADO
+                // 6. MARCAR ESPACIO COMO OCUPADO
                 if (model.Deceased.IntermentSpaceId.HasValue)
                 {
                     var space = await _context.SepulturasNichos
@@ -374,6 +373,48 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
             }
 
             return dto;
+        }
+
+        public async Task<ContractDetailDto> GetContractDetailsAsync(int id)
+        {
+            var contract = await _context.Contratos
+                .Include(c => c.Branch)
+                .Include(c => c.Agency)
+                .Include(c => c.Cemetery)
+                .Include(c => c.Ubigeo)
+                .Include(c => c.IntermentStructure)
+                .Include(c => c.IntermentSpace)
+                .Include(c => c.ProductDetails).ThenInclude(p => p.Product)
+                .Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contract == null) return null;
+
+            return new ContractDetailDto
+            {
+                Id = contract.Id,
+                ContractNumber = contract.ContractNumber,
+                CreatedAt = contract.CreatedAt,
+                Status = contract.Status,
+                BranchName = contract.Branch?.Name,
+                AgencyName = contract.Agency?.Name,
+                SolicitorName = contract.SolicitorName,
+                SolicitorDni = contract.SolicitorDni,
+                SolicitorType = contract.SolicitorType,
+                DeceasedName = contract.DeceasedName,
+                DeceasedDni = contract.DeceasedDni,
+                DeathDate = contract.DeathDate,
+                BurialDate = contract.BurialDate,
+                BurialTime = contract.BurialTime,
+                CemeteryName = contract.Cemetery?.Name,
+                UbigeoDetail = $"{contract.Ubigeo?.Region} - {contract.Ubigeo?.District}",
+                FullLocation = contract.IntermentSpace != null
+                    ? $"{contract.IntermentStructure?.Name} (Fila: {contract.IntermentSpace.RowLetter}, Col: {contract.IntermentSpace.ColumnNumber})"
+                    : contract.IntermentStructure?.Name,
+                Products = contract.ProductDetails.Select(p => p.Product.Name).ToList(),
+                Movilities = contract.MovilityDetails.Select(m => m.VehicleType?.Name ?? "Movilidad").ToList()
+            };
         }
 
     }

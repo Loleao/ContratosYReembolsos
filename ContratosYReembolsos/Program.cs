@@ -42,6 +42,7 @@ builder.Services.AddDbContext<LimaContractsDbContext>(options =>
 
 builder.Services.AddScoped<IntermentService>();
 builder.Services.AddScoped<IUbigeoService, UbigeoService>();
+builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IAgencyService, AgencyService>();
@@ -49,7 +50,8 @@ builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<ITransportService, TransportService>();
 builder.Services.AddScoped<ICemeteryService, CemeteryService>();
 builder.Services.AddScoped<IContractService, ContractService>();
-
+builder.Services.AddScoped<IExhumationService, ExhumationService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
 
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
@@ -113,13 +115,14 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
+        var catalogService = services.GetRequiredService<ICatalogService>();
         var ubigeoService = services.GetRequiredService<IUbigeoService>();
         var intermentService = services.GetRequiredService<IntermentService>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
         // Orquestamos todo en una sola llamada
-        await DbInitializer.SeedAsync(context, ubigeoService, intermentService, userManager, roleManager);
+        await DbInitializer.SeedAsync(context, ubigeoService, catalogService, intermentService, userManager, roleManager);
     }
     catch (Exception ex)
     {

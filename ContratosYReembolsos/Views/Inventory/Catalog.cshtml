@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark m-0">Catálogo Maestro de Productos</h3>
-            <p class="text-muted small">Gestión de existencias, activos fijos y visibilidad comercial.</p>
+            <p class="text-muted small">Gestión unificada de existencias e inventario de suministros.</p>
         </div>
         <div class="d-flex gap-2">
             <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    @* --- KPIs Rápidos --- *@
+    @* --- KPIs Rápidos (Simplificados) --- *@
     <div class="card border-0 shadow-sm mb-4 rounded-4">
         <div class="card-body py-3">
             <div class="row align-items-center">
@@ -28,10 +28,8 @@
                     </div>
                 </div>
                 <div class="col-md-8 text-end">
-                    <span class="badge bg-light text-dark border me-1 px-3 py-2">Total: @Model.Count()</span>
-                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">Stock: @Model.Count(p => p.ControlType == ControlType.Stock)</span>
-                    <span class="badge bg-dark-subtle text-dark border border-dark-subtle px-3 py-2">Activos: @Model.Count(p => p.ControlType == ControlType.Asset)</span>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">Visibles: @Model.Count(p => p.IsAvailableForContract)</span>
+                    <span class="badge bg-light text-dark border me-1 px-3 py-2">Total Catálogo: @Model.Count()</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">Disponibles en Contratos: @Model.Count(p => p.IsAvailableForContract)</span>
                 </div>
             </div>
         </div>
@@ -44,8 +42,8 @@
                     <tr>
                         <th class="ps-4">Producto</th>
                         <th>Categoría / Sub</th>
-                        <th>Control / U.M.</th> @* --- Cabecera Actualizada --- *@
-                        <th class="text-center">Contratos</th>
+                        <th>Unidad de Medida</th>
+                        <th class="text-center">Visibilidad</th>
                         <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
@@ -56,7 +54,7 @@
                             <td class="ps-4">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-primary-subtle p-2 rounded-3 me-3 text-primary text-center" style="width: 40px;">
-                                        <i class="fa-solid @(item.ControlType == ControlType.Stock ? "fa-box-open" : "fa-couch")"></i>
+                                        <i class="fa-solid fa-box"></i>
                                     </div>
                                     <div>
                                         <div class="fw-bold text-dark">@item.Name</div>
@@ -72,27 +70,19 @@
                                 <div class="text-muted x-small">@item.SubCategory?.Name</div>
                             </td>
                             <td>
-                                @if (item.ControlType == ControlType.Stock)
-                                {
-                                    <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle mb-1">Consumible</span>
-                                }
-                                else
-                                {
-                                    <span class="badge rounded-pill bg-dark-subtle text-dark border border-dark-subtle mb-1">Activo Fijo</span>
-                                }
-                                @* --- Mostrar Unidad de Medida --- *@
-                                <div class="x-small text-muted ps-2">
-                                    <i class="fa-solid fa-ruler-combined me-1"></i>@item.Unit.ToString()
+                                <div class="d-inline-flex align-items-center bg-light px-2 py-1 rounded-pill border">
+                                    <i class="fa-solid fa-ruler-combined me-1 text-muted x-small"></i>
+                                    <span class="fw-medium" style="font-size: 0.8rem;">@item.Unit.ToString()</span>
                                 </div>
                             </td>
                             <td class="text-center">
                                 @if (item.IsAvailableForContract)
                                 {
-                                    <span class="text-success" title="Visible en Contratos"><i class="fa-solid fa-circle-check fa-lg"></i></span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Venta/Contrato</span>
                                 }
                                 else
                                 {
-                                    <span class="text-muted" title="Solo uso Interno"><i class="fa-solid fa-circle-minus fa-lg"></i></span>
+                                    <span class="badge bg-light text-muted border rounded-pill">Uso Interno</span>
                                 }
                             </td>
                             <td class="text-end pe-4">
