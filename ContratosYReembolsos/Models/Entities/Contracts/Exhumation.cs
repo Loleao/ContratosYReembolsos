@@ -3,24 +3,29 @@
     public class Exhumation
     {
         public int Id { get; set; }
-        public string ExhumationNumber { get; set; } // Formato: EX-2026-0001
+        public string ExhumationNumber { get; set; }
         public DateTime RequestDate { get; set; }
-
-        // Referencia al contrato donde está el fallecido actualmente
         public int OriginalContractId { get; set; }
-        public virtual Contract OriginalContract { get; set; }
+        public virtual Contract? OriginalContract { get; set; }
 
-        // Datos del Destino
-        public bool IsInternalRelocation { get; set; } // true: FONAFUN, false: Externo
-        public string DestinationDetails { get; set; } // Nombre del cementerio externo o notas
+        // ORIGEN (Snapshot)
+        public int PreviousCemeteryId { get; set; }
+        public int PreviousStructureId { get; set; }
+        public int PreviousSpaceId { get; set; }
+        public string PreviousLocationSnapshot { get; set; } // Ej: "PEC Sta Rosa - Pab. San Jose - A-10"
 
-        // Si es interno, apuntamos a nuestra infraestructura
+        // DESTINO
+        public bool IsInternalRelocation { get; set; }
+        public string DestinationDetails { get; set; } // Nombre cementerio externo o notas
+
+        // DESTINO INTERNO (Snapshot si aplica)
         public int? NewCemeteryId { get; set; }
-        public int? NewIntermentStructureId { get; set; }
-        public int? NewIntermentSpaceId { get; set; }
+        public int? NewStructureId { get; set; }
+        public int? NewSpaceId { get; set; }
+        public string NewLocationSnapshot { get; set; } // Ej: "PEC Sta Rosa - Pab. Santa Ana - B-02"
 
-        public decimal Cost { get; set; } // Costo del nuevo espacio (si aplica)
-        public string Status { get; set; } // "Pendiente", "En Traslado", "Completado"
-        public string Observations { get; set; }
+        public decimal Cost { get; set; }
+        public string Status { get; set; } // "Completado"
+        public string MovementType { get; set; } // "REUBICACION", "TRASLADO", "ENTREGA"
     }
 }

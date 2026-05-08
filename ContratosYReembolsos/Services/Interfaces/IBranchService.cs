@@ -6,6 +6,7 @@ namespace ContratosYReembolsos.Services.Interfaces
     public interface IBranchService
     {
         // Consultas de datos
+        Task<List<Branch>> GetAllBranchesAsync();
         Task<IEnumerable<IGrouping<string, Branch>>> GetGroupedBranchesAsync();
         Task<Branch?> GetByIdAsync(int id);
         Task<List<string>> GetRegionsAsync();
@@ -15,5 +16,9 @@ namespace ContratosYReembolsos.Services.Interfaces
         // Operaciones de negocio
         Task<(bool success, string message)> CreateBranchAsync(Branch model);
         Task<(bool success, string message)> UpdateBranchAsync(Branch model);
+
+        // NUEVOS MÉTODOS PARA SEEDING
+        Task<(bool success, string message)> ImportFromExcelAsync(string filePath);
+        Task SeedIfEmptyAsync();
     }
 }

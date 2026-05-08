@@ -600,6 +600,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using ContratosYReembolsos.Models.ViewModels.Contracts;
+using ContratosYReembolsos.Models.Entities.Contracts;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -663,10 +664,18 @@ namespace ContratosYReembolsos.Controllers
         public async Task<IActionResult> Details(int id)
         {
             var dto = await _contractService.GetContractDetailsAsync(id);
-
             if (dto == null) return NotFound();
 
-            return View(dto);
+            // Aquí llamarías a un nuevo método en el ExhumationService o ContractService 
+            // para traer el historial. Por ahora lo simulamos o mapeamos:
+            var viewModel = new ContractDetailsViewModel
+            {
+                Data = dto,
+                // Aquí traerías la data real de la tabla Exhumaciones
+                MovementHistory = await _contractService.GetMovementHistoryAsync(id)
+            };
+
+            return View(viewModel);
         }
 
 
@@ -709,13 +718,14 @@ namespace ContratosYReembolsos.Controllers
             var agencies = await _contractService.GetAgencies(null, null, branchId);
             return Json(agencies);
         }
+
         [HttpGet]
         public async Task<IActionResult> GetBranchCapabilities(int branchId)
         {
             // Si el branchId es 0 o negativo, devolvemos un objeto básico para evitar errores en JS
             if (branchId <= 0)
             {
-                return Json(new { hasWake = false, hasCem = false, branchName = "No seleccionada" });
+                return Json(new { hasWake = false, branchName = "No seleccionada" });
             }
 
             var capabilities = await _contractService.GetBranchCapabilities(branchId);
@@ -739,5 +749,37 @@ namespace ContratosYReembolsos.Controllers
             var res = await _contractService.CreateContract(model);
             return Json(new { success = res.success, message = res.message, id = res.contractId, contractNumber = res.contractNumber });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> FuneralServices()
+        {
+            var services = await _contractService.GetAllServicesAsync();
+            return View(services);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFuneralServiceForm(int id = 0)
+        {
+            var service = new FuneralService();
+            if (id > 0)
+            {
+                var services = await _contractService.GetAllServicesAsync();
+                service = services.FirstOrDefault(s => s.Id == id) ?? new FuneralService();
+            }
+            return PartialView("Partials/_FuneralServiceForm", service);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveFuneralService(FuneralService model)
+        {
+            if (!ModelState.IsValid) return Json(new { success = false, message = "Datos inválidos" });
+
+            // Aquí llamamos a un método de guardado/actualización en el servicio
+            // Puedes crear uno nuevo o reusar el que tienes si lo adaptas para Update
+            var result = await _contractService.UpsertServiceAsync(model);
+            return Json(new { success = result.success, message = result.message });
+        }
+
     }
 }

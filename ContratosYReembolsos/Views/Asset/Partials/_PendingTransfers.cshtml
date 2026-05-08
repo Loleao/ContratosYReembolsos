@@ -1,0 +1,57 @@
+﻿@model List<ContratosYReembolsos.Models.Entities.FixedAssets.AssetTransfer>
+
+<div class="card border-0 shadow-sm rounded-4 animate__animated animate__fadeIn">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-warning text-dark">
+                    <tr>
+                        <th class="ps-4">Guía Traslado</th>
+                        <th>Sede de Origen</th>
+                        <th>Enviado Por</th>
+                        <th>Equipos Incluidos</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-truck-fast fa-3x mb-3 opacity-20"></i>
+                                <p>No hay traslados pendientes de recepción.</p>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">@t.InternalControlNumber</div>
+                                <div class="x-small text-muted">@t.SentAt.ToString("g")</div>
+                            </td>
+                            <td><span class="fw-bold"><i class="fa-solid fa-location-dot me-1 text-danger"></i>@t.OriginBranch?.Name</span></td>
+                            <td class="small">@t.SentByUserId</td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var det in t.Details)
+                                    {
+                                        <span class="badge bg-dark x-small" title="@det.FixedAsset?.AssetCatalog?.Name">
+                                            @det.FixedAsset?.PatrimonialCode
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="text-center pe-4">
+                                <button class="btn btn-success btn-sm rounded-pill px-4 fw-bold shadow-sm"
+                                        onclick="showReceiveModal(@t.Id, '@t.InternalControlNumber')">
+                                    <i class="fa-solid fa-box-open me-1"></i> RECIBIR
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -352,14 +352,16 @@
 }
 
 @functions {
-    // Función unificada para las clases de color
-    public string GetSpaceClass(string status)
+    // Cambiamos el parámetro de string a IntermentStatus
+    public string GetSpaceClass(IntermentStatus status)
     {
         return status switch
         {
             IntermentStatus.Disponible => "bg-success text-white",
             IntermentStatus.Ocupado => "bg-danger text-white",
             IntermentStatus.Reservado => "bg-warning text-dark",
+            IntermentStatus.Mantenimiento => "bg-secondary text-white",
+            IntermentStatus.Bloqueado => "bg-dark text-white",
             _ => "bg-secondary text-white"
         };
     }

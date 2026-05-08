@@ -23,11 +23,12 @@ namespace ContratosYReembolsos.Models.Entities.Cemeteries
         [ForeignKey("UbigeoId")]
         public virtual Ubigeo? Ubigeo { get; set; }
 
-        public string Address { get; set; }
-        public string Phone { get; set; }
-        public string Email { get; set; }
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsInternal { get; set; } = true;
 
         public virtual ICollection<IntermentStructure>? Structures { get; set; }
     }

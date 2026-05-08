@@ -23,7 +23,7 @@ namespace ContratosYReembolsos.Models.Entities.FixedAssets
         public AssetCondition Condition { get; set; } // Nuevo campo: ¿En qué estado físico está?
 
         // Auditoría y Registro
-        public string Observation { get; set; }
+        public string? Observation { get; set; }
         public DateTime PurchaseDate { get; set; } // Útil para depreciación futura
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string RegisteredByUserId { get; set; } // Quién hizo el alta

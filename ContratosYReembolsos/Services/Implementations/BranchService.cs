@@ -1,6 +1,8 @@
-﻿using ContratosYReembolsos.Data.Contexts;
+﻿using System.Data;
+using ContratosYReembolsos.Data.Contexts;
 using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Services.Interfaces;
+using ExcelDataReader;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContratosYReembolsos.Services.Implementations.Branches
@@ -10,6 +12,14 @@ namespace ContratosYReembolsos.Services.Implementations.Branches
         private readonly ApplicationDbContext _context;
 
         public BranchService(ApplicationDbContext context) => _context = context;
+
+        public async Task<List<Branch>> GetAllBranchesAsync()
+        {
+            return await _context.Filiales
+                .Include(b => b.Ubigeo)
+                .Include(b => b.Cemeteries)
+                .ToListAsync();
+        }
 
         public async Task<IEnumerable<IGrouping<string, Branch>>> GetGroupedBranchesAsync()
         {
@@ -91,5 +101,74 @@ namespace ContratosYReembolsos.Services.Implementations.Branches
             }
             catch (Exception ex) { return (false, ex.Message); }
         }
+
+        public async Task<(bool success, string message)> ImportFromExcelAsync(string filePath)
+        {
+            try
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+                using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                using var reader = ExcelReaderFactory.CreateReader(stream);
+
+                var result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                {
+                    ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                });
+
+                var table = result.Tables[0];
+                var branchesList = new List<Branch>();
+
+                foreach (DataRow row in table.Rows)
+                {
+                    branchesList.Add(new Branch
+                    {
+                        Name = row["Name"].ToString(),
+                        UbigeoId = row["UbigeoId"].ToString().PadLeft(6, '0'),
+                        Code = row["Code"].ToString().ToUpper(),
+                        Address = row["Address"]?.ToString(),
+                        Phone = row["Phone"]?.ToString(),
+                        Email = row["Email"]?.ToString(),
+                        IsActive = Convert.ToBoolean(row["IsActive"] ?? false),
+                        HasWakeService = Convert.ToBoolean(row["HasWakeService"] ?? false)
+                    });
+                }
+
+                if (branchesList.Any())
+                {
+                    // Opcional: Limpiar existentes para evitar conflictos de códigos únicos
+                    var existing = await _context.Filiales.ToListAsync();
+                    _context.Filiales.RemoveRange(existing);
+
+                    await _context.Filiales.AddRangeAsync(branchesList);
+                    await _context.SaveChangesAsync();
+                }
+
+                return (true, $"Se importaron {branchesList.Count} filiales correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error al importar filiales: {ex.Message}");
+            }
+        }
+
+        public async Task SeedIfEmptyAsync()
+        {
+            if (!await _context.Filiales.AnyAsync())
+            {
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Branches.xlsx");
+
+                if (File.Exists(path))
+                {
+                    await ImportFromExcelAsync(path);
+                    Console.WriteLine(">>> FONAFUN: Filiales cargadas desde Excel.");
+                }
+                else
+                {
+                    Console.WriteLine(">>> FONAFUN WARNING: No se encontró Branches.xlsx.");
+                }
+            }
+        }
+
     }
 }

@@ -1,0 +1,43 @@
+﻿<div class="modal fade" id="modalSearchExhumation" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-magnifying-glass me-2"></i>Buscador de Fallecidos para Exhumación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-5">
+                        <label class="form-label x-small fw-bold text-muted">DNI DEL FALLECIDO</label>
+                        <input type="text" id="filterDni" class="form-control rounded-pill border-2" placeholder="8 dígitos">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label x-small fw-bold text-muted">NOMBRES Y APELLIDOS</label>
+                        <input type="text" id="filterName" class="form-control rounded-pill border-2" placeholder="Buscar por nombre...">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100 rounded-pill py-2" onclick="executeSearch()">
+                            <i class="fa-solid fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover align-middle shadow-sm">
+                        <thead class="sticky-top bg-white border-bottom">
+                            <tr class="text-muted small text-uppercase">
+                                <th class="ps-3">Contrato</th>
+                                <th>Fallecido</th>
+                                <th>Ubicación Actual</th>
+                                <th class="text-end"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblResults">
+                            <tr><td colspan="4" class="text-center py-5 text-muted small">Use los filtros de arriba para buscar</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

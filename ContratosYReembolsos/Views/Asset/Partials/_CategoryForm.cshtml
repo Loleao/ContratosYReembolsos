@@ -1,22 +1,43 @@
 ﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.AssetCategory
 
-<form id="formCategory">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
-    <div class="modal-body p-4">
-        <div class="mb-3">
-            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Categoría</label>
-            <input asp-for="Name" class="form-control border-2 shadow-sm" placeholder="Ej: Equipos de Cómputo" required />
-        </div>
-        <div class="mb-0">
-            <label class="form-label x-small fw-bold text-muted text-uppercase">Descripción</label>
-            <textarea asp-for="Description" class="form-control border-2 shadow-sm" rows="3" placeholder="Opcional..."></textarea>
+<div class="modal fade" id="modalCategory" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-folder-plus me-2 text-success"></i>
+                    @(Model.Id == 0 ? "Nueva Categoría" : "Editar Categoría")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formCategory">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Categoría</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-2 border-end-0"><i class="fa-solid fa-tag text-muted"></i></span>
+                            <input asp-for="Name" class="form-control border-2 border-start-0 shadow-none" placeholder="Ej: Equipos de Cómputo" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Descripción (Opcional)</label>
+                        <textarea asp-for="Description" class="form-control border-2 shadow-none" rows="3" placeholder="Breve descripción del grupo de activos..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>
+                        @(Model.Id == 0 ? "GUARDAR CATEGORÍA" : "ACTUALIZAR CAMBIOS")
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="modal-footer border-0 bg-light">
-        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold">
-            @(Model.Id == 0 ? "Guardar Categoría" : "Actualizar Cambios")
-        </button>
-    </div>
-</form>
+</div>

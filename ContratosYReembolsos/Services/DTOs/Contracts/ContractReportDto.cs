@@ -8,6 +8,7 @@
         public string BranchName { get; set; }
         public string AgencyName { get; set; }
         public string AgencyAddress { get; set; }
+        public bool UseAgreement { get; set; } // Nuevo
 
         // Solicitante
         public string SolicitorName { get; set; }
@@ -27,7 +28,7 @@
         public string BurialLocationDetail { get; set; } // "Pabellón X - Fila Y..."
 
         // Items (Ataúd, Capilla, Movilidad)
-        public List<OrderItemDto> Services { get; set; }
+        public List<OrderItemDto> Services { get; set; } = new List<OrderItemDto>();
     }
 
     public class OrderItemDto

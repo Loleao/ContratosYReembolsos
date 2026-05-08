@@ -1,43 +1,43 @@
-﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
-
-<div class="animate__animated animate__fadeIn">
-    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-magnifying-glass me-2"></i>Localizar Registro del Fallecido</h5>
-
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <label class="form-label small fw-bold text-muted">Búsqueda por DNI o Nombre Completo</label>
-            <div class="input-group shadow-sm">
-                <input type="text" id="contractSearchInput" class="form-control border-0" placeholder="Ej: 45678912 o Juan Perez...">
-                <button class="btn btn-primary px-4" type="button" id="btnDoSearch">
-                    <i class="fa-solid fa-search"></i> Buscar
-                </button>
+﻿<div class="animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold text-primary mb-0"><i class="fa-solid fa-magnifying-glass me-2"></i>Búsqueda de Fallecido</h5>
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="openSearchContractModal()">
+            <i class="fa-solid fa-search me-1"></i> BUSCAR EN CONTRATOS
+        </button>
+    </div>
+    <div id="pnlDeceasedInfo" class="d-none">
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="bg-primary p-3 text-white"><h6 class="mb-0 fw-bold">Datos del Expediente</h6></div>
+                    <div class="card-body p-4">
+                        <div class="row mb-3">
+                            <div class="col-6"><label class="text-muted small d-block fw-bold">N° CONTRATO</label><span class="fw-bold text-primary fs-5" id="infoContractNum">---</span></div>
+                            <div class="col-6 text-end"><label class="text-muted small d-block fw-bold">SEPULTURA</label><span class="fw-bold" id="infoBurialDate">---</span></div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 mb-3">
+                            <label class="text-muted small d-block fw-bold">FALLECIDI</label>
+                            <h5 class="fw-bold text-dark mb-1" id="infoDeceasedName">---</h5>
+                            <span class="badge bg-white text-dark border">DNI: <span id="infoDeceasedDni">---</span></span>
+                        </div>
+                        <p class="mb-0 small text-muted">Sede: <span id="infoBranch">---</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm rounded-4 border-start border-5 border-danger h-100">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-danger-subtle text-danger rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:60px;height:60px;"><i class="fa-solid fa-location-dot fa-2x"></i></div>
+                        <h6 class="text-muted small fw-bold">UBICACIÓN ACTUAL</h6>
+                        <h4 class="fw-bold text-dark" id="infoStructure">---</h4>
+                        <p class="badge bg-danger text-white fs-6 px-4 rounded-pill" id="infoSpace">---</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <div id="searchPlaceholder" class="py-4 text-center border rounded-3 border-dashed">
-        <p class="text-muted mb-0">Ingrese los datos para localizar el contrato original</p>
-    </div>
-
-    <div id="contractResultCard" class="d-none">
-        <div class="card border-0 bg-light shadow-sm p-3">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary text-white rounded-circle p-3 me-3">
-                    <i class="fa-solid fa-dove fa-lg"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="fw-bold mb-1" id="lblDeceasedName">---</h6>
-                    <p class="text-muted small mb-0">
-                        DNI: <span id="lblDeceasedDni">---</span> |
-                        Contrato: <span id="lblContractNum" class="fw-bold text-primary">---</span>
-                    </p>
-                </div>
-                <div class="text-end">
-                    <span class="badge bg-danger">Ubicación Actual</span>
-                    <div class="fw-bold small" id="lblCurrentLocation">---</div>
-                </div>
-            </div>
-        </div>
-        <input type="hidden" asp-for="OriginalContractId" id="hfOriginalContractId" />
+    <div id="pnlEmpty" class="text-center py-5">
+        <i class="fa-solid fa-user-slash fa-3x text-muted opacity-25 mb-3"></i>
+        <p class="text-muted">Busque un fallecido para iniciar.</p>
     </div>
 </div>

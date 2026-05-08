@@ -51,6 +51,15 @@
             </a>
         @* } *@
 
+        @* @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver")) *@
+        @* { *@
+        <a href="@Url.Action("Index", "Asset")"
+           class="nav-link @(currentController == "Asset" ? "active" : "")">
+            <i class="fa-solid fa-th-large"></i>
+            <span class="sidebar-text ms-2">Activos Fijos</span>
+        </a>
+        @* } *@
+
         @* Movilidad *@
         @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Movilidad.Ver"))
         {

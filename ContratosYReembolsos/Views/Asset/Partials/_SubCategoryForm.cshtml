@@ -1,21 +1,49 @@
 ﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.AssetSubcategory
 
-<form id="formSubCategory">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="CategoryId" />
-    <div class="modal-body p-4">
-        <div class="mb-3">
-            <label class="form-label x-small fw-bold text-muted text-uppercase">Categoría Superior</label>
-            <input type="text" class="form-control bg-light border-0 fw-bold" value="@ViewBag.CategoryName" readonly />
-        </div>
-        <div class="mb-0">
-            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Subcategoría</label>
-            <input asp-for="Name" class="form-control border-2 shadow-sm" placeholder="Ej: Laptops, Escritorios, etc." required />
+<div class="modal fade" id="modalSubCategory" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-folder-tree me-2"></i>
+                    @(Model.Id == 0 ? "Nueva Subcategoría" : "Editar Subcategoría")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formSubCategory">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CategoryId" />
+
+                <div class="modal-body p-4">
+                    <!-- Categoría Padre (Informativo) -->
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase d-block mb-1">Categoría Superior</label>
+                        <div class="d-flex align-items-center text-primary">
+                            <i class="fa-solid fa-folder me-2"></i>
+                            <span class="fw-bold">@ViewBag.CategoryName</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre de la Subcategoría</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-2 border-end-0"><i class="fa-solid fa-caret-right text-primary"></i></span>
+                            <input asp-for="Name" class="form-control border-2 border-start-0 shadow-none" placeholder="Ej: Laptops, Escritorios, etc." required />
+                        </div>
+                        <small class="text-muted x-small mt-1 d-block">Este nombre aparecerá en el catálogo maestro.</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-circle-check me-2"></i>
+                        @(Model.Id == 0 ? "CONFIRMAR REGISTRO" : "GUARDAR CAMBIOS")
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="modal-footer border-0 bg-light">
-        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Guardar Subcategoría</button>
-    </div>
-</form>
+</div>

@@ -16,7 +16,12 @@ namespace ContratosYReembolsos.Services.Implementations.Agencies
         }
 
         public async Task<List<Branch>> GetBranchesWithAgencies()
-            => await _context.Filiales.Include(b => b.Agencies).ToListAsync();
+        {
+            return await _context.Filiales
+                .Include(b => b.Agencies)
+                .Include(b => b.Ubigeo) // <--- CRÍTICO para que funcione el GroupBy en la vista
+                .ToListAsync();
+        }
 
         public async Task<List<Agency>> GetAgenciesByBranch(int branchId)
             => await _context.Agencias.Where(a => a.BranchId == branchId).ToListAsync();

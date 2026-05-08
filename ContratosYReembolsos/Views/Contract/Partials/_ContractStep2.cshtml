@@ -188,12 +188,13 @@
 
         <div class="col-md-12 mt-4">
             <label class="form-label fw-bold text-muted small text-uppercase">Cementerio de Destino</label>
-            <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                <span class="input-group-text bg-white border-2 border-end-0 text-primary">
+            <div class="input-group shadow-sm rounded-pill overflow-hidden border-2 transition-all">
+                <span class="input-group-text bg-white border-0 text-primary">
                     <i class="fa-solid fa-monument"></i>
                 </span>
-                <input type="text" id="CemeteryName" class="form-control border-2 border-start-0 bg-light" readonly placeholder="Seleccione un cementerio...">
-                <button class="btn btn-primary px-4 border-2 border-start-0" type="button" onclick="openSearchCemetery()">
+                <input type="text" id="CemeteryName" class="form-control border-0 bg-light py-2"
+                       readonly placeholder="Haga clic en la lupa para buscar...">
+                <button class="btn btn-primary px-4 border-0" type="button" onclick="openSearchCemetery()">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>

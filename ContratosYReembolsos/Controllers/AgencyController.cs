@@ -194,7 +194,19 @@ namespace ContratosYReembolsos.Controllers
 
             if (isAdmin)
             {
-                if (selectedBranchId == null) return View("BranchSelection", await _agencyService.GetBranchesWithAgencies());
+                if (selectedBranchId == null)
+                {
+                    // 1. Obtenemos la lista plana desde el servicio
+                    var branches = await _agencyService.GetBranchesWithAgencies();
+
+                    // 2. Agrupamos por Región para que coincida con el @model de la vista
+                    // Usamos el operador null-conditional por seguridad si Ubigeo es nulo
+                    var groupedBranches = branches
+                        .GroupBy(b => b.Ubigeo?.Region ?? "SIN REGIÓN")
+                        .OrderBy(g => g.Key);
+
+                    return View("BranchSelection", groupedBranches);
+                }
                 branchId = selectedBranchId.Value;
             }
             else

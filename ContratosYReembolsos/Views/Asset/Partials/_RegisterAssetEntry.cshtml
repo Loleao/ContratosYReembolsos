@@ -1,55 +1,87 @@
 ﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.FixedAsset
+@using ContratosYReembolsos.Models.Entities.FixedAssets
 
-<form id="formRegisterAsset">
-    <div class="modal-body p-4">
-        <div class="row g-3">
-            <div class="col-md-12">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Modelo del Catálogo</label>
-                <select name="AssetCatalogId" id="select-catalog" class="form-select border-2" onchange="updatePatrimonialCode(this.value)" required>
-                    <option value="">-- Seleccione el modelo --</option>
-                    @* Se cargará vía JS o ViewBag *@
-                </select>
+<div class="modal fade" id="modalAssetEntryContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-file-import me-2 text-success"></i>Registro de Ingreso de Activos Fijos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Código Patrimonial</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-barcode"></i></span>
-                    <input type="text" id="patrimonial-code-display" class="form-control border-start-0 fw-bold text-primary" readonly />
-                    <input type="hidden" name="PatrimonialCode" id="patrimonial-code-hidden" />
+            <form id="formBulkAssetEntry">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+
+                    @* --- SECCIÓN SUPERIOR: DATOS DE CONTROL --- *@
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Sede de Destino</label>
+                            @if (Model.BranchId > 0)
+                            {
+                                @* 1. Si hay una sede predefinida, mostramos un campo falso bloqueado y uno oculto real *@
+                                <input type="hidden" name="BranchId" value="@Model.BranchId" />
+                                <select class="form-select border-2 shadow-sm bg-light" disabled>
+                                    @foreach (var b in (List<ContratosYReembolsos.Models.Entities.Branches.Branch>)ViewBag.Branches)
+                                    {
+                                        <option value="@b.Id" selected="@(b.Id == Model.BranchId)">@b.Name</option>
+                                    }
+                                </select>
+                                <small class="text-primary x-small"><i class="fa-solid fa-lock me-1"></i> Sede bloqueada por contexto actual</small>
+                            }
+                            else
+                            {
+                                @* 2. Si no hay sede (Ingreso General), permitimos elegir *@
+                                <select name="BranchId" class="form-select border-2 shadow-sm" required>
+                                    <option value="">-- Seleccione Sede --</option>
+                                    @foreach (var b in (List<ContratosYReembolsos.Models.Entities.Branches.Branch>)ViewBag.Branches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                </select>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Referencia / Observación General</label>
+                            <input type="text" name="Observation" class="form-control border-2 shadow-sm" placeholder="Ej: Ingreso por compra directa" />
+                        </div>
+                    </div>
+
+                    @* --- TABLA DE ACTIVOS --- *@
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-dark mb-0">Detalle de Equipos</h6>
+                        <button type="button" onclick="addNewAssetRow()" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-plus me-1"></i> Agregar Fila
+                        </button>
+                    </div>
+
+                    <div class="table-responsive border rounded-3" style="max-height: 400px;">
+                        <table class="table table-bordered align-middle mb-0" id="tableBulkAssetEntry">
+                            <thead class="table-dark x-small">
+                                <tr>
+                                    <th style="width: 45%;">Modelo del Catálogo</th>
+                                    <th style="width: 20%;">Cód. Patrimonial</th>
+                                    <th style="width: 20%;">N° de Serie</th>
+                                    <th style="width: 10%;">Condición</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetEntryTableBody">
+                                @* Filas generadas por JS *@
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Número de Serie (Fábrica)</label>
-                <input type="text" name="SerialNumber" class="form-control border-2" placeholder="S/N o Placa" required />
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Estado de Conservación</label>
-                <select name="Condition" class="form-select border-2">
-                    <option value="0">Nuevo</option>
-                    <option value="1">Excelente</option>
-                    <option value="2">Bueno</option>
-                    <option value="3">Regular</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Fecha de Compra</label>
-                <input type="date" name="PurchaseDate" class="form-control border-2" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Observaciones Iniciales</label>
-                <textarea name="Observation" class="form-control border-2" rows="2"></textarea>
-            </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted me-auto text-decoration-none fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow">
+                        <i class="fa-solid fa-cloud-arrow-up me-2"></i>CONFIRMAR TODO EL INGRESO
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="modal-footer bg-light border-0">
-        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-dark rounded-pill px-5 fw-bold shadow">
-            <i class="fa-solid fa-check-double me-2"></i>DAR DE ALTA
-        </button>
-    </div>
-</form>
+</div>

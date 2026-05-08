@@ -1,0 +1,128 @@
+﻿@using ContratosYReembolsos.Models.Entities.Contracts
+@model IEnumerable<FuneralService>
+
+@{
+    ViewData["Title"] = "Catálogo de Servicios Funerarios";
+}
+
+<div class="container-fluid animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Contratos</a></li>
+                    <li class="breadcrumb-item active fw-bold text-primary">Servicios Funerarios</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-hand-holding-heart me-2 text-success"></i>Catálogo de Servicios
+            </h2>
+        </div>
+        @* Corregido: nombre de función coincidente con el script *@
+        <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateModal()">
+            <i class="fa-solid fa-plus-circle me-1"></i> Nuevo Servicio
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table id="tblServices" class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr class="text-muted small text-uppercase">
+                            <th class="ps-3">Nombre del Servicio</th>
+                            <th>Descripción</th>
+                            <th class="text-center">Precio Sugerido</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">@item.Name</td>
+                                <td class="text-muted small">@item.Description</td>
+                                <td class="text-center fw-bold text-success">S/ @item.Price.ToString("N2")</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill @(item.IsActive ? "bg-success-subtle text-success border-success" : "bg-danger-subtle text-danger border-danger") border px-3">
+                                        @(item.IsActive ? "Activo" : "Inactivo")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <button class="btn btn-sm btn-white border shadow-sm" onclick="openEditModal(@item.Id)">
+                                        <i class="fa-solid fa-pen-to-square text-primary"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Contenedor para el Modal Dinámico *@
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tblServices').DataTable({
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+                pageLength: 10
+            });
+        });
+
+        async function openCreateModal() {
+            await loadServiceModal(0);
+        }
+
+        async function openEditModal(id) {
+            await loadServiceModal(id);
+        }
+
+        async function loadServiceModal(id) {
+            Swal.fire({ title: 'Cargando formulario...', didOpen: () => Swal.showLoading() });
+
+            try {
+                // Invocamos la acción que devuelve el PartialView del formulario
+                const response = await fetch(`@Url.Action("GetFuneralServiceForm", "Contract")?id=${id}`);
+                const html = await response.text();
+
+                document.getElementById('modalContainer').innerHTML = html;
+                Swal.close();
+
+                const modal = new bootstrap.Modal(document.getElementById('modalFuneralServiceContainer'));
+                modal.show();
+            } catch (e) {
+                Swal.fire('Error', 'No se pudo cargar el formulario', 'error');
+            }
+        }
+
+        $(document).on('submit', '#formFuneralService', async function (e) {
+            e.preventDefault();
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
+
+            try {
+                const res = await fetch('@Url.Action("SaveFuneralService", "Contract")', {
+                    method: 'POST',
+                    body: new FormData(this)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).text('GUARDAR');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Error de red', 'error');
+                $btn.prop('disabled', false).text('GUARDAR');
+            }
+        });
+    </script>
+}

@@ -1,5 +1,6 @@
 ﻿using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Models.ViewModels.Contracts;
+using ContratosYReembolsos.Models.ViewModels.Exhumations;
 using ContratosYReembolsos.Services.DTOs.Contracts;
 
 namespace ContratosYReembolsos.Services.Interfaces
@@ -33,6 +34,12 @@ namespace ContratosYReembolsos.Services.Interfaces
 
         Task<ContractReportDto> GetContractForPDFAsync(int id);
         Task<ContractDetailDto> GetContractDetailsAsync(int id);
+        Task<List<ExhumationHistoryItemViewModel>> GetMovementHistoryAsync(int contractId);
+
+
+        Task<List<FuneralService>> GetAllServicesAsync();
+        Task<(bool success, string message)> UpsertServiceAsync(FuneralService model);
+
 
     }
 }

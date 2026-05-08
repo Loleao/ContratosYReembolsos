@@ -47,5 +47,7 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         // Relación Detallada
         public virtual ICollection<ContractProductDetail> ProductDetails { get; set; }
         public virtual ICollection<ContractMovilityDetail> MovilityDetails { get; set; }
+        public virtual ICollection<ContractServiceDetail> ServiceDetails { get; set; }
+        public virtual ICollection<ContractExternalServiceDetail> ExternalServiceDetails { get; set; }
     }
 }

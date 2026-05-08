@@ -9,47 +9,106 @@
     <meta charset="utf-8" />
     <title>Contrato @Model.ContractNumber</title>
     <style>
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 11px;
-            color: #333;
-            line-height: 1.4;
-            margin: 0;
-            padding: 30px;
+        @@page {
+            margin: 0.5cm;
         }
 
-        .text-primary {
+        body {
+            font-family: 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+            font-size: 10px;
+            color: #222;
+            line-height: 1.3;
+            margin: 0;
+            padding: 20px;
+            background-color: #fff;
+        }
+
+        .header-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .logo-area {
+            width: 60%;
+            float: left;
+        }
+
+        .contract-badge {
+            width: 35%;
+            float: right;
+            border: 2px solid #004a99;
+            border-radius: 10px;
+            text-align: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+
+        .text-institutional {
             color: #004a99;
         }
 
         .text-danger {
-            color: #dc3545;
+            color: #d32f2f;
         }
 
         .fw-bold {
             font-weight: bold;
         }
 
-        .header-table {
+        .text-uppercase {
+            text-transform: uppercase;
+        }
+
+        /* Secciones */
+        .section {
+            width: 100%;
+            clear: both;
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: #004a99;
+            color: white;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-body {
+            padding: 8px 12px;
+        }
+
+        /* Columnas */
+        .col-wrapper {
+            width: 100%;
+            clear: both;
+        }
+
+        .col-50 {
+            float: left;
+            width: 50%;
+        }
+
+        /* Tablas */
+        .table-data {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
         }
 
-        .border-section {
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-        }
+            .table-data td {
+                padding: 3px 0;
+                vertical-align: top;
+            }
 
-        .title-label {
-            font-weight: bold;
-            color: #004a99;
-            border-bottom: 1px solid #004a99;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            font-size: 10px;
+        .label {
+            color: #666;
+            font-size: 9px;
+            width: 100px;
         }
 
         .val {
@@ -60,30 +119,58 @@
         .table-services {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 0;
         }
 
             .table-services th {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                padding: 8px;
+                background-color: #f1f4f8;
+                border-bottom: 2px solid #004a99;
+                padding: 6px 8px;
                 text-align: left;
-                font-size: 10px;
+                font-size: 9px;
+                color: #004a99;
             }
 
             .table-services td {
-                border: 1px solid #dee2e6;
-                padding: 8px;
+                border-bottom: 1px solid #eee;
+                padding: 6px 8px;
             }
 
-        .row {
-            display: block;
-            width: 100%;
+        .status-badge {
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
         }
 
-        .col-6 {
-            float: left;
-            width: 48%;
+        /* Firmas */
+        .signature-container {
+            margin-top: 50px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .signature-box {
+            width: 40%;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            margin: 0 auto 8px;
+            width: 80%;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 8px;
+            color: #777;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
         }
 
         .clearfix::after {
@@ -91,90 +178,90 @@
             clear: both;
             display: table;
         }
-
-        .signature-box {
-            margin-top: 60px;
-            width: 100%;
-        }
-
-        .signature-line {
-            border-top: 1px solid #000;
-            width: 80%;
-            margin: 0 auto 5px;
-        }
-
-        .footer-note {
-            margin-top: 30px;
-            text-align: center;
-            color: #888;
-            font-size: 8px;
-            border-top: 1px dashed #ccc;
-            padding-top: 10px;
-        }
     </style>
 </head>
 <body>
-    <table class="header-table">
-        <tr>
-            <td style="width: 65%">
-                <h2 class="fw-bold mb-0 text-primary" style="margin:0;">FONAFUN PERÚ</h2>
-                <p style="margin:2px 0; font-weight:bold;">FONDO DE APOYO FUNERARIO - PNP</p>
-                <p style="margin:0; font-size: 9px; color: #666;">
-                    Sede de Registro: <span class="val">@Model.BranchName</span><br />
-                    Agencia: <span class="val">@Model.AgencyName</span> - @Model.AgencyAddress
-                </p>
-            </td>
-            <td style="width: 35%; text-align: right;">
-                <div style="border: 2px solid #004a99; padding: 10px; border-radius: 8px; text-align: center;">
-                    <span class="text-danger fw-bold" style="font-size: 11px;">CONTRATO DE SERVICIO</span>
-                    <h2 style="margin: 5px 0 0 0; color: #000; font-size: 20px;">@Model.ContractNumber</h2>
+
+    <div class="header-container clearfix">
+        <div class="logo-area">
+            <h1 class="text-institutional fw-bold" style="margin:0; font-size: 22px;">FONAFUN PERÚ</h1>
+            <p class="fw-bold" style="margin:2px 0; font-size: 11px;">FONDO DE APOYO FUNERARIO - PNP</p>
+            <p style="margin:5px 0 0 0; color: #555; font-size: 9px;">
+                <i class="fa-solid fa-location-dot"></i> Sede: <span class="val">@Model.BranchName</span><br />
+                @if (!string.IsNullOrEmpty(Model.AgencyName) && Model.AgencyName != "FONAFUN - SEDE CENTRAL")
+                {
+                    <span>Agencia Convenio: <span class="val">@Model.AgencyName</span> (@Model.AgencyAddress)</span>
+                }
+                else
+                {
+                    <span class="text-institutional fw-bold">ATENCIÓN POR ADMINISTRACIÓN DIRECTA</span>
+                }
+            </p>
+        </div>
+        <div class="contract-badge">
+            <span class="text-danger fw-bold" style="font-size: 10px; letter-spacing: 1px;">CONTRATO DE SERVICIOS</span><br />
+            <span style="font-size: 18px; font-weight: bold; color: #000;">N° @Model.ContractNumber</span><br />
+            <span style="font-size: 8px; color: #666;">FECHA REGISTRO: @Model.CreatedAt</span>
+        </div>
+    </div>
+
+    <div class="col-wrapper clearfix">
+        <div class="col-50">
+            <div class="section" style="margin-right: 10px;">
+                <div class="section-header">I. Datos del Titular / Solicitante</div>
+                <div class="section-body">
+                    <table class="table-data">
+                        <tr><td class="label">Nombres:</td><td class="val">@Model.SolicitorName</td></tr>
+                        <tr><td class="label">DNI:</td><td class="val">@Model.SolicitorDni</td></tr>
+                        <tr><td class="label">Parentesco:</td><td class="val">@Model.SolicitorType</td></tr>
+                    </table>
                 </div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="row clearfix">
-        <div class="col-6" style="margin-right: 4%;">
-            <div class="border-section">
-                <div class="title-label">Datos del Titular / Solicitante</div>
-                <div>Nombre: <span class="val">@Model.SolicitorName</span></div>
-                <div>DNI: <span class="val">@Model.SolicitorDni</span></div>
-                <div>Parentesco: <span class="val">@Model.SolicitorType</span></div>
             </div>
         </div>
-        <div class="col-6">
-            <div class="border-section">
-                <div class="title-label">Datos del Fallecido</div>
-                <div>Nombre: <span class="val">@Model.DeceasedName</span></div>
-                <div>DNI: <span class="val">@Model.DeceasedDni</span></div>
-                <div>Fecha Fallecimiento: <span class="val">@Model.DeathDate</span></div>
+        <div class="col-50">
+            <div class="section">
+                <div class="section-header">II. Datos del Beneficiario Fallecido</div>
+                <div class="section-body">
+                    <table class="table-data">
+                        <tr><td class="label">Nombres:</td><td class="val text-uppercase">@Model.DeceasedName</td></tr>
+                        <tr><td class="label">DNI:</td><td class="val">@Model.DeceasedDni</td></tr>
+                        <tr><td class="label">Fallecimiento:</td><td class="val">@Model.DeathDate</td></tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="border-section">
-        <div class="title-label">Logística y Ubicación de Sepelio</div>
-        <table style="width: 100%; border-spacing: 0;">
-            <tr>
-                <td style="width: 33%;">Fecha Sepelio: <span class="val">@Model.BurialDate</span></td>
-                <td style="width: 33%;">Hora: <span class="val">@Model.BurialTime</span></td>
-                <td style="width: 33%;">Ubigeo: <span class="val">@Model.UbigeoFull</span></td>
-            </tr>
-            <tr>
-                <td colspan="2" style="padding-top: 5px;">Cementerio: <span class="val">@Model.CemeteryName</span></td>
-                <td style="padding-top: 5px;">Ubicación: <span class="val">@Model.BurialLocationDetail</span></td>
-            </tr>
-        </table>
+    <div class="section">
+        <div class="section-header">III. Itinerario y Ubicación de Sepelio</div>
+        <div class="section-body">
+            <table class="table-data">
+                <tr>
+                    <td class="label">Fecha Programada:</td>
+                    <td class="val" style="width: 25%;">@Model.BurialDate</td>
+                    <td class="label">Hora:</td>
+                    <td class="val" style="width: 25%;">@Model.BurialTime</td>
+                    <td class="label">Ubigeo:</td>
+                    <td class="val">@Model.UbigeoFull</td>
+                </tr>
+                <tr>
+                    <td class="label">Cementerio:</td>
+                    <td class="val">@Model.CemeteryName</td>
+                    <td class="label">Ubicación:</td>
+                    <td class="val" colspan="3">@Model.BurialLocationDetail</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
-    <div class="border-section">
-        <div class="title-label">Detalle de Suministros y Servicios</div>
+    <div class="section">
+        <div class="section-header">IV. Detalle de Beneficios Asignados (Bienes y Servicios)</div>
         <table class="table-services">
             <thead>
                 <tr>
-                    <th>Descripción del Servicio / Producto</th>
-                    <th>Categoría</th>
-                    <th style="text-align: right;">Estado</th>
+                    <th style="width: 50%;">Descripción del Beneficio</th>
+                    <th style="width: 30%;">Categoría / Origen</th>
+                    <th style="width: 20%; text-align: center;">Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -182,35 +269,40 @@
                 {
                     <tr>
                         <td><span class="val">@item.Description</span></td>
-                        <td>@item.Category</td>
-                        <td style="text-align: right;" class="fw-bold">@item.Status</td>
+                        <td style="font-size: 8.5px; color: #555;">@item.Category</td>
+                        <td style="text-align: center;">
+                            <span class="status-badge">@item.Status.ToUpper()</span>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 
-    <table class="signature-box">
-        <tr>
-            <td style="width: 45%; text-align: center;">
-                <div class="signature-line"></div>
-                <p style="margin: 0;"><strong>@Model.SolicitorName</strong></p>
-                <p style="margin: 0; font-size: 9px;">DNI: @Model.SolicitorDni</p>
-                <p style="margin: 0; font-size: 8px; color: #666;">Firma del Solicitante</p>
-            </td>
-            <td style="width: 10%;"></td>
-            <td style="width: 45%; text-align: center;">
-                <div class="signature-line"></div>
-                <p style="margin: 0;"><strong>FONAFUN PERÚ</strong></p>
-                <p style="margin: 0; font-size: 9px;">Sede: @Model.BranchName</p>
-                <p style="margin: 0; font-size: 8px; color: #666;">Firma Autorizada y Sello</p>
-            </td>
-        </tr>
-    </table>
+    @if (Model.UseAgreement)
+    {
+        <div style="background-color: #fff9c4; border: 1px solid #fbc02d; padding: 5px 10px; border-radius: 4px; font-size: 8px; margin-bottom: 10px;">
+            <strong>NOTA DE CONVENIO:</strong> Los servicios marcados como "Convenio" son gestionados externamente bajo la supervisión de FONAFUN a través de la agencia <strong>@Model.AgencyName</strong>.
+        </div>
+    }
 
-    <div class="footer-note">
-        Documento generado electrónicamente el @Model.CreatedAt - Código de Verificación: @Model.Id.ToString("D8")<br>
-        <strong>FONAFUN - Vocación de Servicio al Personal Policial</strong>
+    <div class="signature-container clearfix" style="margin-top: 80px;">
+        <div class="signature-box" style="float: left; margin-left: 5%;">
+            <div class="signature-line"></div>
+            <p class="fw-bold">@Model.SolicitorName</p>
+            <p style="font-size: 8px; color: #555;">DNI: @Model.SolicitorDni<br />Firma del Solicitante</p>
+        </div>
+        <div class="signature-box" style="float: right; margin-right: 5%;">
+            <div class="signature-line"></div>
+            <p class="fw-bold">FONAFUN PERÚ</p>
+            <p style="font-size: 8px; color: #555;">@Model.BranchName<br />Firma Autorizada y Sello</p>
+        </div>
     </div>
+
+    <div class="footer">
+        Este documento es una representación impresa de un contrato electrónico generado en el sistema de gestión FONAFUN.<br />
+        Generado el: @Model.CreatedAt | ID de Seguimiento: @Model.Id.ToString("D8") | <strong>Vocación de Servicio al Personal Policial</strong>
+    </div>
+
 </body>
 </html>

@@ -1,39 +1,101 @@
-﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
+﻿<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold mb-4 text-primary">
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i>Paso 3: Resumen y Liquidación Final
+    </h5>
 
-<div class="animate__animated animate__fadeIn">
-    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-file-signature me-2"></i>Resumen y Confirmación Final</h5>
-
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-7">
-            <div class="table-responsive">
-                <table class="table table-sm table-borderless">
-                    <tr>
-                        <td class="text-muted">Fallecido:</td>
-                        <td class="fw-bold" id="sumDeceased">---</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Origen:</td>
-                        <td class="fw-bold text-danger" id="sumOrigin">---</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Destino:</td>
-                        <td class="fw-bold text-success" id="sumDestination">---</td>
-                    </tr>
-                    <tr class="border-top">
-                        <td class="text-muted pt-2">Costo Total:</td>
-                        <td class="fw-bold text-primary h5 pt-2">S/ <span id="sumCost">0.00</span></td>
-                    </tr>
-                </table>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white py-3">
+                    <h6 class="mb-0 fw-bold small text-uppercase tracking-wider">
+                        <i class="fa-solid fa-route me-2"></i>Itinerario de Traslado
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="d-flex flex-column">
+                        <div class="p-4 bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25">
+                            <label class="d-block x-small fw-bold text-danger text-uppercase mb-1">Ubicación Actual (Origen)</label>
+                            <h6 class="fw-bold mb-1" id="resOriginLoc">---</h6>
+                            <span class="text-muted small" id="resDeceasedNameSummary">---</span>
+                        </div>
+
+                        <div class="text-center my-n2 z-3" style="margin-top: -15px; margin-bottom: -15px;">
+                            <span class="badge rounded-circle bg-white shadow-sm p-2 text-primary border border-2 border-primary border-opacity-25">
+                                <i class="fa-solid fa-arrow-down-long fs-5"></i>
+                            </span>
+                        </div>
+
+                        <div class="p-4 bg-success bg-opacity-10">
+                            <label class="d-block x-small fw-bold text-success text-uppercase mb-1">Nueva Ubicación (Destino)</label>
+                            <h6 class="fw-bold mb-1" id="resDestLoc">---</h6>
+                            <span class="text-muted small" id="resCemeteryNameSummary">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-3">
+                    <label class="form-label fw-bold small text-muted text-uppercase">Observaciones registradas</label>
+                    <p class="mb-0 small italic p-3 bg-light rounded-3 text-muted" id="resObservations">---</p>
+                </div>
             </div>
         </div>
+
         <div class="col-md-5">
-            <label class="form-label small fw-bold">Observaciones del Trámite</label>
-            <textarea asp-for="Observations" class="form-control" rows="4" placeholder="Indique detalles adicionales de la exhumación..."></textarea>
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4 text-uppercase small border-bottom pb-2">
+                        <i class="fa-solid fa-calculator me-2 text-primary"></i>Desglose de Gastos
+                    </h6>
+
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold small">Derecho de Exhumación</div>
+                                        <small class="text-muted">Apertura y trámites</small>
+                                    </td>
+                                    <td class="text-end fw-bold">S/ 150.00</td>
+                                </tr>
+                                <tr id="rowNicheCost" class="d-none border-top">
+                                    <td class="py-3">
+                                        <div class="fw-bold small">Asignación de Nuevo Espacio</div>
+                                        <small class="text-muted" id="resNicheTypeDetail">---</small>
+                                    </td>
+                                    <td class="text-end fw-bold" id="resNichePrice">S/ 0.00</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="border-top border-2">
+                                    <td class="pt-3 fs-5 fw-bold text-primary">TOTAL</td>
+                                    <td class="pt-3 fs-5 fw-bold text-primary text-end" id="resTotalPrice">S/ 150.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-4 mt-4 py-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-circle-exclamation fs-4 me-3"></i>
+                            <p class="small mb-0">Al confirmar, el espacio de origen se marcará como <b>DISPONIBLE</b> inmediatamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="alert alert-warning mt-4 py-2 small border-0 shadow-sm">
-        <i class="fa-solid fa-triangle-exclamation me-2"></i>
-        Al finalizar, el espacio de origen quedará marcado como <strong>DISPONIBLE</strong> en el sistema de forma inmediata.
-    </div>
 </div>
+
+<style>
+    .x-small {
+        font-size: 0.65rem;
+        letter-spacing: 1px;
+    }
+
+    .z-3 {
+        z-index: 3;
+        position: relative;
+    }
+</style>

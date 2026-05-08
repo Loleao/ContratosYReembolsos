@@ -1,0 +1,59 @@
+﻿<div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+    <div class="modal-header bg-dark text-white py-3">
+        <h5 class="modal-title fw-bold">
+            <i class="fa-solid fa-map-location-dot me-2"></i>Selector de Espacios
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeSearchModal()"></button>
+    </div>
+    <div class="modal-body p-4 bg-light-subtle">
+        <div class="mb-4">
+            <label class="form-label fw-bold text-muted x-small text-uppercase tracking-wider">Estructura disponible en destino</label>
+            <select id="cboPavilion" class="form-select border-2 rounded-pill shadow-sm" onchange="changePavilion()">
+                <option value="">-- Seleccione Estructura --</option>
+            </select>
+        </div>
+
+        @* Loader dinámico *@
+        <div id="nicheLoader" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted small fw-bold">Generando cuadrícula de espacios...</p>
+        </div>
+
+        @* Contenedor de Mapas *@
+        <div id="nicheMapsContainer" class="d-none animate__animated animate__fadeIn">
+            <div class="row">
+                @* Cara A *@
+                <div id="colCara1" class="col-md-12 mb-4">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h6 class="fw-bold mb-0 text-primary small text-uppercase">
+                                <i class="fa-solid fa-door-open me-2"></i>Lado Frontal / Cara A
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div id="gridCara1" class="map-scroll-container custom-scroll"></div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Cara B (Oculta por defecto) *@
+                <div id="colCara2" class="col-md-12 d-none">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header bg-white border-bottom py-3 text-info">
+                            <h6 class="fw-bold mb-0 small text-uppercase">
+                                <i class="fa-solid fa-door-closed me-2"></i>Lado Posterior / Cara B
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div id="gridCara2" class="map-scroll-container custom-scroll"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer bg-white border-top-0">
+        <small class="text-muted me-auto"><i class="fa-solid fa-circle-info me-1"></i> Seleccione un cuadro <b>verde</b> para asignar.</small>
+        <button type="button" class="btn btn-light rounded-pill px-4" onclick="closeSearchModal()">Cerrar</button>
+    </div>
+</div>

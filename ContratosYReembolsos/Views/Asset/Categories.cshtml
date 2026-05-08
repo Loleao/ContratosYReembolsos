@@ -3,10 +3,13 @@
     ViewData["Title"] = "Clasificación de Activos";
 }
 
-<div class="container-fluid p-4">
+<div class="container-fluid p-4 animate__animated animate__fadeIn">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold m-0"><i class="fa-solid fa-tags me-2"></i>Categorías y Subcategorías</h4>
-        <button class="btn btn-dark rounded-pill px-4" onclick="openCreateCategoryModal()">
+        <div>
+            <h4 class="fw-bold m-0"><i class="fa-solid fa-tags me-2 text-primary"></i>Categorías Generales</h4>
+            <p class="text-muted small mb-0">Defina los grupos principales para el control patrimonial.</p>
+        </div>
+        <button class="btn btn-dark rounded-pill px-4 shadow-sm" onclick="openCategoryModal()">
             <i class="fa-solid fa-plus me-1"></i> Nueva Categoría
         </button>
     </div>
@@ -15,26 +18,41 @@
         @foreach (var cat in Model)
         {
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold m-0 text-primary">@cat.Name</h6>
-                        <div class="dropdown">
-                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="editCategory(@cat.Id)">Editar</a></li>
-                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="addSubCategory(@cat.Id)">Añadir Subcategoría</a></li>
-                            </ul>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 bento-hover">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="bg-primary-light p-3 rounded-3 text-primary">
+                                <i class="fa-solid fa-folder-tree fa-xl"></i>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow rounded-3 border-0">
+                                    <li>
+                                        <a class="dropdown-item small" href="javascript:void(0)" onclick="openCategoryModal(@cat.Id)">
+                                            <i class="fa-solid fa-pen-to-square me-2 opacity-50"></i>Editar Nombre
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item small text-primary fw-bold" href="@Url.Action("Subcategories", "Asset", new { id = cat.Id })">
+                                            <i class="fa-solid fa-list-ul me-2"></i>Gestionar Subcategorías
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body pt-0">
-                        <div class="list-group list-group-flush small">
-                            @foreach (var sub in cat.Subcategories)
-                            {
-                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                    <span><i class="fa-solid fa-chevron-right x-small me-2 text-muted"></i>@sub.Name</span>
-                                    <button class="btn btn-link btn-sm text-muted p-0" onclick="editSubCategory(@sub.Id)"><i class="fa-solid fa-pen-to-square"></i></button>
-                                </div>
-                            }
+                        <h5 class="fw-bold text-dark mb-1">@cat.Name</h5>
+                        <p class="text-muted x-small mb-3">@cat.Description</p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                            <span class="badge bg-light text-dark border rounded-pill fw-normal">
+                                @cat.Subcategories.Count Subcategorías
+                            </span>
+                            <a href="@Url.Action("Subcategories", "Asset", new { id = cat.Id })" class="btn btn-link btn-sm p-0 text-decoration-none">
+                                Ver detalle <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -42,3 +60,42 @@
         }
     </div>
 </div>
+
+@* Contenedor para la parcial _CategoryForm *@
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const catUrls = {
+            getForm: '@Url.Action("GetCategoryForm", "Asset")',
+            save: '@Url.Action("SaveCategory", "Asset")'
+        };
+
+        async function openCategoryModal(id = 0) {
+            Swal.fire({ title: 'Cargando...', didOpen: () => { Swal.showLoading() } });
+            try {
+                const resp = await fetch(`${catUrls.getForm}?id=${id}`);
+                const html = await resp.text();
+                $('#modalContainer').html(html);
+                Swal.close();
+                $('#modalCategory').modal('show');
+            } catch (e) { Swal.fire('Error', 'No se pudo cargar el formulario', 'error'); }
+        }
+
+        $(document).on('submit', '#formCategory', async function(e) {
+            e.preventDefault();
+            const data = $(this).serialize();
+            const resp = await fetch(catUrls.save, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: data
+            });
+            const result = await resp.json();
+            if (result.success) {
+                Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Error', result.message, 'error');
+            }
+        });
+    </script>
+}

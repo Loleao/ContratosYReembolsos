@@ -1,0 +1,46 @@
+﻿@model List<ContratosYReembolsos.Models.Entities.FixedAssets.AssetMovement>
+
+<div class="card border-0 shadow-sm rounded-4 animate__animated animate__fadeIn">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="bg-dark text-white">
+                    <tr>
+                        <th class="ps-4">Fecha</th>
+                        <th>Activo</th>
+                        <th>Concepto</th>
+                        <th>Tipo</th>
+                        <th>Documento Ref.</th>
+                        <th>Usuario</th>
+                        <th class="pe-4">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody class="x-small">
+                    @foreach (var m in Model.OrderByDescending(x => x.CreatedAt))
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted">@m.CreatedAt.ToString("g")</td>
+                            <td class="fw-bold">@m.FixedAsset?.PatrimonialCode</td>
+                            <td>
+                                <span class="fw-bold">@m.Concept.ToString()</span>
+                            </td>
+                            <td>
+                                @if (m.MovementType == ContratosYReembolsos.Models.Entities.FixedAssets.AssetMovementType.Entry)
+                                {
+                                    <span class="text-success fw-bold"><i class="fa-solid fa-circle-arrow-down me-1"></i>Entrada</span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger fw-bold"><i class="fa-solid fa-circle-arrow-up me-1"></i>Salida</span>
+                                }
+                            </td>
+                            <td class="font-monospace">@m.InternalControlNumber</td>
+                            <td>@m.UserId</td>
+                            <td class="pe-4 italic text-muted">@m.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

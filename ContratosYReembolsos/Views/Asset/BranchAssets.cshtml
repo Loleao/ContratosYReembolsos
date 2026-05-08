@@ -1,0 +1,241 @@
+﻿@using ContratosYReembolsos.Models.Entities.FixedAssets
+@model List<FixedAsset>
+
+@{
+    ViewData["Title"] = "Activos de Sede - " + ViewBag.BranchName;
+}
+
+<style>
+    .btn-toggle-group {
+        background: #f1f3f5;
+        padding: 4px;
+        border-radius: 50px;
+        display: inline-flex;
+    }
+
+        .btn-toggle-group .btn {
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-weight: 600;
+            border: none;
+            color: #6c757d;
+        }
+
+            .btn-toggle-group .btn.active {
+                background: #fff;
+                color: #0d6efd;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a asp-action="BranchSelection" class="text-decoration-none text-muted">Sedes</a></li>
+                    <li class="breadcrumb-item active fw-bold text-primary">@ViewBag.BranchName</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-laptop-file me-2 text-primary"></i>Gestión Patrimonial
+            </h3>
+            <p class="text-muted small mb-0">Administración de activos fijos - <span class="fw-bold">@ViewBag.BranchName</span></p>
+        </div>
+
+        <div class="d-flex gap-2">
+            @* Solo queda Registro de Ingreso, pasando el BranchId actual *@
+            <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openAssetEntryModal('@ViewBag.BranchId')">
+                <i class="fa-solid fa-plus-circle me-1"></i> Registrar Ingreso Directo
+            </button>
+        </div>
+    </div>
+
+    @* --- NAVEGACIÓN DE PESTAÑAS --- *@
+    <div class="text-center mb-4">
+        <div class="btn-toggle-group shadow-sm">
+            <button id="btnList" class="btn active" onclick="switchAssetView('list')">
+                <i class="fa-solid fa-desktop me-2"></i>Activos en Sede
+            </button>
+            <button id="btnPending" class="btn position-relative" onclick="switchAssetView('pending')">
+                <i class="fa-solid fa-truck-ramp-box me-2"></i>Traslados Entrantes
+                @if (ViewBag.TotalPendientes > 0)
+                {
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        @ViewBag.TotalPendientes
+                    </span>
+                }
+            </button>
+            <button id="btnHistory" class="btn" onclick="switchAssetView('history')">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>Historial (Kardex)
+            </button>
+        </div>
+    </div>
+
+    <div id="assetContent" class="position-relative min-vh-50">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+</div>
+
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const branchId = '@ViewBag.BranchId';
+        let assetEntryRowIndex = 0;
+        let globalCatalogItems = [];
+
+        const assetUrls = {
+            list: '@Url.Action("GetBranchAssetsList", "Asset")',
+            pending: '@Url.Action("GetPendingTransfers", "Asset")',
+            history: '@Url.Action("GetAssetHistory", "Asset")',
+        };
+
+        // Carga inicial de datos para Select2 e Ingresos
+        async function preloadCatalogData() {
+            try {
+                const res = await fetch('@Url.Action("GetCatalogJson", "Asset")');
+                globalCatalogItems = await res.json();
+            } catch (e) { console.error("Error cargando catálogo:", e); }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            preloadCatalogData();
+            switchAssetView('list');
+        });
+
+        // Cambio de pestañas
+        async function switchAssetView(view) {
+            const container = document.getElementById('assetContent');
+            document.querySelectorAll('.btn-toggle-group .btn').forEach(b => b.classList.remove('active'));
+
+            const idBtn = 'btn' + view.charAt(0).toUpperCase() + view.slice(1);
+            if(document.getElementById(idBtn)) document.getElementById(idBtn).classList.add('active');
+
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await fetch(`${assetUrls[view]}?branchId=${branchId}`);
+                container.innerHTML = await response.text();
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar la vista.</div>';
+            }
+        }
+
+        // --- LÓGICA DE INGRESO DIRECTO ---
+        async function openAssetEntryModal(bId) {
+            Swal.fire({ title: 'Cargando formulario...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`@Url.Action("GetRegisterEntryForm", "Asset")?branchId=${bId}`);
+                document.getElementById('modalContainer').innerHTML = await res.text();
+                assetEntryRowIndex = 0;
+                addNewAssetRow(); // Agrega la primera fila vacía
+
+                Swal.close();
+                new bootstrap.Modal(document.getElementById('modalAssetEntryContainer')).show();
+            } catch (e) { Swal.fire('Error', 'No se pudo cargar el formulario', 'error'); }
+        }
+
+        function addNewAssetRow() {
+            const idx = assetEntryRowIndex;
+            const options = globalCatalogItems.map(p => `<option value="${p.id}">${p.name} (${p.brand})</option>`).join('');
+
+            const html = `
+                <tr id="row-asset-${idx}" class="animate__animated animate__fadeIn">
+                    <td>
+                        <select name="Assets[${idx}].AssetCatalogId" class="form-select select-asset-catalog" data-idx="${idx}" required>
+                            <option value="">-- Seleccione Modelo --</option>
+                            ${options}
+                        </select>
+                    </td>
+                    <td><input type="text" id="code-${idx}" class="form-control form-control-sm text-center fw-bold bg-light" readonly placeholder="Auto" /></td>
+                    <td><input type="text" name="Assets[${idx}].SerialNumber" class="form-control form-control-sm" placeholder="S/N" required /></td>
+                    <td>
+                        <select name="Assets[${idx}].Condition" class="form-select form-select-sm border-0">
+                            <option value="0">Nuevo</option>
+                            <option value="2">Bueno</option>
+                            <option value="3">Regular</option>
+                        </select>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" onclick="$('#row-asset-${idx}').remove()" class="btn btn-link text-danger p-0"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+
+            $('#assetEntryTableBody').append(html);
+            $(`#row-asset-${idx} .select-asset-catalog`).select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalAssetEntryContainer'),
+                width: '100%'
+            });
+            assetEntryRowIndex++;
+        }
+
+        // Actualizar código patrimonial visual
+        $(document).on('change', '.select-asset-catalog', async function() {
+            const idx = $(this).data('idx');
+            const catalogId = $(this).val();
+            if (!catalogId) return;
+
+            const res = await fetch(`@Url.Action("GetNextCode", "Asset")?catalogId=${catalogId}`);
+            const data = await res.json();
+
+            // Lógica para evitar visualmente el mismo código en el modal si hay varios del mismo tipo
+            let offset = 0;
+            $('.select-asset-catalog').each(function(i) {
+                if ($(this).val() === catalogId && $(this).data('idx') < idx) offset++;
+            });
+
+            const parts = data.code.split('-');
+            const nextVal = (parseInt(parts.pop()) + offset).toString().padStart(4, '0');
+            $(`#code-${idx}`).val([...parts, nextVal].join('-'));
+        });
+
+        $(document).on('submit', '#formBulkAssetEntry', async function (e) {
+            e.preventDefault();
+            const $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true).text('Procesando...');
+
+            try {
+                const res = await fetch('@Url.Action("RegisterBulkAssets", "Asset")', {
+                    method: 'POST',
+                    body: new FormData(this)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire('Éxito', result.message, 'success').then(() => switchAssetView('list'));
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                    $btn.prop('disabled', false).text('CONFIRMAR INGRESO');
+                }
+            } catch (e) { $btn.prop('disabled', false).text('CONFIRMAR INGRESO'); }
+        });
+
+        // --- LÓGICA DE RECEPCIÓN ---
+        async function showReceiveModal(id, code) {
+            const { value: text, isConfirmed } = await Swal.fire({
+                title: 'Confirmar Recepción Patrimonial',
+                text: `¿Confirma la recepción del traslado ${code}?`,
+                input: 'textarea',
+                inputPlaceholder: 'Observaciones de recepción...',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Recibir',
+                cancelButtonText: 'Cerrar'
+            });
+
+            if (isConfirmed) {
+                const formData = new FormData();
+                formData.append('transferId', id);
+                formData.append('receptionObservation', text || "");
+
+                const res = await fetch('@Url.Action("ConfirmTransferReceipt", "Asset")', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (result.success) Swal.fire('Recibido', result.message, 'success').then(() => location.reload());
+            }
+        }
+    </script>
+}

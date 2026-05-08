@@ -17,74 +17,51 @@ namespace ContratosYReembolsos.Data.SeedData
             ApplicationDbContext context, 
             IUbigeoService ubigeoService,
             ICatalogService catalogService,
+            IFuneralService funeralService,
+            IBranchService branchService,
             IntermentService intermentService, 
             UserManager<ApplicationUser> userManager, 
             RoleManager<IdentityRole> roleManager)
         {
-            // 1. Ubigeos (Servicio Externo)
+            // 1. Servicios Externos
             await ubigeoService.SeedIfEmptyAsync();
+            await branchService.SeedIfEmptyAsync();
             await catalogService.SeedCatalogIfEmptyAsync();
-
-            // Opcional: Una pequeña verificación para estar seguros
-            if (!await context.Ubigeos.AnyAsync(u => u.Id == "150108"))
-            {
-                // Si entra aquí, es que el SeedIfEmptyAsync no cargó el Ubigeo de Lima
-                // Podrías lanzar una excepción o registrar un log
-                throw new Exception("Error crítico: Los Ubigeos no se cargaron correctamente antes de crear las Filiales.");
-            }
-
-            // 2. Filiales (Branches)
-            if (!context.Filiales.Any())
-            {
-                var branches = new List<Branch>
-                {
-                    new Branch
-                    {
-                        Name = "Almacen Central - LIMA",
-                        UbigeoId = "150108",
-                        Code = "LIM1",
-                        Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
-                        Phone = "999999999",
-                        Email = "lima@gmail.com",
-                        IsActive = true,
-                        HasWakeService = false,
-                        HasOwnCemetery = false
-                    },
-                    new Branch
-                    {
-                        Name = "Filial Av. Brasil - LIMA",
-                        UbigeoId = "150120",
-                        Code = "LIM2",
-                        Address = "Av. Brasil 2905, Magdalena del Mar 15086",
-                        Phone = "999999999",
-                        Email = "avbrasil@gmail.com",
-                        IsActive = true,
-                        HasWakeService = true,
-                        HasOwnCemetery = true
-                    }
-                };
-                context.Filiales.AddRange(branches);
-                await context.SaveChangesAsync();
-            }
+            await funeralService.SeedIfEmptyAsync();
 
             // 3. Cementerios
             if (!context.Cementerios.Any())
             {
                 var branchLim2 = await context.Filiales.FirstOrDefaultAsync(f => f.Code == "LIM2");
+
                 if (branchLim2 != null)
                 {
-                    var cemetery = new Cemetery
+                    var cemeteries = new List<Cemetery>
                     {
-                        RUC = "20123456789",
-                        Name = "PEC SANTA ROSA",
-                        BranchId = branchLim2.Id,
-                        UbigeoId = "150108",
-                        Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
-                        Phone = "999999999",
-                        Email = "lima@gmail.com",
-                        IsActive = true
+                        new Cemetery {
+                            RUC = "20123456789",
+                            Name = "PEC SANTA ROSA",
+                            BranchId = branchLim2.Id,
+                            UbigeoId = "150108",
+                            Address = "Av. Alipio Ponce Vasquez Chorrillos",
+                            Phone = "999999999", // Asegúrate de incluirlo si es obligatorio
+                            Email = "pecsantarosa@fonafun.com", // CORRECCIÓN: Agregar valor para evitar el error de NULL
+                            IsActive = true,
+                            IsInternal = true
+                        },
+                        new Cemetery {
+                            RUC = "11111111111",
+                            Name = "Cementerio Generico",
+                            BranchId = branchLim2.Id,
+                            UbigeoId = "150108",
+                            Address = "Av. generico",
+                            Phone = "111111111", // Asegúrate de incluirlo si es obligatorio
+                            Email = "generico@generico.com", // CORRECCIÓN: Agregar valor para evitar el error de NULL
+                            IsActive = true,
+                            IsInternal = false
+                        }
                     };
-                    context.Cementerios.Add(cemetery);
+                    context.Cementerios.AddRange(cemeteries);
                     await context.SaveChangesAsync();
                 }
             }
@@ -119,95 +96,35 @@ namespace ContratosYReembolsos.Data.SeedData
             // 6. Estructuras y Construcción de Nichos
             if (!context.SepulturasEstructura.Any())
             {
-                var structures = new List<IntermentStructure>
+                // Obtenemos el cementerio que acabamos de crear
+                var santaRosa = await context.Cementerios.FirstOrDefaultAsync(c => c.Name == "PEC SANTA ROSA");
+
+                if (santaRosa != null)
                 {
-                    new IntermentStructure { Name = "San Pedro", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = 1, TemplateId = 1},
-                    new IntermentStructure { Name = "San Pablo", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = 1, TemplateId = 2},
-                    new IntermentStructure { Name = "San Juan", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = 1, TemplateId = 3},
-                    new IntermentStructure { Name = "San Miguel", Type = "COLUMBARIO", Status = "DISPONIBLE", CemeteryId = 1, TemplateId = 4},
-                };
+                    var structures = new List<IntermentStructure>
+            {
+                // Usamos santaRosa.Id en lugar de "1"
+                new IntermentStructure { Name = "San Pedro", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = santaRosa.Id, TemplateId = 1},
+                new IntermentStructure { Name = "San Pablo", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = santaRosa.Id, TemplateId = 2},
+                new IntermentStructure { Name = "San Juan", Type = "PABELLON", Status = "DISPONIBLE", CemeteryId = santaRosa.Id, TemplateId = 3},
+                new IntermentStructure { Name = "San Miguel", Type = "COLUMBARIO", Status = "DISPONIBLE", CemeteryId = santaRosa.Id, TemplateId = 4},
+            };
 
-                context.SepulturasEstructura.AddRange(structures);
-                await context.SaveChangesAsync();
+                    context.SepulturasEstructura.AddRange(structures);
+                    await context.SaveChangesAsync();
 
-                // Construcción de nichos mediante el servicio
-                foreach (var item in structures)
-                {
-                    int templateId = item.TemplateId ?? 0;
-                    int structureId = item.Id;
-
-                    if (templateId > 0)
+                    // Construcción física de nichos
+                    foreach (var item in structures)
                     {
-                        await intermentService.BuildFromTemplateAsync(templateId, structureId);
+                        if (item.TemplateId > 0)
+                        {
+                            await intermentService.BuildFromTemplateAsync(item.TemplateId.Value, item.Id);
+                        }
                     }
                 }
             }
 
-            // 7. Catálogo de Productos (Ataúdes con SKU Inteligente)
-            //if (!context.ProductosCategorias.Any())
-            //{
-            //    // A. Crear Categoría Maestra
-            //    var catAtaudes = new ProductCategory
-            //    {
-            //        Name = "Ataudes",
-            //        ShowInContracts = true
-            //    };
-            //    context.ProductosCategorias.Add(catAtaudes);
-            //    await context.SaveChangesAsync(); // Guardamos para obtener el catAtaudes.Id
-
-            //    // B. Crear Subcategorías
-            //    var subCats = new List<ProductSubcategory>
-            //    {
-            //        new ProductSubcategory { Name = "Estandar", CategoryId = catAtaudes.Id, ShowInContracts = true },
-            //        new ProductSubcategory { Name = "Semiviciado", CategoryId = catAtaudes.Id, ShowInContracts = true },
-            //        new ProductSubcategory { Name = "Parvulo", CategoryId = catAtaudes.Id, ShowInContracts = true }
-            //    };
-            //    context.ProductosSubcategorias.AddRange(subCats);
-            //    await context.SaveChangesAsync(); // Guardamos para obtener los IDs de subcategorías
-
-            //    // C. Crear Productos (1 Marrón y 1 Blanco por cada subcategoría)
-            //    var productos = new List<Product>();
-            //    var colores = new[] { "Marron", "Blanco" };
-
-            //    // Prefijo de categoría (3 letras + ID)
-            //    string catPart = (catAtaudes.Name.Length >= 3 ? catAtaudes.Name.Substring(0, 3) : catAtaudes.Name).ToUpper();
-            //    string catIdPart = catAtaudes.Id.ToString();
-
-            //    foreach (var sub in subCats)
-            //    {
-            //        // Prefijo de subcategoría (3 letras + ID)
-            //        string subPart = (sub.Name.Length >= 3 ? sub.Name.Substring(0, 3) : sub.Name).ToUpper();
-            //        string subIdPart = sub.Id.ToString();
-
-            //        int correlativo = 1;
-
-            //        foreach (var color in colores)
-            //        {
-            //            string colorTitle = char.ToUpper(color[0]) + color.Substring(1).ToLower();
-            //            string subTitle = char.ToUpper(sub.Name[0]) + sub.Name.Substring(1).ToLower();
-
-            //            // Formato: CAT[ID]-SUB[ID]-000000
-            //            string generatedSku = $"{catPart}{catIdPart}-{subPart}{subIdPart}-{correlativo.ToString("D6")}";
-
-            //            productos.Add(new Product
-            //            {
-            //                Name = $"Ataud {colorTitle} {subTitle}",
-            //                Sku = generatedSku,
-            //                ControlType = ControlType.Stock,
-            //                CategoryId = catAtaudes.Id,
-            //                SubCategoryId = sub.Id,
-            //                IsAvailableForContract = true
-            //            });
-
-            //            correlativo++;
-            //        }
-            //    }
-
-            //    context.Productos.AddRange(productos);
-            //    await context.SaveChangesAsync();
-            //}
-
-            // 8. Roles y Usuario Admin (SECCIÓN NUEVA)
+            // 7. Roles y Usuario Admin (SECCIÓN NUEVA)
             await SeedIdentity(userManager, roleManager, context);
         }
 

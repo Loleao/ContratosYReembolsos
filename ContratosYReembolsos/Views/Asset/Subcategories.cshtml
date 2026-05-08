@@ -3,45 +3,100 @@
     ViewData["Title"] = "Subcategorías de " + Model.Name;
 }
 
-<div class="container-fluid p-4">
-    <div class="mb-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a asp-action="Categories" class="text-decoration-none">Categorías</a></li>
-                <li class="breadcrumb-item active">@Model.Name</li>
-            </ol>
-        </nav>
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="fw-bold m-0">Subcategorías de @Model.Name</h4>
-            <button class="btn btn-primary rounded-pill px-4" onclick="openCreateSubCategoryModal(@Model.Id)">
-                <i class="fa-solid fa-plus me-1"></i> Nueva Subcategoría
-            </button>
+<div class="container-fluid p-4 animate__animated animate__fadeIn">
+    @* Breadcrumb para navegación fluida *@
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb bg-white p-2 rounded-3 shadow-sm border px-3">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Asset")" class="text-decoration-none">Activos</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Categories", "Asset")" class="text-decoration-none">Categorías</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold m-0 text-dark">Subcategorías: <span class="text-primary">@Model.Name</span></h4>
+            <p class="text-muted small">Especifique los tipos de activos que pertenecen a esta categoría.</p>
         </div>
+        <button class="btn btn-primary rounded-pill px-4 shadow" onclick="openSubCategoryModal()">
+            <i class="fa-solid fa-plus me-1"></i> Nueva Subcategoría
+        </button>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="table-responsive p-3">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" id="tableSubCategories">
                 <thead class="bg-light">
                     <tr class="x-small text-muted text-uppercase">
-                        <th>Nombre de Subcategoría</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="ps-3">Nombre de Subcategoría</th>
+                        <th>Fecha de Registro</th>
+                        <th class="text-center" style="width: 120px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var sub in Model.Subcategories)
                     {
                         <tr>
-                            <td class="fw-bold text-dark">@sub.Name</td>
+                            <td class="fw-bold text-dark ps-3">@sub.Name</td>
+                            <td class="text-muted small">@DateTime.Now.ToShortDateString()</td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="editSubCategory(@sub.Id)">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i> Editar
+                                <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="openSubCategoryModal(@sub.Id)">
+                                    <i class="fa-solid fa-pencil"></i>
                                 </button>
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+            @if (!Model.Subcategories.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                    <p>No hay subcategorías registradas para @Model.Name</p>
+                </div>
+            }
         </div>
     </div>
 </div>
+
+@* Contenedor para la parcial _SubCategoryForm *@
+<div id="modalContainer"></div>
+
+@section Scripts {
+    <script>
+        const subUrls = {
+            getForm: '@Url.Action("GetSubCategoryForm", "Asset")',
+            save: '@Url.Action("SaveSubCategory", "Asset")'
+        };
+
+        // El CategoryId se obtiene directamente del modelo de la vista
+        async function openSubCategoryModal(id = 0) {
+            const categoryId = "@Model.Id";
+            Swal.fire({ title: 'Cargando...', didOpen: () => { Swal.showLoading() } });
+
+            try {
+                const resp = await fetch(`${subUrls.getForm}?categoryId=${categoryId}&id=${id}`);
+                const html = await resp.text();
+                $('#modalContainer').html(html);
+                Swal.close();
+                $('#modalSubCategory').modal('show');
+            } catch (e) { Swal.fire('Error', 'No se pudo cargar el formulario', 'error'); }
+        }
+
+        $(document).on('submit', '#formSubCategory', async function(e) {
+            e.preventDefault();
+            const data = $(this).serialize();
+            const resp = await fetch(subUrls.save, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: data
+            });
+            const result = await resp.json();
+            if (result.success) {
+                Swal.fire('Guardado', result.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Error', result.message, 'error');
+            }
+        });
+    </script>
+}

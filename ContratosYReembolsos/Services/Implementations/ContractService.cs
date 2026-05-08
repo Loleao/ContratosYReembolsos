@@ -3,6 +3,7 @@ using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Models.Entities.FixedAssets;
 using ContratosYReembolsos.Models.ViewModels.Contracts;
+using ContratosYReembolsos.Models.ViewModels.Exhumations;
 using ContratosYReembolsos.Services.DTOs.Contracts;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +49,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
         {
             var branch = await _context.Filiales.FindAsync(branchId);
             if (branch == null) return null;
-            return new { hasWake = branch.HasWakeService, hasCem = branch.HasOwnCemetery, branchName = branch.Name };
+            return new { hasWake = branch.HasWakeService, branchName = branch.Name };
         }
 
         public async Task<List<object>> GetCemeteries(string? inei, int? branchId)
@@ -56,11 +57,11 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
             var query = _context.Cementerios.Where(c => c.IsActive);
             if (!string.IsNullOrEmpty(inei)) query = query.Where(c => c.UbigeoId == inei);
             else if (branchId.HasValue) query = query.Where(c => c.BranchId == branchId);
-            return await query.Select(c => new { id = c.Id, name = c.Name, ruc = c.RUC, branchId = c.BranchId }).Cast<object>().ToListAsync();
+            return await query.Select(c => new { id = c.Id, name = c.Name, ruc = c.RUC, branchId = c.BranchId, isInternal = c.IsInternal }).Cast<object>().ToListAsync();
         }
 
         public async Task<List<object>> GetStructures(int cemeteryId, string type) => await _context.SepulturasEstructura.Where(p => p.CemeteryId == cemeteryId && p.Type == type).Select(p => new { id = p.Id, name = p.Name }).OrderBy(p => p.name).Cast<object>().ToListAsync();
-        public async Task<List<object>> GetSpaceMap(int structureId) => await _context.SepulturasNichos.Where(n => n.StructureId == structureId).Select(n => new { id = n.Id, rowLetter = n.RowLetter, columnNumber = n.ColumnNumber, status = n.Status }).OrderBy(n => n.rowLetter).ThenBy(n => n.columnNumber).Cast<object>().ToListAsync();
+        public async Task<List<object>> GetSpaceMap(int structureId) => await _context.SepulturasNichos.Where(n => n.StructureId == structureId).Select(n => new { id = n.Id, rowLetter = n.RowLetter, columnNumber = n.ColumnNumber, status = n.Status.ToString().ToLower() }).OrderBy(n => n.rowLetter).ThenBy(n => n.columnNumber).Cast<object>().ToListAsync();
 
         public async Task<List<object>> GetAgencies(string ruc, string name, int? branchId)
         {
@@ -114,10 +115,9 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .Select(s => new {
                     id = s.Id,
                     name = s.Name,
-                    category = s.Category,
+                    description = s.Description,
                     price = s.Price
                 })
-                .OrderBy(s => s.category)
                 .ToListAsync()
                 .ContinueWith(t => t.Result.Cast<object>().ToList());
         }
@@ -151,7 +151,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     ContractNumber = contractNumber,
                     BranchId = model.BranchId,
                     UbigeoId = model.Deceased.Inei,
-                    AgencyId = model.AgencyId,
+                    AgencyId = model.AgencyId > 0 ? model.AgencyId : (int?)null,
 
                     SolicitorDni = model.Solicitor.Dni,
                     SolicitorName = model.Solicitor.Name,
@@ -294,7 +294,6 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
 
         public async Task<ContractReportDto> GetContractForPDFAsync(int id)
         {
-            // 1. Consulta con todos los Includes necesarios para evitar valores nulos
             var contract = await _context.Contratos
                 .Include(c => c.Branch)
                 .Include(c => c.Agency)
@@ -302,22 +301,27 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .Include(c => c.IntermentStructure)
                 .Include(c => c.IntermentSpace)
                 .Include(c => c.Ubigeo)
+                // 1. Cargamos Bienes (Ataúdes)
                 .Include(c => c.ProductDetails).ThenInclude(p => p.Product)
-                .Include(c => c.MovilityDetails)
-                    .ThenInclude(m => m.VehicleType) // Asumiendo que existe para el nombre del vehículo
+                // 2. Cargamos Servicios Internos
+                .Include(c => c.ServiceDetails).ThenInclude(s => s.FuneralService)
+                // 3. Cargamos Servicios de Convenio
+                .Include(c => c.ExternalServiceDetails).ThenInclude(s => s.FuneralService)
+                // 4. Cargamos Movilidades
+                .Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (contract == null) return null;
 
-            // 2. Mapeo al DTO de Impresión
             var dto = new ContractReportDto
             {
                 Id = contract.Id,
                 ContractNumber = contract.ContractNumber,
-                CreatedAt = contract.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss"),
+                CreatedAt = contract.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
                 BranchName = contract.Branch?.Name ?? "N/A",
-                AgencyName = contract.Agency?.Name ?? "FONAFUN - SEDE CENTRAL",
+                UseAgreement = contract.AgencyId.HasValue, // Si tiene ID de agencia, es convenio
+                AgencyName = contract.Agency?.Name ?? "FONAFUN - ADMINISTRACIÓN DIRECTA",
                 AgencyAddress = contract.Agency?.Address ?? "-",
 
                 SolicitorName = contract.SolicitorName,
@@ -330,44 +334,70 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
 
                 BurialDate = contract.BurialDate.ToShortDateString(),
                 BurialTime = contract.BurialTime.ToString(@"hh\:mm"),
-                UbigeoFull = contract.Ubigeo != null
-                    ? $"{contract.Ubigeo.Region} - {contract.Ubigeo.District}"
-                    : "No especificado",
-
+                UbigeoFull = contract.Ubigeo != null ? $"{contract.Ubigeo.Region} - {contract.Ubigeo.District}" : "N/A",
                 CemeteryName = contract.Cemetery?.Name ?? "Externo",
 
-                // Formateamos la ubicación específica (Nicho/Tumba)
                 BurialLocationDetail = contract.IntermentSpace != null
                     ? $"{contract.IntermentStructure?.Name} - Fila: {contract.IntermentSpace.RowLetter} Col: {contract.IntermentSpace.ColumnNumber}"
-                    : (contract.IntermentStructure?.Type ?? "Ubicación por confirmar"),
+                    : (contract.IntermentStructure?.Name ?? "Por confirmar"),
 
                 Services = new List<OrderItemDto>()
             };
 
-            // 3. Mapeo de Productos (Ataúdes, Capillas, etc.)
+            // --- MAPEO DE CATEGORÍAS ---
+
+            // A. BIENES (Ataúd)
             if (contract.ProductDetails != null)
             {
-                foreach (var prod in contract.ProductDetails)
+                foreach (var p in contract.ProductDetails)
                 {
                     dto.Services.Add(new OrderItemDto
                     {
-                        Description = prod.Product.Name, // O la propiedad que guarde el nombre
-                        Category = "Suministro",
+                        Description = p.Product.Name,
+                        Category = "Suministro / Bien",
                         Status = "Entregado"
                     });
                 }
             }
 
-            // 4. Mapeo de Movilidades
-            if (contract.MovilityDetails != null)
+            // B. SERVICIOS INTERNOS (Capillas, Biombos, etc.)
+            if (contract.ServiceDetails != null)
             {
-                foreach (var mov in contract.MovilityDetails)
+                foreach (var s in contract.ServiceDetails)
                 {
                     dto.Services.Add(new OrderItemDto
                     {
-                        Description = $"Servicio de Movilidad: {mov.VehicleType?.Name ?? "Cortejo"}",
-                        Category = "Transporte",
+                        Description = s.FuneralService.Name,
+                        Category = "Servicio Propio",
                         Status = "Programado"
+                    });
+                }
+            }
+
+            // C. SERVICIOS EXTERNOS (Si se activó convenio)
+            if (contract.ExternalServiceDetails != null)
+            {
+                foreach (var s in contract.ExternalServiceDetails)
+                {
+                    dto.Services.Add(new OrderItemDto
+                    {
+                        Description = s.FuneralService.Name,
+                        Category = "Servicio vía Convenio",
+                        Status = "Gestionado"
+                    });
+                }
+            }
+
+            // D. MOVILIDAD
+            if (contract.MovilityDetails != null)
+            {
+                foreach (var m in contract.MovilityDetails)
+                {
+                    dto.Services.Add(new OrderItemDto
+                    {
+                        Description = $"Unidad: {m.VehicleType?.Name ?? "Cortejo"}",
+                        Category = "Logística y Transporte",
+                        Status = m.Status
                     });
                 }
             }
@@ -385,6 +415,8 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .Include(c => c.IntermentStructure)
                 .Include(c => c.IntermentSpace)
                 .Include(c => c.ProductDetails).ThenInclude(p => p.Product)
+                .Include(c => c.ServiceDetails).ThenInclude(s => s.FuneralService) // Internos
+                .Include(c => c.ExternalServiceDetails).ThenInclude(s => s.FuneralService) // Convenio
                 .Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -397,24 +429,76 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 ContractNumber = contract.ContractNumber,
                 CreatedAt = contract.CreatedAt,
                 Status = contract.Status,
-                BranchName = contract.Branch?.Name,
-                AgencyName = contract.Agency?.Name,
+                BranchName = contract.Branch?.Name ?? "No especificada",
+                AgencyName = contract.Agency?.Name ?? "FONAFUN - ADMINISTRACIÓN DIRECTA",
+
                 SolicitorName = contract.SolicitorName,
                 SolicitorDni = contract.SolicitorDni,
                 SolicitorType = contract.SolicitorType,
                 DeceasedName = contract.DeceasedName,
                 DeceasedDni = contract.DeceasedDni,
+
                 DeathDate = contract.DeathDate,
                 BurialDate = contract.BurialDate,
                 BurialTime = contract.BurialTime,
-                CemeteryName = contract.Cemetery?.Name,
-                UbigeoDetail = $"{contract.Ubigeo?.Region} - {contract.Ubigeo?.District}",
+                CemeteryName = contract.Cemetery?.Name ?? "Externo",
+                UbigeoDetail = contract.Ubigeo != null ? $"{contract.Ubigeo.Region} - {contract.Ubigeo.District}" : "N/A",
+
                 FullLocation = contract.IntermentSpace != null
                     ? $"{contract.IntermentStructure?.Name} (Fila: {contract.IntermentSpace.RowLetter}, Col: {contract.IntermentSpace.ColumnNumber})"
-                    : contract.IntermentStructure?.Name,
+                    : (contract.IntermentStructure?.Name ?? "Ubicación por confirmar"),
+
                 Products = contract.ProductDetails.Select(p => p.Product.Name).ToList(),
-                Movilities = contract.MovilityDetails.Select(m => m.VehicleType?.Name ?? "Movilidad").ToList()
+                Movilities = contract.MovilityDetails.Select(m => m.VehicleType?.Name ?? "Movilidad").ToList(),
+                InternalServices = contract.ServiceDetails.Select(s => s.FuneralService.Name).ToList(),
+                ExternalServices = contract.ExternalServiceDetails.Select(s => s.FuneralService.Name).ToList()
             };
+        }
+
+        public async Task<List<ExhumationHistoryItemViewModel>> GetMovementHistoryAsync(int contractId)
+        {
+            return await _context.Exhumaciones
+                .Where(e => e.OriginalContractId == contractId)
+                .OrderByDescending(e => e.RequestDate)
+                .Select(e => new ExhumationHistoryItemViewModel
+                {
+                    ExhumationId = e.Id, // <--- MAPEO CRÍTICO
+                    ExhumationNumber = e.ExhumationNumber,
+                    RequestDate = e.RequestDate.ToString("dd/MM/yyyy HH:mm"),
+                    MovementType = e.MovementType ?? "TRASLADO",
+                    PreviousLocation = e.PreviousLocationSnapshot,
+                    NewLocation = e.NewLocationSnapshot,
+                    Cost = e.Cost
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<FuneralService>> GetAllServicesAsync()
+        {
+            return await _context.ServiciosFunerarios
+                .OrderByDescending(s => s.Id)
+                .ToListAsync();
+        }
+
+        public async Task<(bool success, string message)> UpsertServiceAsync(FuneralService model)
+        {
+            try
+            {
+                if (model.Id == 0)
+                {
+                    _context.ServiciosFunerarios.Add(model);
+                }
+                else
+                {
+                    _context.ServiciosFunerarios.Update(model);
+                }
+                await _context.SaveChangesAsync();
+                return (true, "Operación realizada con éxito.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error: {ex.Message}");
+            }
         }
 
     }

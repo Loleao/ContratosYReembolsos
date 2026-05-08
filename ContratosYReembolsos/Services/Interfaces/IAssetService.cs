@@ -1,25 +1,33 @@
 ﻿using ContratosYReembolsos.Models.Entities.FixedAssets;
+using ContratosYReembolsos.Models.ViewModels.Assets;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {
     public interface IAssetService
     {
-        // Catálogo
+        // Categorías y Subcategorías
+        Task<List<AssetCategory>> GetCategoriesWithSub();
+        Task<AssetCategory> GetCategoryById(int id);
+        Task<bool> SaveCategory(AssetCategory model);
+        Task<List<AssetSubcategory>> GetSubcategories();
+        Task<AssetSubcategory> GetSubCategoryById(int id);
+        Task<bool> SaveSubCategory(AssetSubcategory model);
+
+        // Catálogo (Moldes)
         Task<List<AssetCatalog>> GetCatalog();
+        Task<AssetCatalog> GetCatalogItemById(int id);
         Task<bool> SaveCatalogItem(AssetCatalog model);
 
-        // Operaciones de Activos
+        // Activos Físicos (Instancias)
         Task<List<FixedAsset>> GetAssetsByBranch(int branchId);
-        Task<(bool success, string message)> RegisterAssetEntry(FixedAsset model);
-
-        // Movimientos
-        Task<bool> AssignAsset(int assetId, string responsibleName, string notes);
-        Task<bool> ChangeAssetStatus(int assetId, AssetStatus newStatus, string notes);
-
-        // Helpers
         Task<string> GeneratePatrimonialCode(int subcategoryId);
-        Task<List<AssetCategory>> GetCategories();
-        Task<List<AssetSubcategory>> GetSubcategories();
-        Task<List<AssetSubcategory>> GetSubcategoriesByCategoryId(int categoryId);
+        Task<(bool success, string message)> ProcessBulkAssetEntry(List<FixedAsset> assets, int branchId, string observation, string userId);
+
+        Task<string> GenerateTransferCode();
+        Task<List<FixedAsset>> GetAvailableAssetsByBranch(int branchId);
+        Task<(bool success, string message, string transferCode)> ProcessAssetTransfer(AssetTransferFormViewModel model, string userId);
+        Task<List<AssetTransfer>> GetPendingTransfersByBranch(int targetBranchId);
+        Task<(bool success, string message)> ConfirmAssetReceipt(int transferId, string observation, string userId);
+        Task<List<AssetMovement>> GetKardexByBranch(int branchId); // Historial de movimientos
     }
 }

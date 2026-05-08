@@ -1,35 +1,45 @@
-﻿@model ContratosYReembolsos.Services.DTOs.Exhumations.ExhumationCreateDto
-
-<div class="animate__animated animate__fadeIn">
-    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-truck-moving me-2"></i>Información del Nuevo Destino</h5>
-
-    <div class="form-check form-switch p-3 bg-light rounded-3 mb-4 border">
-        <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsInternalRelocation" id="chkIsInternal">
-        <label class="form-check-label fw-bold" for="chkIsInternal">¿El traslado será a un cementerio de FONAFUN?</label>
-    </div>
-
-    <div id="sectionInternal" class="@(Model.IsInternalRelocation ? "" : "d-none")">
-        <div class="row g-3">
-            <div class="col-md-8">
-                <label class="form-label small fw-bold">Seleccionar Nuevo Espacio</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white"><i class="fa-solid fa-location-dot"></i></span>
-                    <select asp-for="NewIntermentSpaceId" class="form-select select2" id="selNewSpace">
-                        <option value="">-- Buscar espacio disponible --</option>
-                    </select>
+﻿<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-truck-moving me-2"></i>Destino de los Restos</h5>
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <label class="form-label fw-bold small text-muted text-uppercase">Tipo de Sepultura</label>
+                    <div class="d-flex gap-3 mb-4">
+                        <div class="form-check"><input class="form-check-input" type="radio" name="BurialType" id="typePabellon" value="Pabellon" checked onchange="resetExhumationNiche()"><label class="form-check-label" for="typePabellon">En Pabellón</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="BurialType" id="typeCremacion" value="Columbario" onchange="resetExhumationNiche()"><label class="form-check-label" for="typeCremacion">Cremación</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="BurialType" id="typeTumba" value="Tumba" onchange="resetExhumationNiche()"><label class="form-check-label" for="typeTumba">En Tierra</label></div>
+                    </div>
+                    <div class="col-md-12 mt-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Cementerio de Destino</label>
+                        <div class="input-group shadow-sm rounded-pill overflow-hidden border-2 transition-all">
+                            <span class="input-group-text bg-white border-0 text-primary">
+                                <i class="fa-solid fa-monument"></i>
+                            </span>
+                            <input type="text" id="CemeteryName" class="form-control border-0 bg-light py-2"
+                                   readonly placeholder="Haga clic en la lupa para buscar...">
+                            <button class="btn btn-primary px-4 border-0" type="button" onclick="openSearchCemetery()">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sectionSpecificLocation" class="d-none animate__animated animate__fadeIn">
+                        <div class="p-4 rounded-4 border-dashed border-primary border-2 bg-primary bg-opacity-10 text-center">
+                            <h6 class="fw-bold text-primary mb-3">UBICACIÓN EN SEDE</h6>
+                            <div id="selectedNicheDisplay" class="mb-3 d-none"><span class="badge bg-primary fs-6 rounded-pill px-4 py-2 shadow-sm"><i class="fa-solid fa-location-dot me-2"></i><span id="txtNicheSelected">Ninguno</span></span></div>
+                            <button type="button" class="btn btn-primary rounded-pill px-4 shadow" onclick="openNicheSelector()"><i class="fa-solid fa-th me-2"></i> Elegir Lugar en el Mapa</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-bold">Costo de Re-ubicación (S/)</label>
-                <input asp-for="RelocationCost" type="number" class="form-control fw-bold text-primary" placeholder="0.00">
-            </div>
         </div>
-    </div>
-
-    <div id="sectionExternal" class="@(Model.IsInternalRelocation ? "d-none" : "")">
-        <div class="mb-3">
-            <label class="form-label small fw-bold">Nombre del Cementerio o Lugar Destino</label>
-            <input asp-for="ExternalDestination" class="form-control" placeholder="Ej: Cementerio General de Jauja">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <label class="form-label fw-bold small text-muted text-uppercase">Observaciones</label>
+                    <textarea id="ExhObservations" class="form-control border-2 rounded-4" rows="8" placeholder="Detalles del traslado..."></textarea>
+                </div>
+            </div>
         </div>
     </div>
 </div>

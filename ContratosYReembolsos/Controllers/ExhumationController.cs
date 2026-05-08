@@ -1,6 +1,9 @@
-﻿using ContratosYReembolsos.Services.Interfaces;
+﻿using ContratosYReembolsos.Models.ViewModels.Exhumations;
 using ContratosYReembolsos.Services.DTOs.Exhumations;
+using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Rotativa.AspNetCore;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -13,39 +16,81 @@ namespace ContratosYReembolsos.Controllers
             _exhumationService = exhumationService;
         }
 
-        public IActionResult Create()
-        {
-            return View(new ExhumationCreateDto());
-        }
+        public IActionResult Index() => View();
+        public IActionResult Create() => View();
 
         [HttpGet]
         public IActionResult GetStep(int step)
         {
-            var model = new ExhumationCreateDto(); // Aquí podrías persistir data temporal si quieres
             return step switch
             {
-                1 => PartialView("Partials/_ExhumationStep1", model),
-                2 => PartialView("Partials/_ExhumationStep2", model),
-                3 => PartialView("Partials/_ExhumationStep3", model),
+                1 => PartialView("Partials/_ExhumationStep1"),
+                2 => PartialView("Partials/_ExhumationStep2"),
+                3 => PartialView("Partials/_ExhumationStep3"),
                 _ => BadRequest()
             };
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(ExhumationCreateDto model)
+        [HttpGet]
+        public IActionResult GetSearchContractModal() => PartialView("Partials/_SearchContractExhumation");
+
+        [HttpGet]
+        public IActionResult GetNicheSelectorModal() => PartialView("Partials/_NicheSelectorExhumation");
+
+        [HttpGet]
+        public async Task<IActionResult> SearchContracts(string dni, string name)
+            => Json(await _exhumationService.SearchContractsAsync(dni, name));
+
+        [HttpGet]
+        public async Task<IActionResult> SearchDeceased(string query)
         {
-            if (!ModelState.IsValid) return View(model);
+            var results = await _exhumationService.SearchDeceasedAsync(query);
+            return Json(results);
+        }
 
-            var result = await _exhumationService.CreateExhumationAsync(model);
+        [HttpPost]
+        public async Task<IActionResult> Save([FromBody] ExhumationCreateDto model)
+        {
+            if (model == null) return BadRequest(new { success = false, message = "Datos nulos" });
 
-            if (result.success)
+            // Capturamos el resultado del servicio
+            var result = await _exhumationService.RegisterExhumationAsync(model);
+
+            // Retornamos un objeto con nombres de propiedades claros para el JS
+            return Json(new
             {
-                // Podrías redirigir al detalle de la exhumación o al Index
-                return RedirectToAction("Index", "Contract");
-            }
+                success = result.success,
+                message = result.message
+            });
+        }
 
-            ModelState.AddModelError("", result.message);
-            return View(model);
+        [HttpGet]
+        public async Task<IActionResult> PrintExhumation(int id)
+        {
+            var dto = await _exhumationService.GetExhumationForPdfAsync(id);
+
+            if (dto == null) return NotFound();
+
+            // Mapeo de DTO a ViewModel
+            var viewModel = new ExhumationPrintViewModel
+            {
+                Folio = dto.ExhumationNumber,
+                FechaEmision = dto.RequestDate.ToString("dd/MM/yyyy HH:mm"),
+                NombreFallecido = dto.DeceasedName.ToUpper(),
+                Dni = dto.DeceasedDni,
+                UbicacionOrigen = dto.OriginLocation,
+                UbicacionDestino = dto.DestinationLocation,
+                TipoTramite = dto.MovementType,
+                MontoTotal = dto.TotalCost.ToString("C2", new System.Globalization.CultureInfo("es-PE")),
+                Notas = string.IsNullOrEmpty(dto.Observations) ? "Ninguna" : dto.Observations
+            };
+
+            return new ViewAsPdf("ExhumationPrint", viewModel)
+            {
+                FileName = $"Exhumacion_{dto.ExhumationNumber}.pdf",
+                PageSize = Rotativa.AspNetCore.Options.Size.A4,
+                PageMargins = new Rotativa.AspNetCore.Options.Margins(10, 10, 10, 10)
+            };
         }
 
     }

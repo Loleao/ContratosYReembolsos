@@ -1,47 +1,68 @@
 ﻿@model ContratosYReembolsos.Models.Entities.FixedAssets.AssetCatalog
 
-<form id="formCatalogItem" enctype="multipart/form-data">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
-    <div class="modal-body p-4">
-        <div class="row g-3">
-            <div class="col-md-12">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre Descriptivo</label>
-                <input asp-for="Name" class="form-control border-2" placeholder="Ej: Laptop Lenovo ThinkPad E14" required />
+<div class="modal fade" id="modalCatalogItem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-layer-group me-2 text-primary"></i>
+                    @(Model.Id == 0 ? "Nuevo Modelo" : "Editar Modelo")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Marca</label>
-                <input asp-for="Brand" class="form-control border-2" placeholder="Ej: Lenovo" required />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Modelo</label>
-                <input asp-for="Model" class="form-control border-2" placeholder="Ej: Gen 3" required />
-            </div>
-            <div class="col-md-12">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Subcategoría</label>
-                <select asp-for="SubcategoryId" class="form-select border-2 select2-catalog" required>
-                    <option value="">-- Seleccione Subcategoría --</option>
-                    @foreach (var cat in (List<ContratosYReembolsos.Models.Entities.FixedAssets.AssetCategory>)ViewBag.Categories)
-                    {
-                        <optgroup label="@cat.Name">
-                            @foreach (var sub in cat.Subcategories)
-                            {
-                                <option value="@sub.Id">@sub.Name</option>
-                            }
-                        </optgroup>
-                    }
-                </select>
-            </div>
-            <div class="col-md-12">
-                <label class="form-label x-small fw-bold text-muted text-uppercase">Imagen Referencial</label>
-                <input type="file" name="ImageFile" class="form-control border-2" accept="image/*" />
-            </div>
+
+            <form id="formCatalogItem">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CreatedAt" />
+
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Categoría</label>
+                            <select asp-for="CategoryId" id="select-category" class="form-select border-2 select2-catalog" required>
+                                <option value="">-- Seleccione --</option>
+                                @foreach (var cat in (List<ContratosYReembolsos.Models.Entities.FixedAssets.AssetCategory>)ViewBag.Categories)
+                                {
+                                    <option value="@cat.Id" selected="@(cat.Id == Model.CategoryId)">@cat.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Subcategoría</label>
+                            <select asp-for="SubcategoryId" id="select-subcategory" class="form-select border-2 select2-catalog"
+                                    data-selected="@Model.SubcategoryId" required disabled>
+                                <option value="">-- Seleccione Categoría --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12"><hr class="my-1 opacity-10"></div>
+
+                        <div class="col-md-12">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre del Producto</label>
+                            <input asp-for="Name" class="form-control border-2 shadow-none" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Marca</label>
+                            <input asp-for="Brand" class="form-control border-2 shadow-none" required />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase">Modelo</label>
+                            <input asp-for="Model" class="form-control border-2 shadow-none" required />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow-sm">
+                        GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="modal-footer border-0 bg-light">
-        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow">
-            <i class="fa-solid fa-save me-2"></i>Guardar en Catálogo
-        </button>
-    </div>
-</form>
+</div>

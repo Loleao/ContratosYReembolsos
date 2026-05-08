@@ -3,20 +3,20 @@
     ViewData["Title"] = "Catálogo de Activos";
 }
 
-<div class="container-fluid p-4">
+<div class="container-fluid p-4 animate__animated animate__fadeIn">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold m-0"><i class="fa-solid fa-layer-group me-2"></i>Modelos de Activos</h4>
-        <button class="btn btn-primary rounded-pill px-4" onclick="openCreateCatalogModal()">
+        @* Corregido: Llamada a la función correcta *@
+        <button class="btn btn-primary rounded-pill px-4 shadow" onclick="openCatalogModal()">
             <i class="fa-solid fa-plus me-1"></i> Registrar Nuevo Modelo
         </button>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="table-responsive p-3">
-            <table class="table table-hover align-middle" id="tableCatalog">
-                <thead class="bg-light">
-                    <tr class="x-small text-muted text-uppercase">
-                        <th>Imagen</th>
+            <table class="table table-hover align-middle table-striped table-sm" id="tableCatalog">
+                <thead class="table-dark x-small text-uppercase">
+                    <tr>
                         <th>Nombre / Descripción</th>
                         <th>Marca / Modelo</th>
                         <th>Categoría</th>
@@ -27,11 +27,6 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td style="width: 80px;">
-                                <div class="rounded-3 bg-light d-flex align-items-center justify-content-center" style="height: 50px;">
-                                    <i class="fa-solid fa-image text-muted opacity-50"></i>
-                                </div>
-                            </td>
                             <td>
                                 <div class="fw-bold text-dark">@item.Name</div>
                                 <div class="x-small text-muted">ID: #@item.Id</div>
@@ -45,7 +40,8 @@
                                 <div class="x-small text-muted">@item.Subcategory.Name</div>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="editCatalogItem(@item.Id)">
+                                @* Corregido: Llamada a la función correcta *@
+                                <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="openCatalogModal(@item.Id)">
                                     <i class="fa-solid fa-pencil"></i>
                                 </button>
                             </td>
@@ -57,6 +53,110 @@
     </div>
 </div>
 
-<script>
+<div id="modalContainer"></div>
 
-</script>
+@section Scripts {
+    <script>
+        const catalogUrls = {
+            getForm: '@Url.Action("GetCatalogForm", "Asset")',
+            save: '@Url.Action("SaveCatalogItem", "Asset")'
+        };
+
+        async function openCatalogModal(id = 0) {
+            Swal.fire({ title: 'Cargando...', didOpen: () => { Swal.showLoading() } });
+
+            try {
+                const resp = await fetch(`@Url.Action("GetCatalogForm", "Asset")?id=${id}`);
+                const html = await resp.text();
+                $('#modalContainer').html(html);
+                Swal.close();
+                $('#modalCatalogItem').modal('show');
+
+                const $catSelect = $('#select-category');
+                const $subSelect = $('#select-subcategory');
+                const initialSubId = $subSelect.data('selected');
+
+                // Inicializar Select2
+                $('.select2-catalog').select2({
+                    theme: 'bootstrap-5',
+                    dropdownParent: $('#modalCatalogItem'),
+                    width: '100%'
+                });
+
+                // Función reutilizable para cargar subcategorías
+                const loadSubcategories = async (categoryId, selectedId = 0) => {
+                    $subSelect.empty().append('<option value="">-- Seleccione Subcategoría --</option>');
+
+                    if (!categoryId) {
+                        $subSelect.prop('disabled', true);
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`@Url.Action("GetSubcategoriesByCategory", "Asset")?categoryId=${categoryId}`);
+                        const data = await response.json();
+
+                        data.forEach(sub => {
+                            const isSelected = sub.id == selectedId ? 'selected' : '';
+                            $subSelect.append(`<option value="${sub.id}" ${isSelected}>${sub.name}</option>`);
+                        });
+
+                        $subSelect.prop('disabled', false);
+                    } catch (e) {
+                        console.error("Error al cargar subcategorías", e);
+                    }
+                };
+
+                // EVENTO: Cambio manual de categoría
+                $catSelect.on('change', function() {
+                    loadSubcategories($(this).val());
+                });
+
+                // LÓGICA DE EDICIÓN: Si hay una categoría pre-seleccionada, cargar sus hijos
+                if ($catSelect.val()) {
+                    await loadSubcategories($catSelect.val(), initialSubId);
+                }
+
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo abrir el formulario', 'error');
+            }
+        }
+
+        $(document).on('submit', '#formCatalogItem', async function(e) {
+            e.preventDefault();
+
+            // IMPORTANTE: Habilitar el select antes de serializar,
+            // de lo contrario serialize() lo ignorará.
+            $(this).find('#select-subcategory').prop('disabled', false);
+
+			// console.log("Datos en crudo:", this;
+
+            const data = $(this).serialize(); // Cambiamos FormData por serialize
+
+			console.log("Datos serializados:", data);
+
+            Swal.fire({ title: 'Guardando...', didOpen: () => { Swal.showLoading() } });
+
+			console.log("Enviando a URL:", catalogUrls.save);
+
+            try {
+                const resp = await fetch(catalogUrls.save, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: data
+                });
+                const result = await resp.json();
+
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                } else {
+                    // Si falla, volvemos a deshabilitar si no hay categoría
+                    if(!$('#select-category').val()) $('#select-subcategory').prop('disabled', true);
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Ocurrió un error inesperado', 'error');
+            }
+        });
+    </script>
+}

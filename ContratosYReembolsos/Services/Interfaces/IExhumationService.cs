@@ -4,13 +4,10 @@ namespace ContratosYReembolsos.Services.Interfaces
 {
     public interface IExhumationService
     {
-        // Para el buscador inicial
-        //Task<IEnumerable<ExhumationContractSearchDto>> SearchOriginalContractsAsync(string filter);
-
-        // Para cargar la data del contrato seleccionado
-        //Task<ExhumationContractSearchDto> GetContractForExhumationAsync(int contractId);
-
-        // El proceso principal
-        Task<(bool success, string message, int exhumationId)> CreateExhumationAsync(ExhumationCreateDto model);
+        Task<List<ExhumationSearchDto>> SearchContractsAsync(string dni, string name);
+        Task<List<ExhumationSearchDto>> SearchDeceasedAsync(string query);
+        Task<ExhumationSearchDto> GetOriginDetailsAsync(int contractId);
+        Task<(bool success, string message)> RegisterExhumationAsync(ExhumationCreateDto model);
+        Task<ExhumationPDFDto> GetExhumationForPdfAsync(int exhumationId);
     }
 }

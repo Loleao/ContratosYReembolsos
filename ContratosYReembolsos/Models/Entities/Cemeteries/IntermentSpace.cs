@@ -16,7 +16,7 @@ namespace ContratosYReembolsos.Models.Entities.Cemeteries
         public int ColumnNumber { get; set; } // 1 al 50
 
         [Required]
-        public string Status { get; set; } = IntermentStatus.Disponible;
+        public IntermentStatus Status { get; set; } = IntermentStatus.Disponible;
 
         public decimal Price { get; set; }
 
@@ -30,5 +30,23 @@ namespace ContratosYReembolsos.Models.Entities.Cemeteries
 
         // Datos de Inhumación (Opcional pero recomendado)
         public DateTime? InhumationDate { get; set; }
+    }
+
+    public enum IntermentStatus
+    {
+        [Display(Name = "Disponible")]
+        Disponible = 1,
+
+        [Display(Name = "Ocupado")]
+        Ocupado = 2,
+
+        [Display(Name = "En Mantenimiento")]
+        Mantenimiento = 3,
+
+        [Display(Name = "Reservado")]
+        Reservado = 4,
+
+        [Display(Name = "Bloqueado")]
+        Bloqueado = 5
     }
 }

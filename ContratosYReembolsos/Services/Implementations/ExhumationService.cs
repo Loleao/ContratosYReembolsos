@@ -1,12 +1,9 @@
-﻿using ContratosYReembolsos.Data;
+﻿using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Services.DTOs.Exhumations;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-// Asumo que tus constantes están en este namespace o uno similar
-using ContratosYReembolsos.Constants;
-using ContratosYReembolsos.Data.Contexts;
-using ContratosYReembolsos.Models.Entities.Cemeteries;
 
 namespace ContratosYReembolsos.Services.Implementations
 {
@@ -14,90 +11,207 @@ namespace ContratosYReembolsos.Services.Implementations
     {
         private readonly ApplicationDbContext _context;
 
-        public ExhumationService(ApplicationDbContext context)
+        public ExhumationService(ApplicationDbContext context) => _context = context;
+
+        public async Task<List<ExhumationSearchDto>> SearchContractsAsync(string dni, string name)
         {
-            _context = context;
+            var query = _context.Contratos
+                .Include(c => c.Branch)
+                .Include(c => c.IntermentStructure)
+                .Include(c => c.IntermentSpace)
+                .Where(c => c.Status == "ACTIVO" && c.IntermentSpaceId.HasValue);
+
+            if (!string.IsNullOrEmpty(dni)) query = query.Where(c => c.DeceasedDni.Contains(dni));
+            if (!string.IsNullOrEmpty(name)) query = query.Where(c => c.DeceasedName.Contains(name));
+
+            return await query.Select(c => new ExhumationSearchDto
+            {
+                ContractId = c.Id,
+                ContractNumber = c.ContractNumber,
+                DeceasedName = c.DeceasedName,
+                DeceasedDni = c.DeceasedDni,
+                BurialDate = c.BurialDate.ToShortDateString(),
+                BranchName = c.Branch.Name,
+                StructureName = c.IntermentStructure.Name,
+                SpaceDetail = $"Fila {c.IntermentSpace.RowLetter} - N° {c.IntermentSpace.ColumnNumber}",
+
+                // ASIGNACIÓN AQUÍ:
+                CurrentLocation = $"{c.IntermentStructure.Name} (Fila {c.IntermentSpace.RowLetter} - N° {c.IntermentSpace.ColumnNumber})",
+
+                CurrentSpaceId = c.IntermentSpaceId
+            }).Take(10).ToListAsync();
         }
 
-        public async Task<(bool success, string message, int exhumationId)> CreateExhumationAsync(ExhumationCreateDto model)
+        public async Task<List<ExhumationSearchDto>> SearchDeceasedAsync(string query)
+        {
+            return await _context.Contratos
+                .Where(c => c.Status == "ACTIVO" && (c.DeceasedName.Contains(query) || c.DeceasedDni.Contains(query) || c.ContractNumber.Contains(query)))
+                .Include(c => c.IntermentStructure)
+                .Include(c => c.IntermentSpace)
+                .Select(c => new ExhumationSearchDto
+                {
+                    ContractId = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    DeceasedName = c.DeceasedName,
+                    DeceasedDni = c.DeceasedDni,
+                    CurrentLocation = c.IntermentSpace != null
+                        ? $"{c.IntermentStructure.Name} - Fila {c.IntermentSpace.RowLetter} Col {c.IntermentSpace.ColumnNumber}"
+                        : "Ubicación no especificada"
+                })
+                .Take(10).ToListAsync();
+        }
+
+        public async Task<List<ExhumationSearchDto>> SearchDeceasedForExhumationAsync(string query)
+        {
+            return await _context.Contratos
+                .Include(c => c.IntermentSpace)
+                .Include(c => c.IntermentStructure)
+                .Where(c => c.Status == "ACTIVO" &&
+                           (c.DeceasedName.Contains(query) || c.DeceasedDni.Contains(query) || c.ContractNumber.Contains(query)))
+                .Select(c => new ExhumationSearchDto
+                {
+                    ContractId = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    DeceasedName = c.DeceasedName,
+                    DeceasedDni = c.DeceasedDni,
+                    // Construimos la ubicación legible para el usuario
+                    CurrentLocation = c.IntermentSpace != null
+                        ? $"{c.IntermentStructure.Name} - Fila {c.IntermentSpace.RowLetter} Col {c.IntermentSpace.ColumnNumber}"
+                        : "Ubicación no registrada"
+                })
+                .Take(10)
+                .ToListAsync();
+        }
+
+        public async Task<ExhumationSearchDto> GetOriginDetailsAsync(int contractId)
+        {
+            // Similar al anterior pero para un ID específico
+            return await _context.Contratos
+                .Include(c => c.IntermentSpace)
+                .Include(c => c.IntermentStructure)
+                .Where(c => c.Id == contractId)
+                .Select(c => new ExhumationSearchDto
+                {
+                    ContractId = c.Id,
+                    DeceasedName = c.DeceasedName,
+                    CurrentLocation = $"{c.IntermentStructure.Name} - {c.IntermentSpace.RowLetter}{c.IntermentSpace.ColumnNumber}"
+                }).FirstOrDefaultAsync();
+        }
+
+        public async Task<(bool success, string message)> RegisterExhumationAsync(ExhumationCreateDto model)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Validar Contrato Original
-                var originalContract = await _context.Contratos
-                    .FirstOrDefaultAsync(c => c.Id == model.OriginalContractId);
+                var contract = await _context.Contratos
+                    .Include(c => c.Cemetery)
+                    .Include(c => c.IntermentStructure)
+                    .Include(c => c.IntermentSpace)
+                    .FirstOrDefaultAsync(c => c.Id == model.ContractId);
 
-                if (originalContract == null)
-                    return (false, "El contrato original no existe.", 0);
+                if (contract == null) return (false, "Contrato no encontrado.");
 
-                // 2. LIBERAR ESPACIO ANTIGUO
-                if (originalContract.IntermentSpaceId.HasValue)
+                // 1. CAPTURAR ORIGEN (Snapshot para el historial)
+                string originSnapshot = contract.IntermentSpace != null
+                    ? $"{contract.Cemetery?.Name ?? "Sede"} - {contract.IntermentStructure?.Name ?? "Pabellón"} - Fila {contract.IntermentSpace.RowLetter} Col {contract.IntermentSpace.ColumnNumber}"
+                    : "Ubicación No Registrada";
+
+                // 2. LIBERAR ESPACIO ACTUAL
+                if (contract.IntermentSpaceId.HasValue)
                 {
-                    var oldSpace = await _context.SepulturasNichos.FindAsync(originalContract.IntermentSpaceId);
+                    var oldSpace = await _context.SepulturasNichos.FindAsync(contract.IntermentSpaceId.Value);
                     if (oldSpace != null)
                     {
-                        // Usamos tu constante
                         oldSpace.Status = IntermentStatus.Disponible;
-                        _context.Entry(oldSpace).State = EntityState.Modified;
+                        _context.Update(oldSpace);
                     }
                 }
 
-                // 3. CREAR EL REGISTRO DE EXHUMACIÓN
-                var exhumation = new Exhumation
+                // 3. REGISTRAR EL EVENTO EN EL HISTORIAL (La Exhumación)
+                var count = await _context.Exhumaciones.CountAsync() + 1;
+                var exhumationRecord = new Exhumation
                 {
-                    ExhumationNumber = await GenerateNextExhumationNumber(),
+                    ExhumationNumber = $"EX-{DateTime.Now.Year}-{count:D4}",
                     RequestDate = DateTime.Now,
-                    OriginalContractId = model.OriginalContractId,
-                    IsInternalRelocation = model.IsInternalRelocation,
+                    OriginalContractId = contract.Id,
 
-                    NewCemeteryId = model.IsInternalRelocation ? model.NewCemeteryId : null,
-                    NewIntermentSpaceId = model.IsInternalRelocation ? model.NewIntermentSpaceId : null,
+                    // Guardamos los IDs de origen (Snapshot técnico)
+                    PreviousCemeteryId = contract.CemeteryId,
+                    PreviousStructureId = contract.IntermentStructureId ?? 0,
+                    PreviousSpaceId = contract.IntermentSpaceId ?? 0,
+                    PreviousLocationSnapshot = originSnapshot,
 
-                    DestinationDetails = !model.IsInternalRelocation ? model.ExternalDestination : "TRASLADO INTERNO FONAFUN",
+                    // Datos del Destino
+                    IsInternalRelocation = model.IsInternal,
+                    DestinationDetails = model.IsInternal
+                        ? $"Interno: {model.CemeteryName}"
+                        : model.CemeteryName,
 
-                    Cost = model.IsInternalRelocation ? model.RelocationCost : 0,
-                    // Estado del trámite administrativo
-                    Status = model.IsInternalRelocation ? "PENDIENTE_TRASLADO" : "COMPLETADO_EXTERNO",
-                    Observations = model.Observations
+                    NewCemeteryId = model.CemeteryId,
+                    NewStructureId = model.NewStructureId,
+                    NewSpaceId = model.NewIntermentSpaceId,
+                    NewLocationSnapshot = model.IsInternal ? model.NewLocationName : "EXTERNO",
+
+                    Cost = model.TotalCost,
+                    Status = "Completado",
+                    MovementType = model.DestinationType?.ToUpper() ?? "TRASLADO"
                 };
 
-                _context.Exhumaciones.Add(exhumation);
-
-                // 4. OCUPAR EL NUEVO ESPACIO (Si es interno)
-                if (model.IsInternalRelocation && model.NewIntermentSpaceId.HasValue)
+                // 4. ACTUALIZAR EL CONTRATO (MANTENERLO ACTIVO)
+                if (model.IsInternal && model.NewIntermentSpaceId.HasValue)
                 {
-                    var newSpace = await _context.SepulturasNichos.FindAsync(model.NewIntermentSpaceId);
-                    if (newSpace != null)
-                    {
-                        // Validamos que el espacio esté realmente disponible antes de ocuparlo
-                        if (newSpace.Status != IntermentStatus.Disponible)
-                        {
-                            return (false, "El nuevo espacio seleccionado no está disponible.", 0);
-                        }
+                    var newSpace = await _context.SepulturasNichos.FindAsync(model.NewIntermentSpaceId.Value);
+                    newSpace.Status = IntermentStatus.Ocupado;
+                    _context.Update(newSpace);
 
-                        newSpace.Status = IntermentStatus.Ocupado; // Usamos tu constante
-                        _context.Entry(newSpace).State = EntityState.Modified;
-                    }
+                    contract.CemeteryId = model.CemeteryId ?? contract.CemeteryId;
+                    contract.IntermentStructureId = model.NewStructureId;
+                    contract.IntermentSpaceId = model.NewIntermentSpaceId;
+
+                    // IMPORTANTE: Mantenemos el estado en ACTIVO para permitir futuras exhumaciones
+                    contract.Status = "ACTIVO";
                 }
+                else
+                {
+                    // Solo si sale del cementerio lo marcamos como cerrado
+                    contract.IntermentSpaceId = null;
+                    contract.Status = "EXHUMADO_EXTERNO";
+                }
+
+                _context.Exhumaciones.Add(exhumationRecord);
+                _context.Update(contract);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return (true, "Exhumación y traslado registrados con éxito.", exhumation.Id);
+                return (true, $"Movimiento registrado: {exhumationRecord.ExhumationNumber}");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return (false, $"Error en la operación: {ex.Message}", 0);
+                return (false, "Error: " + ex.Message);
             }
         }
 
-        private async Task<string> GenerateNextExhumationNumber()
+        public async Task<ExhumationPDFDto> GetExhumationForPdfAsync(int exhumationId)
         {
-            var year = DateTime.Now.Year;
-            var count = await _context.Exhumaciones.CountAsync(x => x.RequestDate.Year == year);
-            return $"EX-{year}-{(count + 1):D4}";
+            var data = await _context.Exhumaciones
+                .Include(e => e.OriginalContract)
+                .Where(e => e.Id == exhumationId)
+                .Select(e => new ExhumationPDFDto
+                {
+                    ExhumationNumber = e.ExhumationNumber,
+                    RequestDate = e.RequestDate,
+                    DeceasedName = e.OriginalContract.DeceasedName, // Asumiendo que esta en Contract
+                    DeceasedDni = e.OriginalContract.DeceasedDni,
+                    OriginLocation = e.PreviousLocationSnapshot,
+                    DestinationLocation = e.NewLocationSnapshot,
+                    MovementType = e.MovementType,
+                    TotalCost = e.Cost
+                })
+                .FirstOrDefaultAsync();
+
+            return data;
         }
     }
 }

@@ -1,0 +1,119 @@
+﻿@using ContratosYReembolsos.Models.ViewModels.Exhumations
+@model ExhumationPrintViewModel
+@{
+    Layout = null; // Importante para que no cargue el Nav ni el Footer del sitio
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            margin: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #004a99;
+            margin-bottom: 30px;
+        }
+
+            .header h1 {
+                color: #004a99;
+                margin: 0;
+            }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-title {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            font-weight: bold;
+            border-left: 4px solid #004a99;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f9f9f9;
+            width: 30%;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        .signatures {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .sig-box {
+            border-top: 1px solid #000;
+            width: 200px;
+            text-align: center;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>@Model.Title</h1>
+        <p>Número de Registro: @Model.Folio</p>
+    </div>
+
+    <div class="info-section">
+        <div class="info-title">DATOS GENERALES</div>
+        <table>
+            <tr><th>Fallecido:</th><td>@Model.NombreFallecido</td></tr>
+            <tr><th>DNI:</th><td>@Model.Dni</td></tr>
+            <tr><th>Fecha de Registro:</th><td>@Model.FechaEmision</td></tr>
+        </table>
+    </div>
+
+    <div class="info-section">
+        <div class="info-title">DETALLES DEL TRASLADO</div>
+        <table>
+            <tr><th>Tipo:</th><td>@Model.TipoTramite</td></tr>
+            <tr><th>Origen:</th><td>@Model.UbicacionOrigen</td></tr>
+            <tr><th>Destino:</th><td>@Model.UbicacionDestino</td></tr>
+            <tr><th>Costo Total:</th><td style="font-weight:bold; color:#004a99;">@Model.MontoTotal</td></tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <div style="margin-top: 60px;">
+            <table style="border:none">
+                <tr style="border:none">
+                    <td style="border:none; text-align:center">
+                        <div style="border-top: 1px solid black; width: 200px; margin: auto">Firma Administrador</div>
+                    </td>
+                    <td style="border:none; text-align:center">
+                        <div style="border-top: 1px solid black; width: 200px; margin: auto">Firma Solicitante</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p style="margin-top:40px">Documento generado por el Sistema de Legajos - @DateTime.Now.Year</p>
+    </div>
+</body>
+</html>

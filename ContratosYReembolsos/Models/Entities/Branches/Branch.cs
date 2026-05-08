@@ -16,18 +16,17 @@ namespace ContratosYReembolsos.Models.Entities.Branches
         [Required]
         public string UbigeoId { get; set; }
         [ForeignKey("UbigeoId")]
-        public virtual Ubigeo Ubigeo { get; set; }
+        public virtual Ubigeo? Ubigeo { get; set; }
 
         public string Code { get; set; }
 
-        public string Address { get; set; }
-        public string Phone { get; set; }
-        public string Email { get; set; }
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
         public bool IsActive { get; set; } = true;
         public bool HasWakeService { get; set; } 
-        public bool HasOwnCemetery { get; set; }
 
-        public virtual ICollection<Cemetery> Cemeteries { get; set; } = new List<Cemetery>();
-        public virtual ICollection<Agency> Agencies { get; set; } = new List<Agency>();
+        public virtual ICollection<Cemetery>? Cemeteries { get; set; } = new List<Cemetery>();
+        public virtual ICollection<Agency>? Agencies { get; set; } = new List<Agency>();
     }
 }

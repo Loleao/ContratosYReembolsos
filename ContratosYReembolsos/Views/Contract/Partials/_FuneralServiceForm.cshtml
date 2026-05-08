@@ -1,0 +1,44 @@
+﻿@model ContratosYReembolsos.Models.Entities.Contracts.FuneralService
+
+<div class="modal fade" id="modalFuneralServiceContainer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header @(Model.Id > 0 ? "bg-primary" : "bg-success") text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid @(Model.Id > 0 ? "fa-pen-to-square" : "fa-plus-circle") me-2"></i>
+                    @(Model.Id > 0 ? "Editar Servicio" : "Nuevo Servicio Funerario")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formFuneralService">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Nombre del Servicio</label>
+                        <input asp-for="Name" class="form-control border-2 shadow-sm" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Precio Sugerido (S/)</label>
+                        <input asp-for="Price" type="number" step="0.01" class="form-control border-2 shadow-sm fw-bold text-success" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label x-small fw-bold text-muted text-uppercase">Descripción</label>
+                        <textarea asp-for="Description" class="form-control border-2 shadow-sm" rows="3"></textarea>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive">
+                        <label class="form-check-label" asp-for="IsActive">Servicio Activo</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn @(Model.Id > 0 ? "btn-primary" : "btn-success") rounded-pill px-5 fw-bold shadow">
+                        @(Model.Id > 0 ? "ACTUALIZAR" : "GUARDAR")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

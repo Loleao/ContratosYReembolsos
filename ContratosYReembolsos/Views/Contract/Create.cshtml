@@ -331,15 +331,11 @@
 				<div class="step-dot"><i class="fa-solid fa-dove"></i></div>
 				<div class="step-label">Difunto</div>
 			</div>
-			@* <div class="step-item" id="nav-3">
-				<div class="step-dot"><i class="fa-solid fa-handshake"></i></div>
-				<div class="step-label">Agencia</div>
-			</div> *@
-			<div class="step-item" id="nav-4">
+			<div class="step-item" id="nav-3">
 				<div class="step-dot"><i class="fa-solid fa-truck-ramp-box"></i></div>
 				<div class="step-label">Servicios</div>
 			</div>
-			<div class="step-item" id="nav-5">
+			<div class="step-item" id="nav-4">
 				<div class="step-dot"><i class="fa-solid fa-file-invoice-dollar"></i></div>
 				<div class="step-label">Resumen</div>
 			</div>
@@ -366,7 +362,6 @@
 			step2: '@Url.Action("GetStep2", "Contract")',
 			step3: '@Url.Action("GetStep3", "Contract")',
 			step4: '@Url.Action("GetStep4", "Contract")',
-			step5: '@Url.Action("GetStep5", "Contract")',
 			searchModal: '@Url.Action("GetSearchModal", "Contract")',
 			searchAction: '@Url.Action("SearchAffiliates", "Contract")',
 			searchBeneficiariesModal: '@Url.Action("GetSearchBeneficiary", "Contract")',
@@ -416,7 +411,7 @@
 
 		let searchTarget = 'Solicitor';
 
-		let branchCaps = { hasWake: false, hasCem: false };
+		let branchCaps = { hasWake: false };
 
 		async function handleStepInitialization(n) {
 			console.log("Inicializando paso:", n);
@@ -428,28 +423,22 @@
 					if (typeof toggleSolicitorType === 'function') {
 						toggleSolicitorType();
 					}
-					break;
+				break;
 
 				case 2:
 					try {
 						const response = await fetch(`${urls.getBranchCapabilities}?branchId=${contractData.branchId}`);
 						if (response.ok) {
-							branchCaps = await response.json();
+							const caps = await response.json(); // Cambiado de branchCaps a constante local
 
 							const $wakeSection = $('#sectionWakePlace');
-							if (branchCaps.hasWake) {
+							if (caps.hasWake) {
 								$wakeSection.fadeIn(300).removeClass('d-none');
 								if (typeof loadWakes === 'function') loadWakes();
 							} else {
 								$wakeSection.hide().addClass('d-none');
 								contractData.deceased.wakeId = "0";
 								contractData.deceased.wakeName = "Particular / Domicilio";
-							}
-
-							$('#sectionSpecificLocation').addClass('d-none');
-
-							if (!branchCaps.hasCem) {
-								contractData.deceased.intermentSpaceId = null;
 							}
 						}
 					} catch (e) {
@@ -458,13 +447,7 @@
 
 					if (typeof filterDeceasedOptions === 'function') filterDeceasedOptions();
 					if (typeof loadRegions === 'function') loadRegions();
-					break;
-
-				// case 3:
-				// 	if (typeof executeAgencySearch === 'function') {
-				// 		executeAgencySearch(true);
-				// 	}
-				// 	break;
+				break;
 
 				case 3:
 					setTimeout(() => {
@@ -475,13 +458,13 @@
 							updateSelectionUI();
 						}
 					}, 150); // 150ms es suficiente para que el navegador procese el nuevo HTML
-					break;
+				break;
 
-				case 5:
-					if (typeof renderStep5 === 'function') {
-						await renderStep5();
+				case 4:
+					if (typeof renderSummary === 'function') {
+						await renderSummary();
 					}
-					break;
+				break;
 			}
 		}
 
@@ -1030,23 +1013,29 @@
 		}
 
 		function selectCemetery(c) {
+			// 1. Guardar en el objeto de datos global
 			contractData.deceased.cemeteryId = c.id;
 			contractData.deceased.cemeteryName = c.name;
 
-			$('#CemeteryNameDisplay').val(c.name);
-			$('#CemeteryId').val(c.id);
+			// 2. CORRECCIÓN VISUAL: Llenar el input
+			// Usamos el ID 'CemeteryName' que está en tu HTML de ContractStep2
+			const $inputCem = $('#CemeteryName');
+			$inputCem.val(c.name);
+
+			// 3. Estilo de "Seleccionado" (Quitar gris, poner blanco y borde azul)
+			$inputCem.removeClass('bg-light')
+					 .addClass('bg-white border-primary text-primary fw-bold animate__animated animate__fadeIn');
 
 			const $specificSection = $('#sectionSpecificLocation');
 
-			// Lógica Dinámica: Match de Sede + Capacidad de la Sede
-			if (c.branchId === contractData.branchId && branchCaps.hasCem) {
-				$specificSection.removeClass('d-none').addClass('animate__animated animate__fadeIn');
+			// 4. Lógica de IsInternal (Flag que agregamos al cementerio)
+			if (c.isInternal) {
+				$specificSection.removeClass('d-none').show();
 				resetNicheSelection();
 			} else {
-				$specificSection.addClass('d-none');
+				$specificSection.hide().addClass('d-none');
 				contractData.deceased.intermentSpaceId = null;
 				contractData.deceased.burialDetail = "Cementerio Externo / Provincia";
-				$('#txtNicheSelected').text("No aplica para esta sede");
 			}
 
 			closeSearchModal();
@@ -1170,12 +1159,9 @@
 
 			// --- 1. CABECERA DE NÚMEROS ---
 			const $headerRow = $('<div class="d-flex align-items-center mb-1"></div>');
-			// Espacio para la letra de la fila (debe ser igual al de abajo: 45px + margen)
 			$headerRow.append('<div style="width: 53px;"></div>');
-
 			const $numContainer = $('<div class="d-flex flex-nowrap gap-1"></div>');
 			cols.forEach(c => {
-				// Forzamos el ancho a 34px para que coincida con .space-item-modal
 				$numContainer.append(`<div class="text-center fw-bold text-muted x-small" style="width: 34px;">${c}</div>`);
 			});
 			$headerRow.append($numContainer);
@@ -1184,24 +1170,21 @@
 			// --- 2. FILAS DE NICHOS ---
 			rows.forEach(r => {
 				const $rowDiv = $('<div class="d-flex align-items-center"></div>');
-
-				// Letra de la fila
 				$rowDiv.append(`<div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px; font-size: 13px;">${r}</div>`);
 
 				const $spacesContainer = $('<div class="d-flex flex-nowrap gap-1"></div>');
 
 				cols.forEach(c => {
-					// Buscamos el espacio que coincida con la letra y EL NÚMERO DE COLUMNA exacto
 					const space = allSpaces.find(s =>
 						s.rowLetter.toString().trim().toUpperCase() === r.toUpperCase() &&
 						parseInt(s.columnNumber) === parseInt(c)
 					);
 
 					if (space) {
-						let statusClass = "st-otro";
+						let statusClass = "st-otro"; // Por defecto gris (Mantenimiento / Bloqueado)
 						let isSelectable = false;
 
-						// Normalizar status a minúsculas para evitar errores
+						// Normalizar status para matchear con el Enum.ToString().ToLower()
 						const currentStatus = (space.status || "").toLowerCase();
 
 						if (currentStatus === "disponible") {
@@ -1211,17 +1194,18 @@
 							statusClass = "st-ocupado";
 						} else if (currentStatus === "reservado") {
 							statusClass = "st-reservado";
+						} else if (currentStatus === "bloqueado") {
+							statusClass = "st-otro"; // Podrías crear .st-bloqueado en CSS si gustas
 						}
 
 						$spacesContainer.append(`
 							<div class="space-item-modal ${statusClass}"
-								 onclick="${isSelectable ? `confirmNicheSelection(${space.id}, '', '${r}', ${c})` : 'Swal.fire(\'No disponible\', \'Este espacio no está libre.\', \'warning\')'}"
-								 title="Fila ${r} - Col ${c} (${space.status})">
+								 onclick="${isSelectable ? `confirmNicheSelection(${space.id}, '', '${r}', ${c})` : `Swal.fire('No disponible', 'El espacio está ${currentStatus}.', 'warning')`}"
+								 title="Fila ${r} - Col ${c} (${currentStatus.toUpperCase()})">
 								${c}
 							</div>
 						`);
 					} else {
-						// Celda vacía: Mantiene el ancho de 34px para que la cuadrícula no se rompa
 						$spacesContainer.append('<div style="width: 34px; height: 34px; background: #f1f5f9; border-radius: 6px; opacity: 0.3;"></div>');
 					}
 				});
@@ -1290,120 +1274,6 @@
 			return true;
 		}
 
-
-		/* YA NO SE USARA
-		// //PASO 3
-
-		// function openSearchAgency() {
-		// 	$.ajax({
-		// 		url: urls.getAgencyModal,
-		// 		type: 'GET',
-		// 		success: function (html) {
-		// 			$('#ajaxTargetSearch').html(html);
-		// 			$('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
-
-		// 			executeAgencySearch(true);
-		// 		}
-		// 	});
-		// }
-
-		// async function executeAgencySearch(isInitialLoad = false) {
-		// 	// 1. Capturamos valores
-		// 	const ruc = $('#filterAgencyRuc').val()?.trim() || '';
-		// 	const name = $('#filterAgencyName').val()?.trim() || '';
-		// 	const branchId = contractData.branchId; // Obtenemos la filial del contrato actual
-
-		// 	const $tbody = $('#agenciesTableBody');
-
-		// 	// 2. Validación condicionada: Solo validamos si NO es carga inicial
-		// 	if (!isInitialLoad && !ruc && !name) {
-		// 		Swal.fire('Atención', 'Ingrese un RUC o Nombre para filtrar.', 'info');
-		// 		return;
-		// 	}
-
-		// 	$tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Cargando agencias...</td></tr>');
-
-		// 	try {
-		// 		// Añadimos branchId a la consulta
-		// 		const queryParams = `ruc=${ruc}&name=${encodeURIComponent(name)}&branchId=${branchId}`;
-		// 		const resp = await fetch(`${urls.getAgenciesAction}?${queryParams}`);
-		// 		const data = await resp.json();
-
-		// 		$tbody.empty();
-
-		// 		if (data.length === 0) {
-		// 			$tbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No se encontraron agencias para esta filial.</td></tr>');
-		// 			return;
-		// 		}
-
-		// 		// 3. Renderizado de la tabla
-		// 		data.forEach(a => {
-		// 			const tr = $(`
-		// 				<tr style="cursor:pointer" class="align-middle">
-		// 					<td class="px-3"><b>${a.ruc}</b></td>
-		// 					<td class="text-uppercase small">${a.name}</td>
-		// 					<td class="text-end">
-		// 						<button class="btn btn-sm btn-primary rounded-circle p-2">
-		// 							<i class="fa-solid fa-check px-1"></i>
-		// 						</button>
-		// 					</td>
-		// 				</tr>
-		// 			`);
-		// 			tr.click(() => selectAgency(a));
-		// 			$tbody.append(tr);
-		// 		});
-		// 	} catch (e) {
-		// 		console.error(e);
-		// 		$tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al conectar con el servidor.</td></tr>');
-		// 	}
-		// }
-
-		// function selectAgency(a) {
-		// 	// Persistencia global
-		// 	contractData.agencyId = a.id; // Guardamos solo el ID para el contrato final
-		// 	contractData.agency = { ...a }; // Mantenemos el objeto para el resumen (Paso 5)
-
-		// 	// Llenado de etiquetas de texto (no inputs)
-		// 	$('#txtAgencyRuc').text(a.ruc);
-		// 	$('#txtAgencyName').text(a.name);
-		// 	$('#txtAgencyAddress').text(a.address || 'Sin dirección registrada');
-		// 	$('#txtAgencyPhone').text(a.phone || 'Sin teléfono');
-
-		// 	// UI Toggle
-		// 	$('#agencyInfoPanel').removeClass('d-none');
-		// 	$('#noAgencySelected').addClass('d-none');
-
-		// 	// Actualizar Badge de Estado
-		// 	const $badge = $('#statusBadge');
-		// 	$badge.removeClass('bg-secondary-subtle text-secondary')
-		// 		  .addClass('bg-success-subtle text-success animate__animated animate__pulse');
-		// 	$badge.html('<i class="fa-solid fa-circle-check me-1"></i>Agencia Vinculada');
-
-		// 	closeSearchModal();
-
-		// 	// Notificación de éxito
-		// 	Swal.fire({
-		// 		toast: true,
-		// 		position: 'top-end',
-		// 		icon: 'success',
-		// 		title: 'Agencia seleccionada correctamente',
-		// 		showConfirmButton: false,
-		// 		timer: 2000
-		// 	});
-		// }
-
-		// function validateStep3() {
-		// 	if (!contractData.agencyId) {
-		// 		Swal.fire({
-		// 			title: 'Agencia Requerida',
-		// 			text: 'Debe seleccionar una empresa funeraria para continuar con el contrato.',
-		// 			icon: 'warning',
-		// 			confirmButtonColor: '#004a99'
-		// 		});
-		// 		return false;
-		// 	}
-		// 	return true;
-		// }*/
 
 		//ANTIGUO PASO 4
 		//AHORA PASO 3
@@ -1718,73 +1588,67 @@
 		//NUMERO
 		//5
 
-		async function renderStep5() {
-			console.log("Generando resumen final con datos:", contractData);
-
-			// 1. Prefijo de Contrato
+		async function renderSummary() {
+			// 1. Prefijo (Consistente con tu lógica)
 			$('#resContractPreview').text("Cargando...");
-			let previewPrefix = "GEN";
 			try {
-				const resp = await fetch(`/Contract/GetBranchPrefix?branchId=${contractData.branchId}`);
-				if (resp.ok) {
-					const data = await resp.json();
-					previewPrefix = data.prefix || "GEN";
-				}
-			} catch (e) { console.warn("Fallo al obtener prefijo", e); }
+				const resp = await fetch(`${urls.getPrefix}?branchId=${contractData.branchId}`);
+				const data = await resp.json();
+				const year = new Date().getFullYear();
+				$('#resContractPreview').text(`${data.prefix}${year}-XXXXX`);
+			} catch (e) { $('#resContractPreview').text("---"); }
 
-			const year = new Date().getFullYear();
-			$('#resContractPreview').text(`${previewPrefix}${year}-XXXXX`);
+			// 2. Datos de Personas
+			$('#resSolicitorName').text(contractData.solicitor.name);
+			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor.dni}`);
+			$('#resDeceasedName').text(contractData.deceased.name);
+			$('#resDeceasedDni').text(`DNI: ${contractData.deceased.dni}`);
 
-			// 2. Datos Personales (Usando tus objetos de pasos anteriores)
-			$('#resSolicitorName').text(contractData.solicitor?.name || "---");
-			$('#resSolicitorDni').text(`DNI: ${contractData.solicitor?.dni || "---"}`);
-			$('#resDeceasedName').text(contractData.deceased?.name || "---");
-			$('#resDeceasedDni').text(`DNI: ${contractData.deceased?.dni || "---"}`);
-
-			// 3. Logística (Paso 3)
+			// 3. Logística
 			const d = contractData.deceased;
-			$('#resBurialDateTime').text(`${d?.burialDate || '---'} ${d?.burialTime || ''}`);
-			$('#resWakePlace').text(d?.wakeName || "Particular / Domicilio");
-			$('#resCemetery').text(d?.cemeteryName || "No seleccionado");
+			$('#resBurialDateTime').text(`${d.burialDate} ${d.burialTime}`);
+			$('#resWakePlace').text(d.wakeName || "Particular / Domicilio");
+			$('#resCemetery').text(d.cemeteryName);
 
-			if (d?.burialDetail) {
+			if (d.burialDetail) {
 				$('#resNicheRow').removeClass('d-none').show();
 				$('#resNicheDetail').text(d.burialDetail);
-			} else {
-				$('#resNicheRow').hide();
 			}
 
-			// 4. Detalle de Beneficios (Tabla/Lista)
+			// 4. Tabla de Servicios (Mapeo de tus nuevas categorías)
 			const $container = $('#resServicesTable');
 			$container.empty();
 
+			// Bienes (Ataúdes, etc)
 			if (contractData.stockItems.length > 0) {
-				$container.append(createSummarySectionHeader("Bienes e Inventario (Suministros)", "fa-box-open", "text-primary"));
-				contractData.stockItems.forEach(item => {
-					const isAtaud = item.category === 'Ataúdes' || item.name.toUpperCase().includes('ATAUD');
-					$container.append(createSummaryRow(item.name, item.category, isAtaud ? 'primary' : 'secondary', isAtaud ? 'fa-vault' : 'fa-box', "Entregado"));
+				$container.append(createSummarySectionHeader("Bienes e Inventario", "fa-box", "text-primary"));
+				contractData.stockItems.forEach(i => {
+					$container.append(createSummaryRow(i.name, i.category, 'primary', 'fa-box', "Entregado"));
 				});
 			}
 
-			// --- GRUPO 2: EQUIPAMIENTO Y ACTIVOS (PRÉSTAMOS) ---
-			if (contractData.assetItems.length > 0) {
-				$container.append(createSummarySectionHeader("Equipamiento en Préstamo (Activos Fijos)", "fa-couch", "text-info"));
-				contractData.assetItems.forEach(item => {
-					$container.append(createSummaryRow(item.name, `Código Patrimonial: ${item.patrimonialCode}`, 'info', 'fa-fingerprint', "En Préstamo"));
+			// Servicios Internos
+			if (contractData.serviceItems.length > 0) {
+				$container.append(createSummarySectionHeader("Servicios Propios", "fa-bell-concierge", "text-info"));
+				contractData.serviceItems.forEach(s => {
+					$container.append(createSummaryRow(s.name, "Servicio FONAFUN", 'info', 'fa-check', "Incluido"));
 				});
 			}
 
-			// --- GRUPO 3: LOGÍSTICA Y MOVILIDAD ---
+			// Servicios Convenio
+			if (contractData.agreementServiceItems.length > 0) {
+				$container.append(createSummarySectionHeader("Servicios por Convenio", "fa-handshake", "text-success"));
+				contractData.agreementServiceItems.forEach(s => {
+					$container.append(createSummaryRow(s.name, "Vía Agencia Externa", 'success', 'fa-users-gear', "Convenio"));
+				});
+			}
+
+			// Movilidad
 			if (contractData.mobilityItems.length > 0) {
 				$container.append(createSummarySectionHeader("Logística de Transporte", "fa-car-side", "text-dark"));
 				contractData.mobilityItems.forEach(id => {
-					// Aquí puedes buscar el nombre real si lo tienes, o usar un genérico
-					$container.append(createSummaryRow("Unidad de Transporte Programada", "Servicio Logístico", 'dark', 'fa-clock', "Programado"));
+					 $container.append(createSummaryRow("Unidad de Traslado", "Programación Logística", 'dark', 'fa-clock', "Pendiente"));
 				});
-			}
-
-			if ($container.children().length === 0) {
-				$container.append('<div class="text-center py-4 text-muted border rounded-4">No hay beneficios asignados.</div>');
 			}
 		}
 
@@ -1836,16 +1700,18 @@
 					didOpen: () => { Swal.showLoading(); }
 				});
 
-				// --- MAPEO DE DATOS PARA EL VIEWMODEL ---
-				// Extraemos solo los IDs porque el servidor espera List<int>
+				// Mapeo corregido según tu ContractController y ContractService
 				const payload = {
 					branchId: parseInt(contractData.branchId),
-					agencyId: parseInt(contractData.agencyId || 0),
+					agencyId: contractData.useAgreement ? parseInt(contractData.agencyId || 0) : null,
 					solicitor: contractData.solicitor,
 					deceased: contractData.deceased,
-					stockItems: contractData.stockItems.map(item => item.id), // Solo IDs
-					assetItems: contractData.assetItems.map(item => item.id),   // Solo IDs
-					mobilityItems: contractData.mobilityItems // Ya es una lista de IDs
+					// Enviamos solo los IDs para las listas del servidor
+					stockItems: contractData.stockItems.map(i => i.id),
+					serviceItems: contractData.serviceItems.map(i => i.id),
+					externalServiceItems: contractData.agreementServiceItems.map(i => i.id),
+					mobilityItems: contractData.mobilityItems, // Ya es lista de IDs
+					useAgreement: contractData.useAgreement
 				};
 
 				try {
@@ -1853,30 +1719,25 @@
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
-							'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() // Opcional: si usas AntiForgeryToken
+							// Importante para la seguridad en .NET
+							'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
 						},
 						body: JSON.stringify(payload)
 					});
 
-					// Si el servidor responde con error 400, 404 o 500
-					if (!response.ok) {
-						const errorData = await response.json();
-						throw new Error(errorData.message || `Error del servidor (${response.status})`);
-					}
-
 					const data = await response.json();
 
 					if (data.success) {
-						Swal.fire('¡Éxito!', 'El contrato ha sido registrado correctamente.', 'success')
+						Swal.fire('¡Éxito!', 'Contrato registrado: ' + data.contractNumber, 'success')
 							.then(() => {
 								window.location.href = '@Url.Action("Index", "Contract")';
 							});
 					} else {
-						Swal.fire('Error', data.message || 'No se pudo registrar el contrato.', 'error');
+						Swal.fire('Error', data.message || 'Error interno del servidor', 'error');
 					}
 				} catch (error) {
 					console.error("Error en la petición:", error);
-					Swal.fire('Error', error.message || 'Ocurrió un fallo en la conexión.', 'error');
+					Swal.fire('Error', 'No se pudo establecer conexión con el servidor.', 'error');
 				}
 			}
 		}

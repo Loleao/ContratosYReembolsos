@@ -1,46 +1,118 @@
 ﻿@{
-    ViewData["Title"] = "Activos Fijos";
+    ViewData["Title"] = "Módulo de Activos Fijos - FONAFUN";
 }
 
 <div class="container-fluid p-4 animate__animated animate__fadeIn">
-    <div class="row g-3">
-        @* Bento Card: Título y Acciones *@
-        <div class="col-md-7">
-            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white d-flex justify-content-between">
-                <div>
-                    <h3 class="fw-bold text-dark mb-1">Módulo de Activos</h3>
-                    <p class="text-muted small">Gestión y control de bienes patrimoniales <span class="text-primary fw-bold">FONAFUN</span>.</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-dark rounded-pill px-4" onclick="openRegisterModal()">
-                        <i class="fa-solid fa-plus me-2"></i>Nuevo Activo
-                    </button>
-                    <a asp-action="Catalog" class="btn btn-outline-primary rounded-pill px-4">
-                        <i class="fa-solid fa-layer-group me-2"></i>Catálogo
-                    </a>
-                </div>
-            </div>
-        </div>
 
-        @* Bento Card: Estadísticas rápidas *@
-        <div class="col-md-5">
-            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-primary text-white">
-                <h6 class="text-uppercase small fw-bold opacity-75">Resumen de Estados</h6>
-                <div class="d-flex justify-content-around mt-3">
-                    <div class="text-center">
-                        <h4 class="fw-bold mb-0">--</h4>
-                        <span class="x-small">Uso</span>
-                    </div>
-                    <div class="text-center">
-                        <h4 class="fw-bold mb-0">--</h4>
-                        <span class="x-small">Taller</span>
-                    </div>
-                    <div class="text-center">
-                        <h4 class="fw-bold mb-0">--</h4>
-                        <span class="x-small">Baja</span>
-                    </div>
-                </div>
-            </div>
+    <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Gestión Patrimonial</h3>
+            <p class="text-muted small mb-0">Panel central para el control independiente de bienes y activos fijos.</p>
+        </div>
+        <div class="bg-white border rounded-pill px-3 py-1 shadow-sm small text-primary fw-bold">
+            <i class="fa-solid fa-shield-halved me-1"></i> Módulo Independiente
         </div>
     </div>
+
+    @* --- BENTO GRID MENU --- *@
+    <div class="row g-3">
+
+        <!-- OPCIÓN 1: INVENTARIO POR SEDE (Branch Selection) -->
+        <div class="col-md-6 col-lg-7">
+            <a href="@Url.Action("BranchSelection", "Asset")" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white bento-hover d-flex flex-row align-items-center gap-4">
+                    <div class="icon-shape bg-primary text-white rounded-4 shadow flex-shrink-0" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-building-circle-check fa-3x"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-2">Sedes y Stock</h4>
+                        <p class="text-muted small mb-0">Gestión física de activos, ingresos y control por cada filial de FONAFUN.</p>
+                        <span class="badge bg-light text-primary border mt-2 px-3 rounded-pill">Seleccionar Sede <i class="fa-solid fa-arrow-right ms-1"></i></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- OPCIÓN 2: CATÁLOGO MAESTRO -->
+        <div class="col-md-6 col-lg-5">
+            <a href="@Url.Action("Catalog", "Asset")" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-dark text-white bento-hover d-flex flex-row align-items-center gap-3">
+                    <div class="icon-shape bg-secondary text-dark rounded-circle flex-shrink-0" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-layer-group fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1">Catálogo Maestro</h5>
+                        <p class="x-small opacity-75 mb-0">Defina los modelos, marcas y especificaciones técnicas de los bienes.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- OPCIÓN 3: CATEGORÍAS -->
+        <div class="col-md-6 col-lg-6">
+            <a href="@Url.Action("Categories", "Asset")" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white bento-hover border-start border-4 border-success d-flex flex-row align-items-center gap-3">
+                    <div class="bg-success-light text-success rounded-circle p-3 flex-shrink-0">
+                        <i class="fa-solid fa-tags fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Categorías</h5>
+                        <p class="small text-muted mb-0">Administración de los grupos principales de la jerarquía patrimonial.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- OPCIÓN 4: SUBCATEGORÍAS (Acceso Directo o General) -->
+        <div class="col-md-6 col-lg-6">
+            <a href="@Url.Action("Subcategories", "Asset")" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white bento-hover border-start border-4 border-success d-flex flex-row align-items-center gap-3">
+                    <div class="bg-info-light text-info rounded-circle p-3 flex-shrink-0">
+                        <i class="fa-solid fa-folder-tree fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Subcategorías</h5>
+                        <p class="small text-muted mb-0">Gestión detallada de tipos de activos. Se recomienda entrar vía Categorías para filtrar.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
 </div>
+
+<style>
+    /* Estilos personalizados para el Menú Bento */
+    .bento-hover {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: pointer;
+        border: 1px solid transparent !important;
+    }
+
+        .bento-hover:hover {
+            transform: translateY(-5px);
+            background-color: #f8f9fa !important;
+            border-color: #dee2e6 !important;
+            box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+        }
+
+    .bg-success-light {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+
+    .bg-info-light {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+
+    .bg-primary-light {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+
+    .icon-shape {
+        transition: transform 0.3s ease;
+    }
+
+    .bento-hover:hover .icon-shape {
+        transform: scale(1.1);
+    }
+</style>

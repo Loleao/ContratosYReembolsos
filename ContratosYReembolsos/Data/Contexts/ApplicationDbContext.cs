@@ -50,6 +50,9 @@ namespace ContratosYReembolsos.Data.Contexts
         public DbSet<AssetCategory> ActivosCategorias { get; set; }
         public DbSet<AssetSubcategory> ActivosSubcategorias { get; set; }
         public DbSet<AssetCatalog> ActivosCatalogo { get; set; }
+        public DbSet<AssetMovement> ActivosMovimientos { get; set; }
+        public DbSet<AssetTransfer> ActivosTransferencias { get; set; }
+        public DbSet<AssetTransferDetail> ActivosTransferenciasDetalles { get; set; }
 
 
         public DbSet<Notification> Notificaciones { get; set; }
@@ -145,6 +148,39 @@ namespace ContratosYReembolsos.Data.Contexts
             modelBuilder.Entity<FixedAsset>()
                 .HasIndex(fa => fa.PatrimonialCode)
                 .IsUnique();
+
+
+            modelBuilder.Entity<AssetCatalog>()
+                .HasOne(a => a.Subcategory)
+                .WithMany() // O como se llame tu navegación en Subcategory
+                .HasForeignKey(a => a.SubcategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<AssetMovement>()
+                .HasOne(m => m.Branch)
+                .WithMany()
+                .HasForeignKey(m => m.BranchId)
+                .OnDelete(DeleteBehavior.Restrict); // ESTO detiene el error de SQL
+
+            modelBuilder.Entity<AssetMovement>()
+                .HasOne(m => m.FixedAsset)
+                .WithMany()
+                .HasForeignKey(m => m.FixedAssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Dentro de OnModelCreating en ApplicationDbContext.cs
+            modelBuilder.Entity<AssetTransfer>()
+                .HasOne(t => t.OriginBranch)
+                .WithMany()
+                .HasForeignKey(t => t.OriginBranchId)
+                .OnDelete(DeleteBehavior.Restrict); // Evita ciclos
+
+            modelBuilder.Entity<AssetTransfer>()
+                .HasOne(t => t.TargetBranch)
+                .WithMany()
+                .HasForeignKey(t => t.TargetBranchId)
+                .OnDelete(DeleteBehavior.Restrict); // Evita ciclos
 
         }
     }
