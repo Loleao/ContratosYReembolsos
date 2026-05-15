@@ -1,92 +1,99 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Cemeteries
+@using Microsoft.AspNetCore.Authorization
 @model IntermentStructure
+@inject IAuthorizationService AuthorizationService
+
 @{
     var template = Model.Template;
     int colsPerFace = template?.ColsPerFace ?? 25;
     bool isDouble = template?.IsDoubleFace ?? false;
     bool isTierra = Model.Type == "TUMBA" || Model.Type == "MAUSOLEO";
+
+    // Evaluación de permisos
+    var canCreateSpaces = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Espacios.Crear")).Succeeded;
+    var canDeleteSpaces = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Espacios.Eliminar")).Succeeded;
 }
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    @* --- CABECERA DE ESTRUCTURA --- *@
     <div class="card border-0 shadow-sm rounded-4 mb-4 border-start border-4 @(isTierra ? "border-success" : "border-primary")">
         <div class="card-body p-4 d-flex justify-content-between align-items-center">
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1 x-small text-uppercase fw-bold">
-                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Cemetery", new { type = Model.Type })">@Model.Type</a></li>
-                        <li class="breadcrumb-item active">Gestión Visual de Espacios</li>
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("InventoryList", "Cemetery", new { id = Model.CemeteryId, type = Model.Type })" class="text-decoration-none">@Model.Type</a>
+                        </li>
+                        <li class="breadcrumb-item active">Mapa de Espacios</li>
                     </ol>
                 </nav>
                 <h4 class="fw-bold mb-0 text-dark">
                     <i class="fa-solid @(isTierra ? "fa-seedling text-success" : "fa-building-columns text-primary") me-2"></i>@Model.Name
                 </h4>
             </div>
+
             <div class="text-end d-flex gap-2">
+                @* LÓGICA SOLO PARA TIERRA: Agregar filas y Borrar espacios *@
                 @if (isTierra)
                 {
-                    <button class="btn btn-outline-success rounded-pill px-3 fw-bold btn-sm" onclick="openAddTumbaModal(@Model.Id)">
-                        <i class="fa-solid fa-plus me-1"></i> Individual
-                    </button>
-                    <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openMassiveTumbasModal(@Model.Id)">
-                        <i class="fa-solid fa-layer-group me-2"></i> Generar Fila Completa
-                    </button>
+                    @if (canCreateSpaces)
+                    {
+                        <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openMassiveTumbasModal(@Model.Id)">
+                            <i class="fa-solid fa-layer-group me-2"></i> Generar Fila Completa
+                        </button>
+                    }
+
+                    @if (canDeleteSpaces)
+                    {
+                        <button id="btnToggleEdit" class="btn btn-outline-danger rounded-pill px-3 fw-bold" onclick="toggleEditMode()">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Modo Edición
+                        </button>
+                    }
                 }
-                else
-                {
-                    <div class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
-                        <i class="fa-solid fa-layer-group me-2"></i>Capacidad: @Model.Spaces.Count()
-                    </div>
-                }
+
+                <div class="badge bg-dark text-white rounded-pill px-3 py-2 d-flex align-items-center">
+                    <i class="fa-solid fa-calculator me-2"></i>Capacidad Actual: @Model.Spaces.Count()
+                </div>
             </div>
         </div>
     </div>
 
+    @* --- RENDERIZADO DE MAPA --- *@
     @if (isTierra)
     {
+        @* (El código del mapa de tierra se mantiene igual pero ahora los botones de borrado 
+            están protegidos por la lógica de arriba) *@
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
             <div class="card-header bg-dark text-white py-3">
-                <h6 class="fw-bold mb-0 text-uppercase small"><i class="fa-solid fa-map me-2"></i>Mapa de Ocupación (Suelo)</h6>
-                <button id="btnToggleEdit" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold" onclick="toggleEditMode()">
-                    <i class="fa-solid fa-pen-to-square me-1"></i> Modo Edición
-                </button>
+                <h6 class="fw-bold mb-0 text-uppercase small"><i class="fa-solid fa-map me-2 text-success"></i>Distribución en Terreno</h6>
             </div>
             <div class="card-body p-4 bg-light-subtle">
-                <div class="p-3 bg-white rounded-4 shadow-sm">
-                    <span class="fw-bold text-success small d-block mb-3 border-bottom pb-2 text-uppercase">Distribución por Filas / Sectores</span>
-
-                    <div class="overflow-auto custom-scroll pb-2">
-                        @* Agrupamos por Fila, asumiendo que en tierra siempre es Nivel 1 *@
-                        <div class="d-flex flex-column gap-2" style="min-width: max-content;">
-                            @foreach (var row in Model.Spaces.GroupBy(s => s.RowLetter).OrderBy(g => g.Key))
-                            {
-                                <div class="d-flex align-items-center">
-                                    @* Letra de la Fila (A, B, C...) - Mismo estilo que Pabellón *@
-                                    <div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px; font-size: 14px;">@row.Key</div>
-
-                                    @* Contenedor de Tumbas - Mismo estilo flex apretado *@
-                                    <div class="d-flex flex-nowrap gap-1">
-                                        @foreach (var tumba in row.OrderBy(s => s.ColumnNumber))
-                                        {
-                                            <div class="position-relative d-inline-block me-1 mb-1">
-                                                <div class="space-item @GetSpaceClass(tumba.Status)"
-                                                     data-bs-toggle="tooltip" title="Tumba @tumba.Code"
-                                                     onclick="verDetalleNicho(@tumba.Id)">
-                                                    @tumba.ColumnNumber
-                                                </div>
-
-                                                @if (tumba.Status == IntermentStatus.Disponible)
-                                                {
-                                                    @* El botón ahora tiene la clase 'delete-overlay' que controlaremos con JS *@
-                                                    <button class="delete-overlay d-none" onclick="confirmDeleteSpace(@tumba.Id, '@tumba.Code')">
-                                                        <i class="fa-solid fa-trash-can"></i>
-                                                    </button>
-                                                }
+                <div class="p-3 bg-white rounded-4 shadow-sm overflow-auto custom-scroll">
+                    <div class="d-flex flex-column gap-2" style="min-width: max-content;">
+                        @foreach (var row in Model.Spaces.GroupBy(s => s.RowLetter).OrderBy(g => g.Key))
+                        {
+                            <div class="d-flex align-items-center">
+                                <div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px; font-size: 14px;">@row.Key</div>
+                                <div class="d-flex flex-nowrap gap-1">
+                                    @foreach (var tumba in row.OrderBy(s => s.ColumnNumber))
+                                    {
+                                        <div class="position-relative d-inline-block">
+                                            <div class="space-item @GetSpaceClass(tumba.Status)"
+                                                 data-bs-toggle="tooltip" title="Tumba @tumba.Code"
+                                                 onclick="verDetalleNicho(@tumba.Id, '@tumba.Code', '@Model.Name', '@tumba.Status')">
+                                                @tumba.ColumnNumber
                                             </div>
-                                        }
-                                    </div>
+                                            @if (canDeleteSpaces && tumba.Status == IntermentStatus.Disponible)
+                                            {
+                                                <button class="delete-overlay d-none" onclick="confirmDeleteSpace(@tumba.Id, '@tumba.Code')">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    }
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -94,6 +101,7 @@
     }
     else
     {
+        @* MAPA DE PABELLONES: Aquí no hay modo edición ni borrado manual por tumba *@
         @foreach (var floor in Model.Spaces.GroupBy(s => s.FloorNumber).OrderByDescending(g => g.Key))
         {
             <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
@@ -102,10 +110,10 @@
                 </div>
                 <div class="card-body p-4 bg-light-subtle">
                     <div class="d-flex flex-column gap-4">
-
+                        @* CARA A *@
                         <div class="p-3 bg-white rounded-4 shadow-sm">
                             <span class="fw-bold text-primary small d-block mb-3 border-bottom pb-2 text-uppercase">Lado Frontal / Cara A</span>
-                            <div class="overflow-auto custom-scroll pb-2">
+                            <div class="overflow-auto custom-scroll">
                                 <div class="d-flex flex-column gap-2" style="min-width: max-content;">
                                     @foreach (var row in floor.Where(s => s.ColumnNumber <= colsPerFace).GroupBy(s => s.RowLetter).OrderBy(g => g.Key))
                                     {
@@ -116,7 +124,7 @@
                                                 {
                                                     <div class="space-item @GetSpaceClass(nicho.Status)"
                                                          data-bs-toggle="tooltip" title="Nicho @nicho.Code"
-                                                         onclick="verDetalleNicho(@nicho.Id)">
+                                                         onclick="verDetalleNicho(@nicho.Id, '@nicho.Code', '@Model.Name', '@nicho.Status')">
                                                         @nicho.ColumnNumber
                                                     </div>
                                                 }
@@ -129,9 +137,10 @@
 
                         @if (isDouble)
                         {
+                            @* CARA B *@
                             <div class="p-3 bg-white rounded-4 shadow-sm">
                                 <span class="fw-bold text-info small d-block mb-3 border-bottom pb-2 text-uppercase">Lado Posterior / Cara B</span>
-                                <div class="overflow-auto custom-scroll pb-2">
+                                <div class="overflow-auto custom-scroll">
                                     <div class="d-flex flex-column gap-2" style="min-width: max-content;">
                                         @foreach (var row in floor.Where(s => s.ColumnNumber > colsPerFace).GroupBy(s => s.RowLetter).OrderBy(g => g.Key))
                                         {
@@ -142,7 +151,7 @@
                                                     {
                                                         <div class="space-item @GetSpaceClass(nicho.Status)"
                                                              data-bs-toggle="tooltip" title="Nicho @nicho.Code"
-                                                             onclick="verDetalleNicho(@nicho.Id)">
+                                                             onclick="verDetalleNicho(@nicho.Id, '@nicho.Code', '@Model.Name', '@nicho.Status')">
                                                             @nicho.ColumnNumber
                                                         </div>
                                                     }
@@ -169,28 +178,12 @@
         let originSpaceId = 0;
         let destinationSpaceId = 0;
 
-        const urlGetAddTumba = '@Url.Action("GetAddTumbaModal", "Cemetery")';
         const urlGetMassiveTumbas = '@Url.Action("GetAddMassiveGraves", "Cemetery")';
 
-        // Inicializar tooltips de Bootstrap
-        document.addEventListener('DOMContentLoaded', function () {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
+        // Inicializar tooltips
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
         });
-
-        async function openAddTumbaModal(id) {
-            try {
-                const response = await fetch(`${urlGetAddTumba}?structureId=${id}`);
-                const html = await response.text();
-                const container = document.getElementById('modalContainer');
-                container.innerHTML = html;
-                new bootstrap.Modal(container.querySelector('.modal')).show();
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
-            }
-        }
 
         async function openMassiveTumbasModal(id) {
             try {
@@ -200,42 +193,23 @@
                 container.innerHTML = html;
                 new bootstrap.Modal(container.querySelector('.modal')).show();
             } catch (error) {
-                Swal.fire('Error', 'No se pudo cargar el generador masivo.', 'error');
+                Swal.fire('Error', 'No se pudo cargar el generador.', 'error');
             }
         }
 
-        async function submitMassiveForm() {
-            const form = document.getElementById('formMassiveTumbas');
-            const formData = new FormData(form);
-            try {
-                const response = await fetch(form.action, { method: 'POST', body: formData });
-                const result = await response.json();
-                if (result.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalMassiveTumbas')).hide();
-                    Swal.fire('Éxito', result.message, 'success').then(() => location.reload());
-                } else {
-                    Swal.fire('Atención', result.message, 'warning');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Error en el servidor.', 'error');
-            }
-        }
-
-        function verDetalleNicho(id) {
-            console.log("Ver detalle del espacio ID:", id);
-            // Aquí llamarías a tu modal de detalles del difunto/contrato
-        }
-
+        // --- FUNCIÓN FALTANTE QUE SOLUCIONA EL ERROR ---
         function validateAndSubmit() {
             const finalInput = document.getElementById('finalRowLetter');
-            const isNewTab = document.getElementById('new-tab').classList.contains('active');
+            const isNewTab = document.getElementById('new-tab')?.classList.contains('active');
 
             if (isNewTab) {
-                // Si está en la pestaña "Nueva", jalamos del input de texto
-                finalInput.value = document.getElementById('inputNuevaFila').value.trim().toUpperCase();
+                // Si existe el campo de texto para nueva fila
+                const inputNueva = document.getElementById('inputNuevaFila');
+                if(inputNueva) finalInput.value = inputNueva.value.trim().toUpperCase();
             } else {
-                // Si está en "Existente", jalamos del select
-                finalInput.value = document.getElementById('selectExistente').value;
+                // Si existe el select para fila existente
+                const selectExt = document.getElementById('selectExistente');
+                if(selectExt) finalInput.value = selectExt.value;
             }
 
             if (!finalInput.value) {
@@ -243,8 +217,34 @@
                 return;
             }
 
-            // Llamamos a la función global que ya tenías en Details.cshtml
             submitMassiveForm();
+        }
+
+        async function submitMassiveForm() {
+            const form = document.getElementById('formMassiveTumbas');
+            if(!form) return;
+
+            const formData = new FormData(form);
+
+            // Mostrar loading
+            Swal.fire({
+                title: 'Generando espacios...',
+                didOpen: () => { Swal.showLoading() },
+                allowOutsideClick: false
+            });
+
+            try {
+                const response = await fetch(form.action, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo de servidor.', 'error');
+            }
         }
 
         function toggleEditMode() {
@@ -253,106 +253,47 @@
             const deleteButtons = document.querySelectorAll('.delete-overlay');
 
             if (editModeActive) {
-                btn.classList.replace('btn-outline-light', 'btn-danger');
+                btn.classList.replace('btn-outline-danger', 'btn-danger');
                 btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Finalizar Edición';
                 deleteButtons.forEach(b => b.classList.remove('d-none'));
-                // Opcional: Deshabilitar tooltips para que no estorben
             } else {
-                btn.classList.replace('btn-danger', 'btn-outline-light');
+                btn.classList.replace('btn-danger', 'btn-outline-danger');
                 btn.innerHTML = '<i class="fa-solid fa-pen-to-square me-1"></i> Modo Edición';
                 deleteButtons.forEach(b => b.classList.add('d-none'));
             }
         }
 
         async function confirmDeleteSpace(id, code) {
-            event.stopPropagation(); // Evita abrir el modal de detalles
-
+            event.stopPropagation();
             const result = await Swal.fire({
-                title: '¿Eliminar tumba?',
-                text: `Se borrará permanentemente la ubicación ${code}.`,
+                title: '¿Eliminar espacio?',
+                text: `Se borrará la ubicación ${code}. Esta acción no se puede deshacer.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, eliminar',
+                confirmButtonText: 'Sí, borrar',
                 cancelButtonText: 'Cancelar'
             });
 
             if (result.isConfirmed) {
-                try {
-                    const response = await fetch(`@Url.Action("DeleteSpace", "Cemetery")/${id}`, {
-                        method: 'POST'
-                    });
-                    const res = await response.json();
-                    if (res.success) {
-                        location.reload();
-                    } else {
-                        Swal.fire('Error', res.message, 'error');
-                    }
-                } catch (e) {
-                    Swal.fire('Error', 'Fallo de conexión', 'error');
-                }
+                const response = await fetch(`@Url.Action("DeleteSpace", "Cemetery")?id=${id}`, { method: 'POST' });
+                const res = await response.json();
+                if (res.success) location.reload();
+                else Swal.fire('Error', res.message, 'error');
             }
-        }
-
-        async function openExhumationModal(id) {
-            originSpaceId = id;
-            try {
-                const response = await fetch(`@Url.Action("GetExhumation", "Cemetery")?spaceId=${id}`);
-                const html = await response.text();
-                document.getElementById('modalContainer').innerHTML = html;
-                new bootstrap.Modal(document.querySelector('#modalExhumation')).show();
-            } catch (e) { Swal.fire('Error', 'No se pudo cargar la orden.', 'error'); }
-        }
-
-        function selectNewSpace() {
-            isSelectingDestiny = true;
-            bootstrap.Modal.getInstance(document.querySelector('#modalExhumation')).hide();
-
-            Swal.fire({
-                toast: true,
-                position: 'top',
-                title: 'Seleccione un espacio disponible en el mapa',
-                icon: 'info',
-                showConfirmButton: false,
-                timer: 5000
-            });
-
-            document.querySelectorAll('.bg-success').forEach(el => el.classList.add('pulse-destiny'));
         }
 
         function verDetalleNicho(id, code, structureName, status) {
             if (isSelectingDestiny) {
-                if (status !== 'Disponible') {
-                    Swal.fire('Error', 'Debe seleccionar un espacio libre.', 'warning');
-                    return;
-                }
-
-                destinationSpaceId = id;
-                isSelectingDestiny = false;
-
-                // Removemos el efecto visual
-                document.querySelectorAll('.pulse-destiny').forEach(el => el.classList.remove('pulse-destiny'));
-
-                // Reabrimos el modal y llenamos los datos del destino
-                const modal = new bootstrap.Modal(document.querySelector('#modalExhumation'));
-                modal.show();
-
-                document.getElementById('noDestiny').classList.add('d-none');
-                document.getElementById('destinationSelected').classList.remove('d-none');
-                document.getElementById('destCode').innerText = code;
-                document.getElementById('destStructure').innerText = structureName;
-                document.getElementById('btnConfirmTransfer').disabled = false;
+                // Lógica de traslado...
             } else {
-                // Lógica normal de ver detalles...
-                if (status === 'Ocupado') openExhumationModal(id);
+                console.log("Detalle de espacio:", id, status);
             }
         }
     </script>
 }
 
 @functions {
-    // Cambiamos el parámetro de string a IntermentStatus
     public string GetSpaceClass(IntermentStatus status)
     {
         return status switch
@@ -369,55 +310,32 @@
 
 <style>
     .space-item {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
         border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0,0,0,0.05);
-        flex-shrink: 0;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+        user-select: none;
     }
 
         .space-item:hover {
-            transform: scale(1.2);
-            z-index: 10;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transform: scale(1.15);
+            z-index: 5;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-
-    /* Scroll Personalizado Estilo FONAFUN */
-    .custom-scroll::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 10px;
-    }
-
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
-
-    .x-small {
-        font-size: 11px;
-    }
-
-    .tracking-wider {
-        letter-spacing: 0.05em;
-    }
 
     .delete-overlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 34px; 
-        height: 34px;
+        width: 32px;
+        height: 32px;
         background-color: rgba(220, 53, 69, 0.9);
         color: white;
         border: none;
@@ -425,31 +343,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 12px;
         cursor: pointer;
         z-index: 10;
-        animation: fadeIn 0.2s;
     }
 
-        .delete-overlay:hover {
-            background-color: #dc3545;
-            transform: scale(1.1);
-        }
+    .custom-scroll::-webkit-scrollbar {
+        height: 8px;
+    }
 
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 4px;
     }
 
     .pulse-destiny {
         animation: pulse-green 1.5s infinite;
         border: 2px solid white !important;
-        box-shadow: 0 0 15px rgba(25, 135, 84, 0.7);
     }
 
     @@keyframes pulse-green {
@@ -458,8 +368,8 @@
         }
 
         50% {
-            transform: scale(1.15);
-            filter: brightness(1.2);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px #198754;
         }
 
         100% {

@@ -11,6 +11,5 @@ namespace ContratosYReembolsos.Data.Contexts
 
         public DbSet<Affiliate> Afiliados { get; set; }
         public DbSet<Beneficiary> Beneficiarios { get; set; }
-        public DbSet<Wake> Velatorios { get; set; }
     }
 }

@@ -5,26 +5,53 @@ html, body {
     background-color: #f8f9fa;
 }
 
-.main-wrapper {
-    min-height: 100vh;
-}
-
-/* Sidebar */
+/* --- SIDEBAR FIJO --- */
 .sidebar {
-    width: 240px;
+    width: 260px;
+    height: 100vh; /* Ocupa siempre el alto de la pantalla */
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column; /* Alinea header, nav y footer verticalmente */
+    padding: 24px 16px;
     background: #ffffff;
     border-right: 1px solid #e9ecef;
-    display: flex;
-    flex-direction: column;
-    padding: 24px 16px;
-    transition: all 0.3s;
-    flex-shrink: 0; 
+    flex-shrink: 0;
+    z-index: 1040;
 }
 
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    padding-left: 8px;
+/* El contenido medio del sidebar (links) sí puede tener scroll si hay muchos */
+.sidebar-content {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* El pie del sidebar (Logout) siempre se queda abajo */
+.sidebar-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 15px;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+/* Scroll interno solo para los links */
+.custom-scroll {
+    scrollbar-width: thin; /* Para Firefox */
+    scrollbar-color: #ced4da transparent;
+}
+
+    .custom-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #ced4da;
+        border-radius: 10px;
+    }
+
+/* Evita que el footer se deforme */
+.flex-shrink-0 {
+    flex-shrink: 0 !important;
 }
 
 .logo-box {
@@ -87,11 +114,35 @@ html, body {
     justify-content: center;
 }
 
-/* Área de contenido */
+/* --- COMPORTAMIENTO BASE --- */
 .content-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     height: 100vh;
-    overflow-y: auto;
-    background-color: #f8f9fa;
+    overflow: hidden;
+}
+
+    /* --- VISTA FIJA (Tipo Gestión de Permisos) --- */
+    .content-area.is-fixed {
+        height: 100vh;
+        overflow: hidden; /* Bloquea el scroll del navegador */
+    }
+
+    /* --- VISTA CON SCROLL (Tipo Contratos, Index, etc.) --- */
+    .content-area.allow-scroll {
+        padding-bottom: 5vh; /* Espacio para el footer si es necesario */
+        min-height: 100vh;
+        height: auto; /* Permite que crezca con el contenido */
+        overflow-y: auto; /* Habilita la barra de scroll */
+    }
+
+/* Ajuste para el wrapper principal si usas sidebar */
+.main-wrapper {
+    display: flex;
+    min-height: 100vh;
+    height: auto;
+    overflow: hidden; /* Evitamos que el wrapper principal haga scroll */
 }
 
 .active-container {

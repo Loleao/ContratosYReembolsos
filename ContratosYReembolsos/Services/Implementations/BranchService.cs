@@ -130,7 +130,6 @@ namespace ContratosYReembolsos.Services.Implementations.Branches
                         Phone = row["Phone"]?.ToString(),
                         Email = row["Email"]?.ToString(),
                         IsActive = Convert.ToBoolean(row["IsActive"] ?? false),
-                        HasWakeService = Convert.ToBoolean(row["HasWakeService"] ?? false)
                     });
                 }
 

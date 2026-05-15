@@ -1,20 +1,18 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Authorization
-@inject UserManager<ContratosYReembolsos.Models.ApplicationUser> UserManager
 @inject IAuthorizationService AuthorizationService
 
 @{
     string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
     string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
 
-    var user = await UserManager.GetUserAsync(User);
-    var fullName = user?.FullName ?? "Usuario";
-    var roles = await UserManager.GetRolesAsync(user!);
-    var roleDisplay = roles.FirstOrDefault() ?? "Sin Rol";
+    // Extraemos info de los Claims de la identidad actual (sin ir a la base de datos)
+    var fullName = User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "Usuario";
+    var roleDisplay = User.IsInRole("Admin") ? "Administrador" : "Operador";
 }
 
 <aside class="sidebar" id="mainSidebar">
-    <div class="sidebar-header mb-4">
+    <div class="sidebar-header mb-4 flex-shrink-0">
         <div class="logo-box">
             <i class="fa-solid fa-shield-halved text-primary"></i>
         </div>
@@ -24,16 +22,16 @@
         </div>
     </div>
 
-    <nav class="nav flex-column flex-grow-1">
-        @* Dashboard: Acceso para todos los logueados *@
+    <nav class="nav flex-column flex-grow-1 overflow-y-auto custom-scroll pe-2">
+        @* Dashboard: Visible para todos los usuarios autenticados *@
         <a href="@Url.Action("Index", "Home")"
            class="nav-link @(currentController == "Home" ? "active" : "")">
             <i class="fa-solid fa-house-chimney"></i>
             <span class="sidebar-text ms-2">Dashboard</span>
         </a>
 
-        @* Contratos *@
-        @if ((await AuthorizationService.AuthorizeAsync(User, "Policy.Global.Lectura")).Succeeded && User.HasClaim("Permission", "Contratos.Ver") || User.IsInRole("Admin"))
+        @* Módulo de Contratos *@
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Contratos.Ver")).Succeeded)
         {
             <a href="@Url.Action("Index", "Contract")"
                class="nav-link @(currentController == "Contract" ? "active" : "")">
@@ -42,26 +40,31 @@
             </a>
         }
 
-        @* @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver")) *@
-        @* { *@
+        @* Módulo de Inventario *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Inventario.Ver")).Succeeded)
+        {
             <a href="@Url.Action("Index", "Inventory")"
-           class="nav-link @(currentController == "Inventory" ? "active" : "")">
+               class="nav-link @(currentController == "Inventory" ? "active" : "")">
                 <i class="fa-solid fa-box"></i>
                 <span class="sidebar-text ms-2">Inventario</span>
             </a>
-        @* } *@
+        }
 
-        @* @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Ataudes.Ver")) *@
-        @* { *@
-        <a href="@Url.Action("Index", "Asset")"
-           class="nav-link @(currentController == "Asset" ? "active" : "")">
-            <i class="fa-solid fa-th-large"></i>
-            <span class="sidebar-text ms-2">Activos Fijos</span>
-        </a>
-        @* } *@
+        @* Módulo de Activos Fijos *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Activos.Ver")).Succeeded)
+        {
+            <a href="@Url.Action("Index", "Asset")"
+               class="nav-link @(currentController == "Asset" ? "active" : "")">
+                <i class="fa-solid fa-th-large"></i>
+                <span class="sidebar-text ms-2">Activos Fijos</span>
+            </a>
+        }
 
-        @* Movilidad *@
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Movilidad.Ver"))
+        @* Módulo de Movilidad *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Movilidad.Ver")).Succeeded)
         {
             <a href="@Url.Action("Index", "Transport")"
                class="nav-link @(currentController == "Transport" ? "active" : "")">
@@ -70,8 +73,9 @@
             </a>
         }
 
-        @* Sepulturas y Modelos Técnicos *@
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Sepulturas.Ver"))
+        @* Módulo de Sepulturas *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Cementerios.Ver")).Succeeded)
         {
             <div class="nav-item">
                 <a href="@Url.Action("Index", "Cemetery")"
@@ -80,8 +84,8 @@
                     <span class="sidebar-text ms-2">Sepulturas</span>
                 </a>
 
-                @* Submenú: Solo si tiene permiso para Modelos o es Admin *@
-                @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Sepulturas.Modelos"))
+                @* Submenú para Modelos Técnicos *@
+                @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Modelos.Ver")).Succeeded)
                 {
                     <div class="ps-3 mt-1">
                         <a href="@Url.Action("Templates", "Cemetery")"
@@ -95,8 +99,9 @@
             </div>
         }
 
-        @* Configuración: Filiales *@
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Filiales.Ver"))
+        @* Módulo de Filiales *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Filiales.Ver")).Succeeded)
         {
             <a href="@Url.Action("Index", "Branch")"
                class="nav-link @(currentController == "Branch" ? "active" : "")">
@@ -105,7 +110,9 @@
             </a>
         }
 
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Agencias.Ver"))
+        @* Módulo de Agencias *@
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Convenios.Ver")).Succeeded)
         {
             <a href="@Url.Action("Index", "Agency")"
                class="nav-link @(currentController == "Agency" ? "active" : "")">
@@ -114,7 +121,8 @@
             </a>
         }
 
-        @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Personal.Ver"))
+        
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Usuarios.Gestionar")).Succeeded)
         {
             <a href="@Url.Action("Index", "User")"
                class="nav-link @(currentController == "User" ? "active" : "")">
@@ -122,10 +130,12 @@
                 <span class="sidebar-text ms-2">Gestión de Personal</span>
             </a>
         }
+    
     </nav>
 
-    @* --- SECCIÓN DE PERFIL REAL --- *@
-    <div class="user-profile border-top pt-3 mt-auto">
+    @* --- PERFIL DE USUARIO FIJO (FOOTER) --- *@
+    @* Usamos 'flex-shrink-0' para que nunca pierda su tamaño *@
+    <div class="user-profile border-top pt-3 mt-auto flex-shrink-0">
         <div class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <div class="avatar bg-light text-primary rounded-circle me-2"
@@ -133,7 +143,7 @@
                     <i class="fa-solid fa-user-tie"></i>
                 </div>
                 <div class="sidebar-text">
-                    <p class="mb-0 fw-bold small">@fullName</p>
+                    <p class="mb-0 fw-bold small text-truncate" style="max-width: 100px;">@fullName</p>
                     <small class="text-muted" style="font-size: 10px;">@roleDisplay</small>
                 </div>
             </div>

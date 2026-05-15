@@ -1,66 +1,286 @@
 ﻿@using ContratosYReembolsos.Models.ViewModels.Users
 @model ManageUserPermissionsViewModel
 
-<div class="container py-4">
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-        <div class="card-header bg-dark text-white p-4">
+@{
+    ViewData["Title"] = "Configuración de Accesos";
+    ViewData["NoPadding"] = true;
+
+    // Agrupamos dinámicamente: Categoría -> Grupo
+    var seccionesPrincipales = Model.Claims
+        .GroupBy(c => c.Category ?? "GENERAL")
+        .OrderBy(s => s.Key);
+}
+
+@* Contenedor Principal: Viewport Height - Header Layout *@
+<div class="d-flex flex-column bg-white overflow-hidden" style="height: calc(100vh - 60px); width: 100%;">
+
+    <form asp-action="ManagePermissions" method="post" id="permissionsForm" class="d-flex flex-column h-100 m-0">
+        <input type="hidden" asp-for="UserId" />
+
+        @* --- HEADER FIJO --- *@
+        <div class="bg-primary p-3 text-white flex-shrink-0 shadow-sm border-bottom">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h4 class="mb-1">Configuración de Accesos</h4>
-                    <p class="mb-0 opacity-75">Usuario: <strong>@Model.FullName</strong> | DNI: @Model.DNI</p>
+                    <h5 class="mb-1 fw-bold"><i class="fa-solid fa-shield-halved me-2"></i>Control de Accesos</h5>
+                    <div class="d-flex align-items-center gap-2 small opacity-75">
+                        <span class="badge bg-white text-primary fw-bold">USUARIO</span>
+                        <span>@Model.FullName</span>
+                        <span class="vr mx-1"></span>
+                        <span>DNI: @Model.DNI</span>
+                    </div>
                 </div>
-                <i class="fa-solid fa-user-shield fa-2x opacity-50"></i>
+                <a asp-action="Index" class="btn btn-sm btn-light rounded-pill px-3 fw-bold shadow-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Volver al Listado
+                </a>
             </div>
         </div>
 
-        <form asp-action="ManagePermissions" method="post">
-            <input type="hidden" asp-for="UserId" />
-            <div class="card-body p-4 bg-light">
+        @* --- CUERPO DIVIDIDO (SCROLLS INDEPENDIENTES) --- *@
+        <div class="row g-0 flex-grow-1 overflow-hidden">
 
-                @* Agrupamos por la propiedad Group *@
-                @{
-                    var groups = Model.Claims.GroupBy(c => c.Group);
-                }
+            @* Sidebar de Módulos Categorizado *@
+            <div class="col-md-3 border-end bg-light d-flex flex-column h-100 overflow-hidden">
 
-                @foreach (var group in groups)
-                {
-                    <div class="mb-4">
-                        <h6 class="text-uppercase text-primary fw-bold mb-3 border-bottom pb-2">
-                            <i class="fa-solid fa-layer-group me-2"></i>Módulo @group.Key
-                        </h6>
-                        <div class="row g-3">
-                            @for (int i = 0; i < Model.Claims.Count; i++)
+                @* Buscador Fijo *@
+                <div class="p-3 flex-shrink-0 border-bottom bg-white">
+                    <div class="input-group input-group-sm border rounded-pill px-2">
+                        <span class="input-group-text bg-transparent border-0 text-muted">
+                            <i class="fa-solid fa-filter small"></i>
+                        </span>
+                        <input type="text" id="moduleSearch" class="form-control border-0 shadow-none x-small"
+                               placeholder="Filtrar módulos...">
+                    </div>
+                </div>
+
+                @* ÁREA DE SCROLL PARA MÓDULOS *@
+                <div class="flex-grow-1 overflow-y-auto custom-scroll p-2 bg-light bg-opacity-50">
+                    <div class="nav flex-column nav-pills custom-pills" id="v-pills-tab" role="tablist">
+                        @foreach (var seccion in seccionesPrincipales)
+                        {
+                            @* Título de la Categoría Principal *@
+                            <div class="px-3 pt-3 pb-1 section-header">
+                                <span class="fw-bold text-primary opacity-50" style="font-size: 0.65rem; letter-spacing: 0.05rem;">
+                                    <i class="fa-solid fa-layer-group me-1"></i> @seccion.Key
+                                </span>
+                            </div>
+
+                            @foreach (var subGrupo in seccion.GroupBy(g => g.Group))
                             {
-                                if (Model.Claims[i].Group == group.Key)
-                                {
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="card h-100 border-0 shadow-sm rounded-3">
-                                            <div class="card-body d-flex align-items-center">
-                                                <div class="form-check form-switch me-3">
-                                                    <input type="hidden" asp-for="@Model.Claims[i].Value" />
-                                                    <input type="checkbox" asp-for="@Model.Claims[i].IsSelected"
-                                                           class="form-check-input border-2" style="cursor:pointer; width: 2.5em; height: 1.25em;">
-                                                </div>
-                                                <div>
-                                                    <label class="fw-bold d-block mb-0">@Model.Claims[i].DisplayName</label>
-                                                    <span class="x-small text-muted">@Model.Claims[i].Value</span>
-                                                </div>
+                                @* Generamos un ID seguro basado en el nombre del grupo *@
+                                var safeId = subGrupo.Key.Replace(" ", "").Replace("á", "a").Replace("ó", "o").Replace("é", "e").Replace("í", "i").Replace("ú", "u");
+
+                                <button class="nav-link mb-1 text-start d-flex align-items-center module-item"
+                                        data-bs-toggle="pill" data-bs-target="#content-@safeId" type="button" role="tab">
+                                    <i class="fa-solid fa-circle-dot me-2 small opacity-50"></i>
+                                    <span class="flex-grow-1 text-truncate x-small">@subGrupo.Key</span>
+                                    <span class="badge rounded-pill bg-dark bg-opacity-10 text-dark ms-2 x-small">@subGrupo.Count()</span>
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @* Panel de Detalles de Permisos *@
+            <div class="col-md-9 bg-white d-flex flex-column h-100 overflow-hidden">
+                @* SCROLL INDEPENDIENTE PARA LISTA DE PERMISOS *@
+                <div class="tab-content flex-grow-1 overflow-y-auto custom-scroll p-4" id="v-pills-tabContent">
+                    @foreach (var seccion in seccionesPrincipales)
+                    {
+                        @foreach (var subGrupo in seccion.GroupBy(g => g.Group))
+                        {
+                            var safeId = subGrupo.Key.Replace(" ", "").Replace("á", "a").Replace("ó", "o").Replace("é", "e").Replace("í", "i").Replace("ú", "u");
+
+                            @* Determinamos si es el primer tab para activarlo *@
+                            bool isFirst = (seccion.Key == seccionesPrincipales.First().Key && subGrupo.Key == seccion.First().Group);
+
+                            <div class="tab-pane fade @(isFirst ? "show active" : "")" id="content-@safeId" role="tabpanel">
+
+                                @* Cabecera del Módulo (Sticky dentro del scroll) *@
+                                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 sticky-top bg-white pt-1" style="z-index: 10;">
+                                    <div>
+                                        <span class="badge bg-primary-subtle text-primary x-small mb-1">@seccion.Key</span>
+                                        <h5 class="fw-bold text-dark mb-0">Permisos de @subGrupo.Key</h5>
+                                    </div>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                                        <label class="small fw-bold text-muted mb-0 cursor-pointer" for="checkAll-@safeId">Seleccionar Todo</label>
+                                        <input type="checkbox" id="checkAll-@safeId" class="form-check-input cursor-pointer"
+                                               onclick="checkAllInGroup('content-@safeId', this.checked)">
+                                    </div>
+                                </div>
+
+                                <div class="permission-list">
+                                    @foreach (var claim in subGrupo)
+                                    {
+                                        var i = Model.Claims.IndexOf(claim);
+                                        <div class="permission-row d-flex align-items-center p-3 rounded-3 hover-bg mb-2 border">
+                                            <div class="form-check form-switch mb-0 me-3">
+                                                @* Binding con índices del modelo original *@
+                                                <input type="hidden" asp-for="@Model.Claims[i].Value" />
+                                                <input type="hidden" asp-for="@Model.Claims[i].Group" />
+                                                <input type="hidden" asp-for="@Model.Claims[i].DisplayName" />
+                                                <input type="hidden" asp-for="@Model.Claims[i].Category" />
+                                                <input type="checkbox" asp-for="@Model.Claims[i].IsSelected"
+                                                       class="form-check-input cursor-pointer permission-checkbox shadow-none">
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <label class="fw-bold text-dark mb-0 d-block cursor-pointer small" asp-for="@Model.Claims[i].IsSelected">
+                                                    @Model.Claims[i].DisplayName
+                                                </label>
+                                                <small class="text-muted" style="font-size: 10px;">@Model.Claims[i].Value</small>
                                             </div>
                                         </div>
-                                    </div>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
             </div>
+        </div>
 
-            <div class="card-footer bg-white p-4 d-flex justify-content-end gap-2 border-top">
-                <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">Volver</a>
-                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow">
-                    Guardar Permisos <i class="fa-solid fa-save ms-2"></i>
+        @* --- FOOTER FIJO --- *@
+        <div class="bg-white p-3 border-top flex-shrink-0 shadow-lg" style="z-index: 1031;">
+            <div class="d-flex justify-content-between align-items-center px-3">
+                <div class="text-muted small">
+                    <i class="fa-solid fa-circle-info text-info me-1"></i>
+                    Los cambios requieren que el usuario <strong>re-inicie su sesión</strong> para impactar.
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+                    Confirmar y Guardar Cambios <i class="fa-solid fa-floppy-disk ms-2"></i>
                 </button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+
+@section Styles {
+    <style>
+        /* Bloqueo del scroll global del body */
+        body {
+            overflow: hidden !important;
+        }
+
+        .x-small {
+            font-size: 0.75rem;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* Estilos personalizados del scrollbar (Logic adaptada) */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #ced4da;
+            border-radius: 10px;
+        }
+
+            .custom-scroll::-webkit-scrollbar-thumb:hover {
+                background: #adb5bd;
+            }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Estilo de los módulos en el sidebar */
+        .custom-pills .nav-link {
+            color: #495057;
+            font-size: 0.8rem;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .custom-pills .nav-link:hover {
+                background-color: #f1f3f5;
+            }
+
+            .custom-pills .nav-link.active {
+                background-color: #fff !important;
+                color: var(--bs-primary);
+                font-weight: bold;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                border: 1px solid #dee2e6;
+            }
+
+        .permission-row {
+            transition: all 0.2s;
+            border-color: #f1f3f5 !important;
+        }
+
+        .hover-bg:hover {
+            background-color: #f8fbff;
+            border-color: #e7f1ff !important;
+        }
+
+        .tab-pane {
+            transition: opacity 0.1s linear;
+        }
+
+        /* Clases de apoyo para altura */
+        .h-100 {
+            height: 100% !important;
+        }
+
+        .overflow-y-auto {
+            overflow-y: auto !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Función para marcar/desmarcar todos los de un módulo
+        function checkAllInGroup(containerId, state) {
+            const container = document.getElementById(containerId);
+            const checkboxes = container.querySelectorAll('.permission-checkbox');
+            checkboxes.forEach(cb => cb.checked = state);
+        }
+
+        // Buscador funcional para el Sidebar
+        document.getElementById('moduleSearch').addEventListener('input', function (e) {
+            const term = e.target.value.toLowerCase().trim();
+            const modules = document.querySelectorAll('.module-item');
+            const sections = document.querySelectorAll('.section-header');
+
+            // 1. Filtrar los módulos (botones)
+            modules.forEach(module => {
+                const moduleText = module.innerText.toLowerCase();
+                if (moduleText.includes(term)) {
+                    module.classList.remove('d-none');
+                    module.classList.add('d-flex');
+                } else {
+                    module.classList.remove('d-flex');
+                    module.classList.add('d-none');
+                }
+            });
+
+            // 2. Filtrar las secciones (Títulos como CONTRATOS, MOVILIDAD)
+            // Solo mostramos la sección si tiene al menos un módulo visible debajo
+            sections.forEach(section => {
+                let nextElement = section.nextElementSibling;
+                let hasVisibleModule = false;
+
+                // Recorremos los elementos hermanos hasta encontrar la siguiente sección o acabar el contenedor
+                while (nextElement && !nextElement.classList.contains('section-header')) {
+                    if (nextElement.classList.contains('module-item') && !nextElement.classList.contains('d-none')) {
+                        hasVisibleModule = true;
+                        break;
+                    }
+                    nextElement = nextElement.nextElementSibling;
+                }
+
+                if (hasVisibleModule || term === "") {
+                    section.classList.remove('d-none');
+                } else {
+                    section.classList.add('d-none');
+                }
+            });
+        });
+    </script>
+}

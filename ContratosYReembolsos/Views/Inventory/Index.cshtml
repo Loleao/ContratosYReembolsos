@@ -1,169 +1,181 @@
-﻿@using ContratosYReembolsos.Models.ViewModels.Inventory
+﻿@* @using ContratosYReembolsos.Models.ViewModels.Inventory
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
 @model AdminDashboardViewModel
 
+@{
+    ViewData["Title"] = "Panel de Control - Inventario";
+}
+
 <div class="container-fluid py-4 animate__animated animate__fadeIn">
+    <!-- ENCABEZADO ESTRATÉGICO -->
     <div class="row mb-4 align-items-center">
         <div class="col-md-8">
-            <h2 class="fw-bold text-dark mb-1">Panel de Control de Inventario</h2>
-            <p class="text-muted mb-0">Gestión global de recursos <span class="fw-bold text-primary">FONAFUN PERÚ</span></p>
+            <h2 class="fw-bold text-dark mb-1">Control Central de Inventarios</h2>
+            <p class="text-muted mb-0">Gestión nacional de recursos y activos <span class="fw-bold text-primary">FONAFUN</span></p>
         </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <span class="badge bg-white text-dark shadow-sm p-2 px-3 border rounded-pill">
-                <i class="fa-solid fa-calendar-day me-2 text-primary"></i> @DateTime.Now.ToString("dd MMM yyyy")
-            </span>
+        <div class="col-md-4 text-md-end">
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-white border shadow-sm rounded-pill px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-print me-2 text-primary"></i> Reportes Rápidos
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-3">
+                    <li><a class="dropdown-item" asp-action="InventoryDashboard"><i class="fa-solid fa-chart-line me-2"></i>Dashboard Estadístico</a></li>
+                    <li><a class="dropdown-item" asp-action="Kardex"><i class="fa-solid fa-list-check me-2"></i>Kardex General</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <div class="row g-3 mb-5">
+    <!-- TARJETAS DE INDICADORES (KPIs) -->
+    <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm card-gradient-primary h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Productos Master</p>
-                            <h2 class="text-white fw-bold mb-0">@Model.TotalProducts</h2>
-                        </div>
-                        <div class="icon-shape bg-white-20 rounded-3 p-3">
-                            <i class="fa-solid fa-boxes-stacked fa-xl text-white"></i>
-                        </div>
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-2">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <small class="text-white-50 fw-bold">SKUS ACTIVOS</small>
+                        <h3 class="mb-0 fw-bold">@Model.TotalProducts</h3>
                     </div>
+                    <i class="fa-solid fa-boxes-stacked fa-2x opacity-50"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm card-gradient-dark h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Activos Fijos</p>
-                            <h2 class="text-white fw-bold mb-0">@Model.TotalAssets</h2>
-                        </div>
-                        <div class="icon-shape bg-white-20 rounded-3 p-3">
-                            <i class="fa-solid fa-laptop-file fa-xl text-white"></i>
-                        </div>
+            <div class="card border-0 shadow-sm rounded-4 bg-dark text-white p-2">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <small class="text-white-50 fw-bold">TRANSFERENCIAS</small>
+                        <h3 class="mb-0 fw-bold">@Model.PendingTransfers</h3>
                     </div>
+                    <i class="fa-solid fa-truck-fast fa-2x opacity-50 text-warning"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm card-gradient-warning h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-dark-50 text-uppercase fw-bold x-small mb-1">En Tránsito</p>
-                            <h2 class="text-dark fw-bold mb-0">@Model.PendingTransfers</h2>
-                        </div>
-                        <div class="icon-shape bg-dark-10 rounded-3 p-3">
-                            <i class="fa-solid fa-truck-fast fa-xl text-dark"></i>
-                        </div>
+            <div class="card border-0 shadow-sm rounded-4 bg-white border p-2">
+                <div class="card-body d-flex align-items-center text-dark">
+                    <div class="flex-grow-1">
+                        <small class="text-muted fw-bold">FILIALES ACTIVAS</small>
+                        <h3 class="mb-0 fw-bold">@Model.Branches.Count</h3>
                     </div>
+                    <i class="fa-solid fa-city fa-2x text-primary opacity-25"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm card-gradient-danger h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-white-50 text-uppercase fw-bold x-small mb-1">Stock Crítico</p>
-                            <h2 class="text-white fw-bold mb-0">@Model.LowStockItems</h2>
-                        </div>
-                        <div class="icon-shape bg-white-20 rounded-3 p-3">
-                            <i class="fa-solid fa-triangle-exclamation fa-xl text-white"></i>
-                        </div>
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white p-2">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <small class="text-white-50 fw-bold">STOCK CRÍTICO</small>
+                        <h3 class="mb-0 fw-bold">@Model.LowStockItems</h3>
                     </div>
+                    <i class="fa-solid fa-triangle-exclamation fa-2x animate__animated animate__pulse animate__infinite"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-2 g-4">
-        <div class="col-md-5">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark d-flex align-items-center">
-                        <span class="p-2 bg-primary-light rounded-circle me-3">
-                            <i class="fa-solid fa-gears text-primary"></i>
-                        </span>
-                        Configuración Maestra
-                    </h5>
+    <div class="row g-4">
+        <!-- SECCIÓN PRINCIPAL: ESTADO DE FILIALES -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">Estado de Suministros por Filial</h5>
+                    <a asp-action="BranchSelection" class="btn btn-sm btn-light rounded-pill px-3">Ver Mapa Completo</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 table-borderless">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="ps-4">Sede / Ubicación</th>
+                                    <th class="text-center">Estado Stock</th>
+                                    <th class="text-center">T. Pendientes</th>
+                                    <th class="text-end pe-4">Gestión</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sede in Model.Branches)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-dark">@sede.Name</div>
+                                            <small class="text-muted">Sede Regional</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- Indicador visual rápido -->
+                                            <div class="progress rounded-pill" style="height: 6px; width: 100px; margin: 0 auto;">
+                                                <div class="progress-bar bg-success" style="width: 85%"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill bg-light text-dark border">
+                                                <i class="fa-solid fa-arrow-right-arrow-left text-muted me-1"></i> 2
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a asp-action="Inventory" asp-route-branchId="@sede.Id" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                                Entrar <i class="fa-solid fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- SECCIÓN LATERAL: CONFIGURACIÓN Y MAESTROS -->
+        <div class="col-lg-4">
+            <!-- ACCESOS RÁPIDOS -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase text-muted mb-3" style="letter-spacing: 1px; font-size: 0.75rem;">Administración</h6>
                     <div class="vstack gap-2">
-                        <a asp-action="Catalog" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
-                            <div class="icon-box bg-primary-soft me-3">
-                                <i class="fa-solid fa-boxes-stacked text-primary"></i>
+                        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.CatalogoInventario.Ver")).Succeeded)
+                        {
+                            <a asp-action="Catalog" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                                <div class="bg-primary-soft text-primary rounded-3 p-2 me-3">
+                                    <i class="fa-solid fa-list-check"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark mb-0">Catálogo Global</div>
+                                    <small class="text-muted">Maestro de SKUs</small>
+                                </div>
+                            </a>
+                            
+                            <a asp-action="Categories" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                                <div class="bg-info-soft text-info rounded-3 p-2 me-3">
+                                    <i class="fa-solid fa-tags"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark mb-0">Categorización</div>
+                                    <small class="text-muted">Líneas y Familias</small>
+                                </div>
+                            </a>
+                        }
+                        
+                        <a asp-action="Movements" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                            <div class="bg-secondary-soft text-secondary rounded-3 p-2 me-3">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold text-dark">Catálogo Maestro</h6>
-                                <small class="text-muted">Gestión de ataúdes y activos.</small>
+                                <div class="fw-bold text-dark mb-0">Historial Global</div>
+                                <small class="text-muted">Auditoría de Movimientos</small>
                             </div>
-                            <i class="fa-solid fa-chevron-right text-light"></i>
-                        </a>
-
-                        <a asp-action="Categories" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
-                            <div class="icon-box bg-info-soft me-3">
-                                <i class="fa-solid fa-folder-tree text-info"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold text-dark">Categorización</h6>
-                                <small class="text-muted">Nivel superior de inventario.</small>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-light"></i>
-                        </a>
-
-                        <a asp-action="Subcategories" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
-                            <div class="icon-box bg-info-soft me-3">
-                                <i class="fa-solid fa-folder-tree text-info"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold text-dark">Subcategorización</h6>
-                                <small class="text-muted">Nivel secundario de inventario.</small>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-light"></i>
-                        </a>
-
-                        <a asp-action="Kardex" class="action-item d-flex align-items-center p-3 rounded-3 border text-decoration-none">
-                            <div class="icon-box bg-secondary-soft me-3">
-                                <i class="fa-solid fa-clock-rotate-left text-secondary"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold text-dark">Auditoría Global</h6>
-                                <small class="text-muted">Kardex centralizado.</small>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-light"></i>
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-7">
-            <div class="card border-0 shadow-sm bg-dark rounded-4 text-white position-relative overflow-hidden h-100" style="min-height: 300px;">
-                <div class="position-absolute top-0 end-0 opacity-10 p-4">
-                    <i class="fa-solid fa-city fa-10x"></i>
-                </div>
-
-                <div class="card-body p-5 d-flex flex-column justify-content-center position-relative z-1">
-                    <h2 class="fw-bold mb-3">Gestión de Sedes</h2>
-                    <p class="fs-5 opacity-75 mb-4" style="max-width: 80%;">
-                        Controle el stock local, verifique ingresos y supervise activos fijos de todas las sucursales a nivel nacional.
-                    </p>
-                    <div>
-                        <a asp-action="BranchSelection" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-lg border-0">
-                            Ir al Panel de Sedes <i class="fa-solid fa-arrow-right ms-2"></i>
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body p-5 d-flex flex-column justify-content-center position-relative z-1">
-                    <h2 class="fw-bold mb-3">Movimientos</h2>
-                    <p class="fs-5 opacity-75 mb-4" style="max-width: 80%;">
-                        Movimientos a nivel nacional.
-                    </p>
-                    <div>
-                        <a asp-action="Movements" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-lg border-0">
-                            Ir al Panel de Movimientos <i class="fa-solid fa-arrow-right ms-2"></i>
-                        </a>
-                    </div>
+            <!-- CARD DE AYUDA / INFO -->
+            <div class="card border-0 shadow-sm rounded-4 bg-gradient-info text-white overflow-hidden">
+                <div class="card-body p-4 position-relative">
+                    <i class="fa-solid fa-circle-info position-absolute end-0 bottom-0 opacity-10 m-n3" style="font-size: 8rem;"></i>
+                    <h6 class="fw-bold mb-2">Ayuda de Gestión</h6>
+                    <p class="small mb-0 opacity-75">Recuerde que todas las transferencias deben ser validadas por la sede destino para actualizar el stock real.</p>
                 </div>
             </div>
         </div>
@@ -171,48 +183,244 @@
 </div>
 
 <style>
-    /* Gradientes Personalizados */
-    .card-gradient-primary {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    .bg-primary-soft { background: #eef2ff; }
+    .bg-info-soft { background: #e0f2fe; }
+    .bg-secondary-soft { background: #f1f5f9; }
+    
+    .action-link {
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+    .action-link:hover {
+        background: #f8fafc;
+        transform: translateX(5px);
+        border-color: var(--bs-primary) !important;
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
     }
 
-    .card-gradient-dark {
-        background: linear-gradient(135deg, #2d3436 0%, #000000 100%);
-    }
+    .progress-bar { transition: width 1s ease-in-out; }
+</style> *@
 
-    .card-gradient-warning {
-        background: linear-gradient(135deg, #f6e58d 0%, #f9ca24 100%);
-    }
 
-    .card-gradient-danger {
-        background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
-    }
 
-    /* Estilos de Iconos Soft */
-    .bg-white-20 {
-        background: rgba(255, 255, 255, 0.2);
-    }
 
-    .bg-dark-10 {
-        background: rgba(0, 0, 0, 0.1);
-    }
+@using ContratosYReembolsos.Models.ViewModels.Inventory
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@inject ContratosYReembolsos.Services.Interfaces.ICurrentUserService CurrentUser
+@model AdminDashboardViewModel
 
-    .bg-primary-light {
-        background: #eef2ff;
-    }
+@{
+    ViewData["Title"] = "Panel de Control - Inventario";
 
-    .icon-box {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-    }
+    // Determinamos los permisos operativos
+    var canProcessEntry = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Inventario.Ingreso")).Succeeded;
+    var canProcessTransfer = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Inventario.Transferencia")).Succeeded;
 
+    // Decidimos la acción de destino
+    var destinationAction = (User.IsInRole("Admin") || canProcessEntry || canProcessTransfer)
+                            ? "BranchSelection"
+                            : "Inventory";
+
+    // Si es un usuario común, guardamos su ID de sede
+    var userBranchId = !User.IsInRole("Admin") && !canProcessEntry && !canProcessTransfer
+                       ? CurrentUser.BranchId
+                       : null;
+}
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    <!-- ENCABEZADO ESTRATÉGICO -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-1">
+                @(User.IsInRole("Admin") ? "Control Central de Inventarios" : $"Gestión de Inventario - {ViewBag.UserBranch?.Name}")
+            </h2>
+            <p class="text-muted mb-0">Gestión de recursos y activos <span class="fw-bold text-primary">FONAFUN</span></p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="dropdown d-inline-block">
+                <button class="btn btn-white border shadow-sm rounded-pill px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-print me-2 text-primary"></i> Reportes Rápidos
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-3">
+                    <li><a class="dropdown-item" asp-action="InventoryDashboard"><i class="fa-solid fa-chart-line me-2"></i>Dashboard Estadístico</a></li>
+                    <li><a class="dropdown-item" asp-action="Kardex" asp-route-branchId="@(!User.IsInRole("Admin") ? CurrentUser.BranchId : null)"><i class="fa-solid fa-list-check me-2"></i>Kardex @(User.IsInRole("Admin") ? "General" : "Local")</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE INDICADORES (KPIs Adaptativos) -->
+    <div class="row g-3 mb-4">
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-2 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <small class="text-white-50 fw-bold">SKUS GLOBALES</small>
+                            <h3 class="mb-0 fw-bold">@Model.TotalProducts</h3>
+                        </div>
+                        <i class="fa-solid fa-boxes-stacked fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 bg-dark text-white p-2 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <small class="text-white-50 fw-bold">TRANSFERENCIAS</small>
+                            <h3 class="mb-0 fw-bold">@Model.PendingTransfers</h3>
+                        </div>
+                        <i class="fa-solid fa-truck-fast fa-2x opacity-50 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-2 h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <small class="text-white-50 fw-bold">ITEMS EN SEDE</small>
+                            <h3 class="mb-0 fw-bold">@(((List<ContratosYReembolsos.Models.Entities.Inventory.ProductStock>)ViewBag.UserStock)?.Count ?? 0)</h3>
+                        </div>
+                        <i class="fa-solid fa-box-open fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="@(User.IsInRole("Admin") ? "col-md-3" : "col-md-6")">
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white p-2 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <small class="text-white-50 fw-bold">STOCK CRÍTICO</small>
+                        <h3 class="mb-0 fw-bold">@Model.LowStockItems</h3>
+                    </div>
+                    <i class="fa-solid fa-triangle-exclamation fa-2x animate__animated animate__pulse animate__infinite"></i>
+                </div>
+            </div>
+        </div>
+
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 bg-white border p-2 h-100">
+                    <div class="card-body d-flex align-items-center text-dark">
+                        <div class="flex-grow-1">
+                            <small class="text-muted fw-bold">FILIALES</small>
+                            <h3 class="mb-0 fw-bold">@Model.Branches.Count</h3>
+                        </div>
+                        <i class="fa-solid fa-city fa-2x text-primary opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-4">
+        <!-- SECCIÓN PRINCIPAL: OPERACIÓN DE SEDE -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-dark text-white position-relative overflow-hidden h-100" style="min-height: 350px;">
+                <!-- Decoración de fondo -->
+                <div class="position-absolute top-0 end-0 opacity-10 p-4">
+                    <i class="fa-solid fa-warehouse fa-10x"></i>
+                </div>
+
+                <div class="card-body p-5 d-flex flex-column justify-content-center position-relative z-1">
+                    <h2 class="fw-bold mb-3">Gestión Operativa</h2>
+                    <p class="fs-5 opacity-75 mb-4" style="max-width: 80%;">
+                        @(User.IsInRole("Admin")
+                            ? "Acceda al panel de selección para supervisar el stock, internar mercadería o gestionar traslados entre cualquier sede nacional."
+                            : "Administre las existencias locales de su filial, valide ingresos y supervise los suministros asignados.")
+                    </p>
+
+                    <div>
+                        <a asp-action="@destinationAction"
+                           asp-route-branchId="@userBranchId"
+                           class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-lg border-0 btn-lg hover-scale">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i>
+                            @(destinationAction == "BranchSelection" ? "Ir a Selección de Sede" : "Gestionar Mi Almacén")
+                        </a>
+                    </div>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="mt-4">
+                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                                <i class="fa-solid fa-shield-check me-1"></i> Modo Administrador Global
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN LATERAL: CONFIGURACIÓN Y MAESTROS -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-uppercase text-muted mb-3" style="letter-spacing: 1px; font-size: 0.75rem;">Administración</h6>
+                    <div class="vstack gap-2">
+                        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.CatalogoInventario.Ver")).Succeeded)
+                        {
+                            <a asp-action="Catalog" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                                <div class="bg-primary-soft text-primary rounded-3 p-2 me-3">
+                                    <i class="fa-solid fa-list-check"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark mb-0">Catálogo Global</div>
+                                    <small class="text-muted">Maestro de SKUs</small>
+                                </div>
+                            </a>
+
+                            <a asp-action="Categories" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                                <div class="bg-info-soft text-info rounded-3 p-2 me-3">
+                                    <i class="fa-solid fa-tags"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark mb-0">Categorización</div>
+                                    <small class="text-muted">Líneas y Familias</small>
+                                </div>
+                            </a>
+                        }
+
+                        <a asp-action="Movements" class="d-flex align-items-center p-3 rounded-3 border text-decoration-none action-link">
+                            <div class="bg-secondary-soft text-secondary rounded-3 p-2 me-3">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark mb-0">Movimientos</div>
+                                <small class="text-muted small">Historial de auditoría</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD DE AYUDA / INFO CON PERMISOS OPERATIVOS -->
+            <div class="card border-0 shadow-sm rounded-4 bg-gradient-info text-white overflow-hidden">
+                <div class="card-body p-4 position-relative">
+                    <i class="fa-solid fa-circle-info position-absolute end-0 bottom-0 opacity-10 m-n3" style="font-size: 8rem;"></i>
+                    <h6 class="fw-bold mb-2">Resumen Operativo</h6>
+                    <ul class="list-unstyled small mb-0 opacity-75">
+                        <li><i class="fa-solid fa-check-circle me-1"></i> Ingreso Directo: @(canProcessEntry ? "Habilitado" : "Restringido")</li>
+                        <li><i class="fa-solid fa-check-circle me-1"></i> Transferencias: @(canProcessTransfer ? "Habilitado" : "Restringido")</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
     .bg-primary-soft {
-        background: #e0e7ff;
+        background: #eef2ff;
     }
 
     .bg-info-soft {
@@ -223,28 +431,28 @@
         background: #f1f5f9;
     }
 
-    /* Items de Acción */
-    .action-item {
-        background: #fff;
+    .action-link {
         transition: all 0.2s ease;
-        border-color: #f1f5f9 !important;
+        background: #fff;
     }
 
-        .action-item:hover {
+        .action-link:hover {
             background: #f8fafc;
-            border-color: #cbd5e1 !important;
             transform: translateX(5px);
+            border-color: var(--bs-primary) !important;
         }
 
-    /* Utilidades */
-    .hover-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
     }
 
-    .x-small {
-        font-size: 0.7rem;
+    .hover-scale {
+        transition: transform 0.2s ease;
     }
+
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
 
     .z-1 {
         z-index: 1;

@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "Expediente Digital " + Model.Data.ContractNumber;
-    // Lógica de color de estado basada en el ViewModel
     var statusClass = Model.Data.Status == "ACTIVO" ? "success" : (Model.Data.Status == "REUBICADO" ? "info" : "secondary");
 }
 
@@ -61,24 +60,35 @@
         <div class="tab-pane fade show active" id="info-general" role="tabpanel">
             <div class="row g-4">
                 <div class="col-md-8">
+
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-white border-0 py-3 px-4">
-                            <h5 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-user-group me-2 text-primary"></i>Datos de Identidad</h5>
+                            <h5 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-user-group me-2 text-primary"></i>Datos de Identidad y Vínculo</h5>
                         </div>
                         <div class="card-body p-4 pt-0">
-                            <div class="row g-4">
-                                <div class="col-md-6 border-end">
-                                    <div class="p-3 bg-primary bg-opacity-10 rounded-4 border border-primary border-opacity-10">
-                                        <label class="x-small fw-bold text-primary text-uppercase d-block mb-2 opacity-75">Titular Solicitante</label>
-                                        <h6 class="fw-bold mb-1 fs-5">@Model.Data.SolicitorName</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4 border-end">
+                                    <div class="p-3 bg-primary bg-opacity-10 rounded-4 border border-primary border-opacity-10 h-100">
+                                        <label class="x-small fw-bold text-primary text-uppercase d-block mb-2 opacity-75">Solicitante de Servicio</label>
+                                        <h6 class="fw-bold mb-1 text-truncate">@Model.Data.SolicitorName</h6>
                                         <span class="badge bg-primary text-white mb-2">DNI @Model.Data.SolicitorDni</span>
-                                        <p class="small text-muted mb-0"><i class="fa-solid fa-address-card me-1"></i> @Model.Data.SolicitorType</p>
+                                        <p class="small text-muted mb-0"><i class="fa-solid fa-user-shield me-1"></i> Tipo: @Model.Data.SolicitorType</p>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-dark bg-opacity-10 rounded-4 border border-dark border-opacity-10">
+
+                                <div class="col-md-4 border-end">
+                                    <div class="p-3 bg-success bg-opacity-10 rounded-4 border border-success border-opacity-10 h-100">
+                                        <label class="x-small fw-bold text-success text-uppercase d-block mb-2 opacity-75">Afiliado Titular (Derecho)</label>
+                                        <h6 class="fw-bold mb-1 text-truncate">@(string.IsNullOrEmpty(Model.Data.AffiliateFullName) ? Model.Data.SolicitorName : Model.Data.AffiliateFullName)</h6>
+                                        <span class="badge bg-success text-white mb-2">DNI @(string.IsNullOrEmpty(Model.Data.AffiliateDni) ? Model.Data.SolicitorDni : Model.Data.AffiliateDni)</span>
+                                        <p class="small text-muted mb-0"><i class="fa-solid fa-id-card me-1"></i> CIP: @(string.IsNullOrEmpty(Model.Data.AffiliateCIP) ? Model.Data.SolicitorCip : Model.Data.AffiliateCIP)</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-dark bg-opacity-10 rounded-4 border border-dark border-opacity-10 h-100">
                                         <label class="x-small fw-bold text-dark text-uppercase d-block mb-2 opacity-75">Beneficiario Fallecido</label>
-                                        <h6 class="fw-bold mb-1 fs-5">@Model.Data.DeceasedName</h6>
+                                        <h6 class="fw-bold mb-1 text-truncate">@Model.Data.DeceasedName</h6>
                                         <span class="badge bg-dark text-white mb-2">DNI @Model.Data.DeceasedDni</span>
                                         <p class="small text-muted mb-0"><i class="fa-solid fa-calendar-xmark me-1"></i> Defunción: @Model.Data.DeathDate.ToString("dd/MM/yyyy")</p>
                                     </div>
@@ -87,7 +97,7 @@
                         </div>
                     </div>
 
-                    <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-white border-0 py-3 px-4">
                             <h5 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i>Ubicación y Logística</h5>
                         </div>
@@ -95,34 +105,45 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-4 text-center bg-light">
-                                        <i class="fa-regular fa-calendar-check text-primary mb-2"></i>
-                                        <label class="d-block x-small fw-bold text-muted text-uppercase">Fecha Sepelio</label>
+                                        <i class="fa-regular fa-calendar-check text-primary mb-2 fs-5"></i>
+                                        <label class="d-block x-small fw-bold text-muted text-uppercase mb-1">Fecha Sepelio</label>
                                         <span class="fw-bold">@Model.Data.BurialDate.ToShortDateString()</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-4 text-center bg-light">
-                                        <i class="fa-regular fa-clock text-primary mb-2"></i>
-                                        <label class="d-block x-small fw-bold text-muted text-uppercase">Hora Programada</label>
+                                        <i class="fa-regular fa-clock text-primary mb-2 fs-5"></i>
+                                        <label class="d-block x-small fw-bold text-muted text-uppercase mb-1">Hora Programada</label>
                                         <span class="fw-bold">@Model.Data.BurialTime.ToString(@"hh\:mm")</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 border rounded-4 text-center bg-light">
-                                        <i class="fa-solid fa-location-dot text-primary mb-2"></i>
-                                        <label class="d-block x-small fw-bold text-muted text-uppercase">Lugar de Deceso</label>
-                                        <span class="fw-bold d-block text-truncate">@Model.Data.UbigeoDetail</span>
+                                        <i class="fa-solid fa-house-chimney-window text-primary mb-2 fs-5"></i>
+                                        <label class="d-block x-small fw-bold text-muted text-uppercase mb-1">Lugar de Velación</label>
+                                        <span class="fw-bold d-block text-truncate" title="@Model.Data.WakeName">@Model.Data.WakeName</span>
+                                        @if (!string.IsNullOrEmpty(Model.Data.CustomWakeAddress))
+                                        {
+                                            <small class="text-danger d-block text-truncate x-small fw-bold mt-1" title="@Model.Data.CustomWakeAddress">
+                                                <i class="fa-solid fa-location-dot"></i> @Model.Data.CustomWakeAddress
+                                            </small>
+                                        }
                                     </div>
                                 </div>
                             </div>
+
                             <div class="p-4 bg-primary bg-opacity-10 rounded-4 border-dashed border-primary border-2 d-flex align-items-center">
                                 <div class="bg-primary text-white rounded-circle p-3 me-4">
                                     <i class="fa-solid fa-monument fa-lg"></i>
                                 </div>
-                                <div>
+                                <div class="flex-grow-1">
                                     <label class="x-small fw-bold text-primary text-uppercase d-block mb-1">Destino Final Actual</label>
                                     <h5 class="fw-bold mb-1">@Model.Data.CemeteryName</h5>
-                                    <p class="mb-0 text-dark"><i class="fa-solid fa-th-large me-2 opacity-50"></i>@Model.Data.FullLocation</p>
+                                    <p class="mb-0 text-dark fw-semibold"><i class="fa-solid fa-th-large me-2 opacity-50"></i>@Model.Data.FullLocation</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-muted small d-block"><i class="fa-solid fa-map-location-dot me-1"></i> Ubigeo</span>
+                                    <span class="badge bg-white text-primary border fw-bold">@Model.Data.UbigeoDetail</span>
                                 </div>
                             </div>
                         </div>
@@ -132,7 +153,7 @@
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden border-top border-4 border-primary">
                         <div class="card-body p-4">
-                            <label class="x-small fw-bold text-muted text-uppercase d-block mb-3">Gestión Administrativa</label>
+                            <label class="x-small fw-bold text-muted text-uppercase d-block mb-3">Sedes Administrativas</label>
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fa-solid fa-building-shield fs-4 text-primary me-3"></i>
                                 <div>
@@ -151,39 +172,110 @@
                     </div>
 
                     <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-header bg-white border-0 py-3 px-4">
-                            <h5 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-list-check me-2 text-primary"></i>Cobertura</h5>
+                        <div class="card-header bg-white border-0 py-3 px-4 border-bottom">
+                            <h5 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-clipboard-check me-2 text-primary"></i>Control de Cobertura</h5>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="list-group list-group-flush small">
-                                @foreach (var prod in Model.Data.Products)
+                        <div class="card-body p-3">
+
+                            <div class="mb-4">
+                                <span class="fw-bold text-muted x-small text-uppercase tracking-wider px-2 d-block mb-2">Bienes Otorgados</span>
+                                @foreach (var prod in Model.Data.DetailedProducts)
                                 {
-                                    <div class="list-group-item px-4 py-3 border-0 bg-transparent">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-box text-muted me-3"></i>
-                                            <div><span class="fw-bold d-block">@prod</span><small class="text-muted">Ataúd / Urna</small></div>
+                                    <div class="d-flex justify-content-between align-items-center p-2 mb-2 bg-white rounded-3 border align-middle shadow-sm animate__animated animate__fadeIn">
+                                        <div class="d-flex align-items-center overflow-hidden">
+                                            <i class="fa-solid fa-box text-primary mx-2"></i>
+                                            <div class="overflow-hidden">
+                                                <span class="fw-bold d-block text-truncate text-dark small" style="font-size:0.75rem;" title="@prod.Name">@prod.Name</span>
+                                                @if (prod.Status == "Entregado")
+                                                {
+                                                    <small class="text-success x-small fw-bold"><i class="fa-solid fa-circle-check"></i> Entregado (@prod.DeliveryDate.ToString("dd/MM"))</small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-warning x-small fw-bold"><i class="fa-solid fa-clock"></i> Pendiente Entrega</small>
+                                                }
+                                            </div>
                                         </div>
-                                    </div>
-                                }
-                                @foreach (var serv in Model.Data.InternalServices)
-                                {
-                                    <div class="list-group-item px-4 py-3 border-0 border-start border-4 border-info">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-bell-concierge text-info me-3"></i>
-                                            <div><span class="fw-bold d-block">@serv</span><small class="text-muted">Servicio Propio FONAFUN</small></div>
-                                        </div>
-                                    </div>
-                                }
-                                @foreach (var serv in Model.Data.ExternalServices)
-                                {
-                                    <div class="list-group-item px-4 py-3 border-0 border-start border-4 border-success">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-users-gear text-success me-3"></i>
-                                            <div><span class="fw-bold d-block">@serv</span><small class="text-muted">Servicio por Convenio</small></div>
+                                        <div class="text-end flex-shrink-0 ms-2">
+                                            @if (prod.Status == "Pendiente")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-success rounded-pill px-2 py-0" style="font-size:0.65rem;"
+                                                        onclick="openDeliveryModal(@prod.Id, '@Html.Encode(prod.Name)')">
+                                                    <i class="fa-solid fa-truck-ramp-box"></i> Entregar
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-link text-muted p-0 border-0 shadow-none me-1" title="Ver Notas"
+                                                        onclick="showDeliveryNotes('@Html.Encode(prod.Name)', '@prod.DeliveryDate.ToString("dd/MM/yyyy HH:mm")', '@Html.Encode(prod.Observations)')">
+                                                    <i class="fa-solid fa-comment-dots fs-5"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </div>
                                 }
                             </div>
+
+                            <div>
+                                <span class="fw-bold text-muted x-small text-uppercase tracking-wider px-2 d-block mb-2">Servicios Propios FONAFUN</span>
+                                @foreach (var serv in Model.Data.DetailedInternalServices)
+                                {
+                                    <div class="p-2 mb-2 bg-white rounded-3 border align-middle shadow-sm border-start border-4 animate__animated animate__fadeIn
+                                         @(serv.Status == "Ejecutado" ? "border-success" : (serv.Status == "EnProgreso" ? "border-warning" : "border-info"))">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center overflow-hidden">
+                                                <i class="fa-solid fa-bell-concierge mx-2 @(serv.Status == "Ejecutado" ? "text-success" : (serv.Status == "EnProgreso" ? "text-warning" : "text-info"))"></i>
+                                                <div class="overflow-hidden">
+                                                    <span class="fw-bold d-block text-dark small text-truncate" style="font-size:0.75rem;" title="@serv.Name">@serv.Name</span>
+                                                    @if (serv.Status == "Ejecutado")
+                                                    {
+                                                        <small class="text-success x-small fw-bold"><i class="fa-solid fa-square-check"></i> Finalizado</small>
+                                                    }
+                                                    else if (serv.Status == "EnProgreso")
+                                                    {
+                                                        <small class="text-warning x-small fw-bold animate__animated animate__pulse animate__infinite"><i class="fa-solid fa-spinner fa-spin"></i> En Curso...</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-info x-small fw-semibold">Por iniciar</small>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div class="text-end flex-shrink-0 ms-2">
+                                                @if (serv.Status == "Pendiente")
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-info text-white rounded-pill px-2 py-0" style="font-size:0.65rem;"
+                                                            onclick="processServiceAdvance(@serv.Id, '@Html.Encode(serv.Name)', 'Pendiente')">
+                                                        <i class="fa-solid fa-play"></i> Iniciar
+                                                    </button>
+                                                }
+                                                else if (serv.Status == "EnProgreso")
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-warning text-dark rounded-pill px-2 py-0" style="font-size:0.65rem;"
+                                                            onclick="processServiceAdvance(@serv.Id, '@Html.Encode(serv.Name)', 'EnProgreso')">
+                                                        <i class="fa-solid fa-square-check"></i> Completar
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @foreach (var serv in Model.Data.ExternalServices)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded-3 border-start border-4 border-success shadow-sm">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-handshake text-success mx-2"></i>
+                                            <div>
+                                                <span class="fw-bold d-block small text-dark" style="font-size:0.75rem;">@serv</span>
+                                                <small class="text-success x-small fw-semibold">Vía Convenio</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -215,7 +307,7 @@
                                         <th>Ubicación Origen (Anterior)</th>
                                         <th>Ubicación Destino (Nueva)</th>
                                         <th class="text-end" style="width: 110px;">Costo</th>
-                                        <th class="text-center" style="width: 80px;">Acta</th> @* NUEVA COLUMNA *@
+                                        <th class="text-center" style="width: 80px;">Acta</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -247,7 +339,6 @@
                                             <td class="text-end">
                                                 <span class="fw-bold text-dark small">S/ @move.Cost.ToString("N2")</span>
                                             </td>
-                                            @* BOTÓN PARA EL PDF *@
                                             <td class="text-center">
                                                 <a href="@Url.Action("PrintExhumation", "Exhumation", new { id = move.ExhumationId })"
                                                    target="_blank"
@@ -261,13 +352,6 @@
                                     }
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="mt-4 p-3 bg-light rounded-4 border-dashed border-2">
-                            <p class="mb-0 x-small text-muted text-center italic">
-                                <i class="fa-solid fa-lock me-2"></i>
-                                Este reporte contiene información histórica inalterable. Los datos de ubicación corresponden a los registros capturados al momento de la ejecución.
-                            </p>
                         </div>
                     }
                     else
@@ -286,119 +370,67 @@
     </div>
 </div>
 
+<div class="modal fade" id="deliveryConfirmModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-primary text-uppercase" id="modalProductName">Confirmar Entrega</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="hdnDetailId" />
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Fecha y Hora de Entrega</label>
+                    <input type="datetime-local" id="txtDeliveryDate" class="form-control rounded-pill border-2" />
+                </div>
+                <div class="mb-0">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Observaciones / Notas de Almacén</label>
+                    <textarea id="txtDeliveryObservations" class="form-control rounded-4 border-2" rows="3" placeholder="Ej: Se realiza la entrega física del ataúd al contratante en perfecto estado."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light py-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-4" onclick="submitProductDelivery()">Guardar Entrega</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     :root {
         --pnp-blue: #004a99;
         --pnp-bg: #f8fafc;
     }
 
-    body {
-        background-color: var(--pnp-bg);
-    }
-
-    .nav-pills .nav-link {
-        color: #64748b;
-        transition: all 0.3s ease;
-    }
-
-        .nav-pills .nav-link.active {
-            background-color: var(--pnp-blue) !important;
-            color: white !important;
-            box-shadow: 0 4px 15px rgba(0, 74, 153, 0.3);
-        }
-
-    .x-small {
-        font-size: 0.7rem;
-    }
-
-    .tracking-wider {
-        letter-spacing: 0.1em;
-    }
-
-    .border-dashed {
-        border-style: dashed !important;
-    }
-
-    /* Timeline Styling */
-    .timeline {
-        position: relative;
-    }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 24px;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: #e2e8f0;
-            z-index: 1;
-        }
-
-    .timeline-item:last-child {
-        margin-bottom: 0 !important;
-    }
-
-    .timeline-content::before {
-        content: '';
-        position: absolute;
-        left: -12px;
-        top: 15px;
-        width: 20px;
-        height: 20px;
-        background: inherit;
-        transform: rotate(45deg);
-        border-left: 1px solid rgba(0,0,0,0.05);
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-
-    <style >
-    /* Estilo Formal para Tablas */
     .custom-table-formal {
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid #e2e8f0 !important;
     }
 
-    .custom-table-formal thead th {
-        background-color: #f8fafc;
-        padding: 15px;
-        border-bottom: 2px solid #e2e8f0 !important;
-        letter-spacing: 0.5px;
-    }
+        .custom-table-formal thead th {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-bottom: 2px solid #e2e8f0 !important;
+        }
 
-    .custom-table-formal tbody td {
-        padding: 18px 15px;
-        background-color: white;
-    }
+        .custom-table-formal tbody td {
+            padding: 18px 15px;
+            background-color: white;
+        }
 
-    /* Badge de Expediente estilo Sello */
     .badge-expediente {
         background-color: #f1f5f9;
         color: #475569;
         border: 1px solid #cbd5e0;
         padding: 6px 12px;
         border-radius: 6px;
-        font-family: 'Courier New', Courier, monospace; /* Toque de máquina de escribir */
+        font-family: 'Courier New', Courier, monospace;
         font-weight: bold;
         font-size: 0.85rem;
-        display: inline-block;
     }
 
-    /* Icono de estado */
-    .icon-circle-status {
-        width: 35px;
-        height: 35px;
-        background: #e0e7ff;
-        color: #4338ca;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-    }
-
-    /* Clases de texto pequeño */
     .x-small {
         font-size: 0.65rem;
     }
@@ -407,8 +439,131 @@
         letter-spacing: 1px;
     }
 
-    /* Efecto hover profesional */
     .custom-table-formal tbody tr:hover td {
         background-color: #fcfcfc;
     }
 </style>
+
+<script>
+    // --- LÓGICA LOGÍSTICA: BIENES ---
+    function openDeliveryModal(id, encodedName) {
+        const productName = $('<div/>').html(encodedName).text();
+        $('#hdnDetailId').val(id);
+        $('#modalProductName').text('Entrega: ' + productName);
+
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        $('#txtDeliveryDate').val(now.toISOString().slice(0, 16));
+        $('#txtDeliveryObservations').val('');
+
+        const deliveryModal = new bootstrap.Modal(document.getElementById('deliveryConfirmModal'));
+        deliveryModal.show();
+    }
+
+    async function submitProductDelivery() {
+        const detailId = $('#hdnDetailId').val();
+        const deliveryDate = $('#txtDeliveryDate').val();
+        const observations = $('#txtDeliveryObservations').val().trim();
+
+        if (!deliveryDate) {
+            Swal.fire('Atención', 'Debe seleccionar una fecha y hora válidas.', 'warning');
+            return;
+        }
+
+        Swal.fire({ title: 'Guardando registro...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const response = await fetch('@Url.Action("ConfirmProductDelivery", "Contract")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify({
+                    Id: parseInt(detailId),
+                    DeliveryDate: deliveryDate,
+                    Observations: observations
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('¡Éxito!', data.message, 'success').then(() => { location.reload(); });
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        } catch (error) {
+            console.error("Error en entrega:", error);
+            Swal.fire('Error', 'Falla de comunicación.', 'error');
+        }
+    }
+
+    function showDeliveryNotes(name, dateStr, encodedObs) {
+        const title = $('<div/>').html(name).text();
+        const observations = encodedObs ? $('<div/>').html(encodedObs).text() : "Sin observaciones registradas.";
+
+        Swal.fire({
+            title: '<span class="fs-6 fw-bold text-primary text-uppercase">Auditoría de Despacho</span>',
+            html: `
+                <div class="text-start border p-3 rounded-4 bg-light small mt-2">
+                    <p class="mb-2"><b>Elemento:</b> <span class="text-dark">${title}</span></p>
+                    <p class="mb-2"><b>Fecha de Operación:</b> <span class="text-muted">${dateStr}</span></p>
+                    <p class="mb-0"><b>Notas de Almacén:</b></p>
+                    <div class="p-2 bg-white border rounded-3 mt-1 text-muted fs-7">"${observations}"</div>
+                </div>
+            `,
+            icon: 'info',
+            confirmButtonColor: '#004a99'
+        });
+    }
+
+    // --- LÓGICA OPERATIVA: AVANCE DE SERVICIOS POR FASES ---
+    async function processServiceAdvance(id, encodedName, currentStatus) {
+        const serviceName = $('<div/>').html(encodedName).text();
+
+        const config = currentStatus === "Pendiente"
+            ? { title: '¿Iniciar Servicio?', text: `El servicio propio "${serviceName}" pasará a estado EN CURSO (En Progreso).`, btnText: 'Sí, Iniciar', color: '#0dcaf0' }
+            : { title: '¿Finalizar Servicio?', text: `Registre las notas de conformidad final para cerrar el servicio "${serviceName}".`, btnText: 'Sí, Completar', color: '#ffc107' };
+
+        const { value: text, isConfirmed } = await Swal.fire({
+            title: config.title,
+            text: config.text,
+            input: 'textarea',
+            inputPlaceholder: 'Escriba las observaciones o notas de conformidad aquí...',
+            showCancelButton: true,
+            confirmButtonText: config.btnText,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: config.color,
+            preConfirm: (inputValue) => {
+                if (currentStatus === "EnProgreso" && (!inputValue || inputValue.trim().length < 5)) {
+                    Swal.showValidationMessage('Debe ingresar una nota de conformidad válida para cerrar el servicio.');
+                }
+                return inputValue;
+            }
+        });
+
+        if (isConfirmed) {
+            Swal.fire({ title: 'Actualizando servicio...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            try {
+                const response = await fetch('@Url.Action("AdvanceServiceStatus", "Contract")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({ Id: id, Observations: text })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('¡Actualizado!', data.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Error de comunicación con el servidor.', 'error');
+            }
+        }
+    }
+</script>

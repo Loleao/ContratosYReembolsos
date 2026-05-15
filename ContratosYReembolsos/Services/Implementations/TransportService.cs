@@ -1,4 +1,5 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Models.Entities.Transport;
 using ContratosYReembolsos.Models.ViewModels.Transport;
 using ContratosYReembolsos.Services.Interfaces;
@@ -13,6 +14,21 @@ namespace ContratosYReembolsos.Services.Implementations.Transport
         public TransportService(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync()
+        {
+            // Obtenemos las filiales incluyendo Ubigeo y las colecciones necesarias para el conteo
+            var branches = await _context.Filiales
+                .Include(b => b.Ubigeo)
+                .Include(b => b.Vehicles)
+                .Include(b => b.Contracts) // Asegúrate de que la navegación exista
+                .OrderBy(b => b.Name)
+                .ToListAsync();
+
+            return branches
+                .GroupBy(b => b.Ubigeo?.Region ?? "SIN REGIÓN")
+                .OrderBy(g => g.Key);
         }
 
         public async Task<List<object>> GetBranchesSelectionData()

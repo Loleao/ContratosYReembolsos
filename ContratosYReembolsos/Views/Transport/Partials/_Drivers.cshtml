@@ -1,5 +1,14 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Transport
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
 @model IEnumerable<Driver>
+
+@{
+    // Evaluación de políticas de seguridad
+    var canCreate = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Conductores.Crear")).Succeeded;
+    var canEdit = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Conductores.Editar")).Succeeded;
+    var canDelete = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Conductores.Eliminar")).Succeeded;
+}
 
 <div class="animate__animated animate__fadeIn">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -11,49 +20,97 @@
                         <th>LICENCIA (BREVETE)</th>
                         <th>CATEGORÍA</th>
                         <th>ESTADO</th>
-                        <th class="text-center">GESTIÓN</th>
+                        @if (canEdit || canDelete)
+                        {
+                            <th class="text-center">GESTIÓN</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var d in Model)
+                    @if (!Model.Any())
                     {
                         <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold me-3" style="width: 35px; height: 35px;">
-                                        @d.FullName.Substring(0, 1)
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold">@d.FullName</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><code class="fw-bold">@d.LicenseNumber</code></td>
-                            <td><span class="badge bg-dark rounded-pill px-3">@d.Category</span></td>
-                            <td>
-                                @if (d.IsAvailable)
-                                {
-                                    <span class="text-success small fw-bold"><i class="fa-solid fa-check-circle me-1"></i>Disponible</span>
-                                }
-                                else
-                                {
-                                    <span class="text-danger small fw-bold"><i class="fa-solid fa-truck-fast me-1"></i>En Ruta</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1" onclick="editDriver(@d.Id)"><i class="fa-solid fa-pen"></i></button>
-                                <button class="btn btn-light btn-sm rounded-circle shadow-sm text-danger" onclick="deleteDriver(@d.Id)"><i class="fa-solid fa-trash"></i></button>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fa-solid fa-users-slash fa-3x text-light mb-3"></i>
+                                <p class="text-muted small">No hay conductores registrados en esta sede.</p>
                             </td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var d in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold me-3" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                            @d.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">@d.FullName</div>
+                                            @if (!d.IsActive)
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger x-small">Inactivo</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><code class="fw-bold text-primary">@d.LicenseNumber</code></td>
+                                <td><span class="badge bg-dark rounded-pill px-3" style="font-size: 0.7rem;">@d.Category</span></td>
+                                <td>
+                                    @if (d.IsAvailable)
+                                    {
+                                        <span class="text-success small fw-bold"><i class="fa-solid fa-check-circle me-1"></i>Disponible</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger small fw-bold"><i class="fa-solid fa-truck-fast me-1"></i>En Ruta</span>
+                                    }
+                                </td>
+
+                                @if (canEdit || canDelete)
+                                {
+                                    <td class="text-center">
+                                        @if (canEdit)
+                                        {
+                                            <button class="btn btn-light btn-sm rounded-circle shadow-sm me-1"
+                                                    onclick="editDriver(@d.Id)" title="Editar información">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                        }
+                                        @if (canDelete)
+                                        {
+                                            <button class="btn btn-light btn-sm rounded-circle shadow-sm text-danger"
+                                                    onclick="deleteDriver(@d.Id)" title="Eliminar registro">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="mt-4 text-end">
-        <button class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateDriver()">
-            <i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Chofer
-        </button>
-    </div>
+    @if (canCreate)
+    {
+        <div class="mt-4 text-end">
+            <button class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateDriver()">
+                <i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Chofer
+            </button>
+        </div>
+    }
 </div>
+
+<style>
+    .x-small {
+        font-size: 0.7rem;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff !important;
+    }
+</style>

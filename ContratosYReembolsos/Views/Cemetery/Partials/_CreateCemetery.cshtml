@@ -13,36 +13,62 @@
 
             <form id="formCreateCemetery" asp-action="Create" method="post">
                 <div class="modal-body p-4">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="BranchId" />
 
                     <div class="mb-3">
-                        <label asp-for="Name" class="form-label fw-bold">Nombre de la Sede</label>
+                        <label asp-for="Name" class="form-label fw-bold text-dark">Nombre de la Sede</label>
                         <input asp-for="Name" class="form-control rounded-3" placeholder="Ej: Cementerio General San José" required />
                         <span asp-validation-for="Name" class="text-danger small"></span>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="RUC" class="form-label fw-bold">RUC</label>
+                            <label asp-for="RUC" class="form-label fw-bold text-dark">RUC</label>
                             <input asp-for="RUC" class="form-control rounded-3" placeholder="10XXXXXXXXX" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label asp-for="Phone" class="form-label fw-bold">Teléfono</label>
+                            <label asp-for="Phone" class="form-label fw-bold text-dark">Teléfono</label>
                             <input asp-for="Phone" class="form-control rounded-3" placeholder="01-XXXXXX" />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Address" class="form-label fw-bold">Dirección Física</label>
+                        <label asp-for="Address" class="form-label fw-bold text-dark">Dirección Física</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="fa-solid fa-map-pin"></i></span>
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-map-pin text-muted"></i></span>
                             <input asp-for="Address" class="form-control rounded-end-3" placeholder="Av. Principal 123..." />
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label fw-bold">Correo de Contacto</label>
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label fw-bold text-dark">Correo de Contacto</label>
                         <input asp-for="Email" type="email" class="form-control rounded-3" placeholder="sede@fonafun.com" />
+                    </div>
+
+                    <!-- NUEVA SECCIÓN DE CONFIGURACIÓN -->
+                    <div class="bg-light p-3 rounded-3 border">
+                        <h6 class="fw-bold text-muted small text-uppercase mb-3">Configuración de Sede</h6>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <label class="fw-bold d-block mb-0 text-dark">Estado Operativo</label>
+                                <small class="text-muted">¿La sede está disponible para contratos?</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input ms-0" type="checkbox" role="switch" asp-for="IsActive" style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <label class="fw-bold d-block mb-0 text-dark">Tipo de Cementerio</label>
+                                <small class="text-muted">¿Es propiedad interna de FONAFUN?</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input ms-0" type="checkbox" role="switch" asp-for="IsInternal" style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                            </div>
+                        </div>
                     </div>
                 </div>
 

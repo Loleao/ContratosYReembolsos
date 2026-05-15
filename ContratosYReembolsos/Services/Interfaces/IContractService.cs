@@ -1,4 +1,5 @@
-﻿using ContratosYReembolsos.Models.Entities.Contracts;
+﻿using ContratosYReembolsos.Models.Entities.Branches;
+using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Models.ViewModels.Contracts;
 using ContratosYReembolsos.Models.ViewModels.Exhumations;
 using ContratosYReembolsos.Services.DTOs.Contracts;
@@ -7,10 +8,14 @@ namespace ContratosYReembolsos.Services.Interfaces
 {
     public interface IContractService
     {
+
+        Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync();
+        Task<List<ContractListDto>> GetContractListByBranchAsync(int? branchId);
         // Consultas de Afiliados (Lima Database)
         Task<List<object>> SearchAffiliates(string dni, string cip, string name);
         Task<List<object>> GetBeneficiariesByAffiliate(string afiliadoId);
-        Task<List<object>> GetWakes();
+        Task<List<object>> GetWakes(int branchId);
+
 
         // Consultas de Ubicación y Sedes (Local Database)
         Task<List<string>> GetRegions();
@@ -34,11 +39,14 @@ namespace ContratosYReembolsos.Services.Interfaces
 
         Task<ContractReportDto> GetContractForPDFAsync(int id);
         Task<ContractDetailDto> GetContractDetailsAsync(int id);
+        Task<(bool success, string message)> ConfirmProductDeliveryAsync(ConfirmProductDeliveryInput input);
+        Task<(bool success, string message)> AdvanceServiceStatusAsync(AdvanceServiceStatusInput input);
         Task<List<ExhumationHistoryItemViewModel>> GetMovementHistoryAsync(int contractId);
 
 
         Task<List<FuneralService>> GetAllServicesAsync();
         Task<(bool success, string message)> UpsertServiceAsync(FuneralService model);
+
 
 
     }

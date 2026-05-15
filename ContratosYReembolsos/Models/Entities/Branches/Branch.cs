@@ -2,6 +2,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using ContratosYReembolsos.Models.Entities.Agencies;
 using ContratosYReembolsos.Models.Entities.Cemeteries;
+using ContratosYReembolsos.Models.Entities.Contracts;
+using ContratosYReembolsos.Models.Entities.Transport;
 
 namespace ContratosYReembolsos.Models.Entities.Branches
 {
@@ -24,9 +26,11 @@ namespace ContratosYReembolsos.Models.Entities.Branches
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public bool IsActive { get; set; } = true;
-        public bool HasWakeService { get; set; } 
 
         public virtual ICollection<Cemetery>? Cemeteries { get; set; } = new List<Cemetery>();
         public virtual ICollection<Agency>? Agencies { get; set; } = new List<Agency>();
+        public virtual ICollection<Vehicle>? Vehicles { get; set; } = new List<Vehicle>();
+        public virtual ICollection<Contract>? Contracts { get; set; } = new List<Contract>();
+
     }
 }

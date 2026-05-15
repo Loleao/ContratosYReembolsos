@@ -2,50 +2,68 @@
 using Microsoft.AspNetCore.Mvc;
 using ContratosYReembolsos.Models;
 using Microsoft.AspNetCore.Authorization;
+using ContratosYReembolsos.Services.Interfaces;
 
 namespace ContratosYReembolsos.Controllers
 {
-    // Permitimos acceso anónimo a todo el controlador para que puedan loguearse
     [AllowAnonymous]
     public class AccountController : Controller
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAccountService _accountService;
 
-        public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+        public AccountController(IAccountService accountService)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
+            _accountService = accountService;
         }
 
+        // --- AÑADE ESTE MÉTODO GET ---
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
+            // Si el usuario ya está autenticado, redirigir al Home
             if (User.Identity?.IsAuthenticated == true)
+            {
                 return RedirectToAction("Index", "Home");
+            }
 
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string dni, string password, bool rememberMe)
+        public async Task<IActionResult> Login(string username, string password, bool rememberMe, string? returnUrl = null)
         {
-            if (string.IsNullOrEmpty(dni) || string.IsNullOrEmpty(password))
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ModelState.AddModelError("", "El DNI y la contraseña son obligatorios.");
+                ModelState.AddModelError("", "El usuario y la contraseña son obligatorios.");
                 return View();
             }
 
-            // Identity usará el DNI para buscar en la columna UserName
-            var result = await _signInManager.PasswordSignInAsync(dni, password, rememberMe, lockoutOnFailure: false);
+            var result = await _accountService.LoginAsync(username, password, rememberMe);
 
             if (result.Succeeded)
             {
+                // Si hay una URL de retorno válida, redirigir allí, si no al Home
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return Redirect(returnUrl);
+                }
                 return RedirectToAction("Index", "Home");
             }
 
-            ModelState.AddModelError("", "DNI o contraseña incorrectos.");
+            // Manejo de bloqueos o errores específicos si lo deseas
+            if (result.IsLockedOut)
+            {
+                ModelState.AddModelError("", "La cuenta está bloqueada temporalmente.");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Usuario o contraseña incorrectos.");
+            }
+
             return View();
         }
 
@@ -53,7 +71,7 @@ namespace ContratosYReembolsos.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
+            await _accountService.LogoutAsync();
             return RedirectToAction("Login", "Account");
         }
 

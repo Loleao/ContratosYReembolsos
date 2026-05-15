@@ -1,5 +1,12 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Transport
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
 @model IEnumerable<VehicleService>
+
+@{
+    // Evaluación de permiso para finalizar viajes
+    var canFinishTrip = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Movilidad.Finalizar")).Succeeded;
+}
 
 <div class="animate__animated animate__fadeIn">
     <ul class="nav nav-pills mb-4 bg-white p-2 rounded-pill shadow-sm border d-inline-flex" id="historyTabs" role="tablist">
@@ -67,17 +74,17 @@
                                         </div>
 
                                         <div class="mb-1">
-                                            @* Cambio clave: Acceso a través de la relación *@
                                             <span class="x-small fw-bold text-primary">
                                                 <i class="fa-solid fa-tag me-1"></i>
                                                 Servicio: @(item.ContractMovilityDetail?.VehicleType?.Name ?? "Servicio General")
                                             </span>
                                         </div>
 
-                                        <h6 class="fw-bold mb-1 text-uppercase" style="font-size: 0.85rem;">@item.Contract?.DeceasedName</h6>
+                                        <h6 class="fw-bold mb-1 text-uppercase text-truncate" style="font-size: 0.85rem;" title="@item.Contract?.DeceasedName">
+                                            @item.Contract?.DeceasedName
+                                        </h6>
 
-                                        @* Acceso corregido al nombre del cementerio *@
-                                        <p class="x-small text-muted mb-3">
+                                        <p class="x-small text-muted mb-3 text-truncate">
                                             <i class="fa-solid fa-location-dot me-1"></i>
                                             @(item.Contract?.Cemetery?.Name ?? "Ubicación externa")
                                         </p>
@@ -95,15 +102,24 @@
 
                                         @if (isActive)
                                         {
-                                            <button class="btn btn-success btn-sm w-100 rounded-pill fw-bold shadow-sm" onclick="prepareReturn(@item.Id)">
-                                                Confirmar Retorno <i class="fa-solid fa-check-circle ms-1"></i>
-                                            </button>
+                                            @if (canFinishTrip)
+                                            {
+                                                <button class="btn btn-success btn-sm w-100 rounded-pill fw-bold shadow-sm" onclick="prepareReturn(@item.Id)">
+                                                    Confirmar Retorno <i class="fa-solid fa-check-circle ms-1"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-center p-2 border rounded-pill x-small bg-white text-muted">
+                                                    <i class="fa-solid fa-lock me-1"></i> En ruta (Solo lectura)
+                                                </div>
+                                            }
                                         }
                                         else
                                         {
                                             <div class="d-flex justify-content-between align-items-center x-small pt-2 border-top">
-                                                <span class="text-muted italic">Finalizó: @item.ReturnTime?.ToString("HH:mm")</span>
-                                                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Completado</span>
+                                                <span class="text-muted italic">Retorno: @item.ReturnTime?.ToString("HH:mm")</span>
+                                                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Finalizado</span>
                                             </div>
                                         }
                                     </div>
@@ -116,3 +132,17 @@
         }
     }
 }
+
+<style>
+    .x-small {
+        font-size: 0.75rem;
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.05em;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+</style>

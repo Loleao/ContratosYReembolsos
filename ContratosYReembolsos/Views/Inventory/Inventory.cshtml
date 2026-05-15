@@ -1,5 +1,8 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Inventory
+@using Microsoft.AspNetCore.Authorization
 @model List<ProductStock>
+@inject IAuthorizationService AuthorizationService
+
 
 @{
     ViewData["Title"] = "Gestión de Sede - " + ViewBag.BranchName;
@@ -85,12 +88,14 @@
                     <i class="fa-solid fa-list"></i>
                 </button>
             </div>
-            <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" onclick="openMinStockModal()">
-                <i class="fa-solid fa-bell-concierge me-1"></i> Ajustar Alertas
-            </button>
-            <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="openEntryModal()">
-                <i class="fa-solid fa-plus-circle me-1"></i> Nuevo Ingreso
-            </button>
+            <div class="d-flex gap-2">
+                @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Inventario.Alertas")).Succeeded)
+                {
+                    <button class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-bold" onclick="openMinStockModal()">
+                        <i class="fa-solid fa-bell me-1"></i> Alertas
+                    </button>
+                }
+            </div>
         </div>
     </div>
 
@@ -276,13 +281,33 @@
             new bootstrap.Modal(document.getElementById('modalStockEntryContainer')).show();
         }
 
+        // 5. LÓGICA DE STOCKS MÍNIMOS (ALERTAS)
         async function openMinStockModal() {
+            const container = document.getElementById('modalContainer');
+            // Mostramos un indicador de carga dentro del modal si es posible
+            Swal.fire({
+                title: 'Cargando configuración...',
+                didOpen: () => { Swal.showLoading(); },
+                allowOutsideClick: false
+            });
+
             try {
-                const res = await fetch(`@Url.Action("GetMinStockSettings", "Inventory")?branchId=${branchId}`);
-                document.getElementById('modalContainer').innerHTML = await res.text();
-                new bootstrap.Modal(document.getElementById('modalMinStockContainer')).show();
+                // Llamamos a la acción que devuelve el PartialView con la tabla de stocks mínimos
+                const response = await fetch(`@Url.Action("GetMinStockSettings", "Inventory")?branchId=${branchId}`);
+
+                if (!response.ok) throw new Error("No se pudo obtener la vista");
+
+                const html = await response.text();
+                container.innerHTML = html;
+
+                Swal.close(); // Cerramos el loading de Swal
+
+                const modal = new bootstrap.Modal(document.getElementById('modalMinStockContainer'));
+                modal.show();
+
             } catch (e) {
-                Swal.fire('Error', 'No se pudo cargar la configuración', 'error');
+                console.error(e);
+                Swal.fire('Error', 'No se pudo cargar el formulario de alertas.', 'error');
             }
         }
 
@@ -291,32 +316,46 @@
         $(document).on('submit', '#formSaveMinStocks', async function (e) {
             e.preventDefault();
             const $btn = $(this).find('button[type="submit"]');
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+            const originalText = $btn.html();
+
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
 
             try {
+                const formData = new FormData(this);
                 const response = await fetch('@Url.Action("UpdateMinimumStocks", "Inventory")', {
                     method: 'POST',
-                    body: new FormData(this)
+                    body: formData,
+                    headers: {
+                        // Importante para la seguridad CSRF
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
                 });
+
                 const result = await response.json();
 
                 if (result.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Configuración actualizada',
+                        title: '¡Actualizado!',
                         text: result.message,
                         showConfirmButton: false,
                         timer: 1500
                     }).then(() => {
-                        location.reload(); // Recargamos para refrescar los estados de las tarjetas
+                        // Cerramos el modal manualmente
+                        const modalElement = document.getElementById('modalMinStockContainer');
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        modal.hide();
+
+                        // Refrescamos la vista actual para ver los cambios en las tarjetas (si hay stock bajo)
+                        switchView('stock');
                     });
                 } else {
                     Swal.fire('Error', result.message, 'error');
-                    $btn.prop('disabled', false).text('Guardar Configuración');
+                    $btn.prop('disabled', false).html(originalText);
                 }
             } catch (error) {
-                Swal.fire('Error', 'Error de comunicación', 'error');
-                $btn.prop('disabled', false).text('Guardar Configuración');
+                Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
+                $btn.prop('disabled', false).html(originalText);
             }
         });
 

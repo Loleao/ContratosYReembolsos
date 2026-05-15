@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ContratosYReembolsos.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260507204958_Setup")]
-    partial class Setup
+    [Migration("20260515195218_setup")]
+    partial class setup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -200,9 +200,6 @@ namespace ContratosYReembolsos.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("HasWakeService")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -222,6 +219,35 @@ namespace ContratosYReembolsos.Migrations
                     b.HasIndex("UbigeoId");
 
                     b.ToTable("Filiales");
+                });
+
+            modelBuilder.Entity("ContratosYReembolsos.Models.Entities.Branches.Wake", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsInternal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Velatorios");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Entities.Cemeteries.Cemetery", b =>
@@ -402,6 +428,15 @@ namespace ContratosYReembolsos.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AffiliateCIP")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AffiliateDni")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AffiliateFullName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("AgencyId")
                         .HasColumnType("int");
@@ -1685,7 +1720,7 @@ namespace ContratosYReembolsos.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ContratosYReembolsos.Models.Entities.Branches.Branch", "Branch")
-                        .WithMany()
+                        .WithMany("Contracts")
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2068,7 +2103,7 @@ namespace ContratosYReembolsos.Migrations
             modelBuilder.Entity("ContratosYReembolsos.Models.Entities.Transport.Vehicle", b =>
                 {
                     b.HasOne("ContratosYReembolsos.Models.Entities.Branches.Branch", "Branch")
-                        .WithMany()
+                        .WithMany("Vehicles")
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2173,6 +2208,10 @@ namespace ContratosYReembolsos.Migrations
                     b.Navigation("Agencies");
 
                     b.Navigation("Cemeteries");
+
+                    b.Navigation("Contracts");
+
+                    b.Navigation("Vehicles");
                 });
 
             modelBuilder.Entity("ContratosYReembolsos.Models.Entities.Cemeteries.Cemetery", b =>

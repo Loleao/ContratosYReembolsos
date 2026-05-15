@@ -1,4 +1,5 @@
-﻿using ContratosYReembolsos.Models.Entities.Transport;
+﻿using ContratosYReembolsos.Models.Entities.Branches;
+using ContratosYReembolsos.Models.Entities.Transport;
 using ContratosYReembolsos.Models.ViewModels.Transport;
 
 namespace ContratosYReembolsos.Services.Interfaces
@@ -6,6 +7,7 @@ namespace ContratosYReembolsos.Services.Interfaces
     public interface ITransportService
     {
         // Consultas de Dashboard y Selección
+        Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync();
         Task<List<object>> GetBranchesSelectionData();
         Task<List<PendingContractViewModel>> GetPendingContracts();
         Task<List<Vehicle>> GetVehicles();

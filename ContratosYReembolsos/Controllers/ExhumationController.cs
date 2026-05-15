@@ -1,6 +1,7 @@
 ﻿using ContratosYReembolsos.Models.ViewModels.Exhumations;
 using ContratosYReembolsos.Services.DTOs.Exhumations;
 using ContratosYReembolsos.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
@@ -16,7 +17,10 @@ namespace ContratosYReembolsos.Controllers
             _exhumationService = exhumationService;
         }
 
+        [Authorize(Policy = "Permissions.Exhumaciones.Ver")]
         public IActionResult Index() => View();
+
+        [Authorize(Policy = "Permissions.Exhumaciones.Crear")]
         public IActionResult Create() => View();
 
         [HttpGet]
@@ -49,6 +53,7 @@ namespace ContratosYReembolsos.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permissions.Exhumaciones.Crear")]
         public async Task<IActionResult> Save([FromBody] ExhumationCreateDto model)
         {
             if (model == null) return BadRequest(new { success = false, message = "Datos nulos" });

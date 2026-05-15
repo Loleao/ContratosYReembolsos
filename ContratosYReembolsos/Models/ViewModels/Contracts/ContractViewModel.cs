@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
 namespace ContratosYReembolsos.Models.ViewModels.Contracts
 {
     public class ContractViewModel
@@ -11,11 +10,13 @@ namespace ContratosYReembolsos.Models.ViewModels.Contracts
             ServiceItems = new List<int>();
             ExternalServiceItems = new List<int>();
             MobilityItems = new List<int>();
+            Affiliate = new AffiliateData();
             Solicitor = new SolicitorData();
             Deceased = new DeceasedData();
         }
 
         public int BranchId { get; set; }
+        public AffiliateData Affiliate { get; set; }
         public SolicitorData Solicitor { get; set; }
         public DeceasedData Deceased { get; set; }
 
@@ -27,6 +28,13 @@ namespace ContratosYReembolsos.Models.ViewModels.Contracts
         public List<int> ServiceItems { get; set; }         // Servicios FONAFUN
         public List<int> ExternalServiceItems { get; set; } // Servicios Agencia/Convenio
         public List<int> MobilityItems { get; set; }
+    }
+
+    public class AffiliateData
+    {
+        public string Dni { get; set; }
+        public string FullName { get; set; }
+        public string Cip { get; set; }
     }
 
     public class SolicitorData
@@ -45,6 +53,7 @@ namespace ContratosYReembolsos.Models.ViewModels.Contracts
         public string BurialTime { get; set; }
         public string Inei { get; set; }
         public int? WakeId { get; set; }
+        public string? CustomWakeAddress { get; set; }
         public int CemeteryId { get; set; }
         public int? StructureId { get; set; }
         public int? IntermentSpaceId { get; set; }

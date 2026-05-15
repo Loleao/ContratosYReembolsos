@@ -19,6 +19,7 @@ namespace ContratosYReembolsos.Data.SeedData
             ICatalogService catalogService,
             IFuneralService funeralService,
             IBranchService branchService,
+            IWakeService wakeService,
             IntermentService intermentService, 
             UserManager<ApplicationUser> userManager, 
             RoleManager<IdentityRole> roleManager)
@@ -26,6 +27,7 @@ namespace ContratosYReembolsos.Data.SeedData
             // 1. Servicios Externos
             await ubigeoService.SeedIfEmptyAsync();
             await branchService.SeedIfEmptyAsync();
+            await wakeService.SeedIfEmptyAsync();
             await catalogService.SeedCatalogIfEmptyAsync();
             await funeralService.SeedIfEmptyAsync();
 
@@ -43,7 +45,7 @@ namespace ContratosYReembolsos.Data.SeedData
                             Name = "PEC SANTA ROSA",
                             BranchId = branchLim2.Id,
                             UbigeoId = "150108",
-                            Address = "Av. Alipio Ponce Vasquez Chorrillos",
+                            Address = "Av. Alipio Ponce Vasquez Chorrillos, Av. Los Eucaliptos",
                             Phone = "999999999", // Asegúrate de incluirlo si es obligatorio
                             Email = "pecsantarosa@fonafun.com", // CORRECCIÓN: Agregar valor para evitar el error de NULL
                             IsActive = true,
@@ -130,35 +132,52 @@ namespace ContratosYReembolsos.Data.SeedData
 
         private static async Task SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context)
         {
-            // Crear Rol Admin
+            // 1. Crear Rol Admin si no existe
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
                 await roleManager.CreateAsync(new IdentityRole("Admin"));
             }
 
-            var adminDni = "00000000";
-            var adminUser = await userManager.FindByNameAsync(adminDni);
+            // 2. Definir credenciales base
+            var adminUsername = "pespejo"; // El login
+            var adminDni = "00000000";      // El documento
+
+            // IMPORTANTE: Buscamos por UserName (pespejo)
+            var adminUser = await userManager.FindByNameAsync(adminUsername);
 
             if (adminUser == null)
             {
-                // Buscamos la filial LIM2 que creamos arriba para asignarla
+                // 3. Obtener sede por defecto
                 var defaultBranch = await context.Filiales.FirstOrDefaultAsync(f => f.Code == "LIM2")
                                     ?? await context.Filiales.FirstOrDefaultAsync();
 
+                // 4. Crear instancia de ApplicationUser con los nuevos campos
                 var user = new ApplicationUser
                 {
-                    UserName = adminDni,
-                    DNI = adminDni,
+                    UserName = adminUsername,       // Ahora es "pespejo"
+                    DNI = adminDni,                // Campo personalizado
                     FullName = "Administrador Sistema",
                     Email = "admin@fonafun.com",
                     EmailConfirmed = true,
-                    BranchId = defaultBranch?.Id // Asignación segura del ID real
+                    BranchId = defaultBranch?.Id    // Asignación de sede
                 };
 
+                // 5. Crear usuario con hash de contraseña automático
                 var result = await userManager.CreateAsync(user, "Admin123*");
+
                 if (result.Succeeded)
                 {
+                    // 6. Asignar rol
                     await userManager.AddToRoleAsync(user, "Admin");
+
+                    // Opcional: Si manejas Claims de permisos directamente
+                    // await userManager.AddClaimAsync(user, new Claim("Permission", "Admin.All"));
+                }
+                else
+                {
+                    // Log de errores por si la contraseña no cumple las políticas
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    throw new Exception($"Error al crear usuario inicial: {errors}");
                 }
             }
         }

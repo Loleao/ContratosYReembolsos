@@ -5,10 +5,16 @@
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header bg-dark text-white rounded-top-4">
-                <h5 class="modal-title"><i class="fa-solid fa-gears me-2"></i>Configurar Plantilla Técnica</h5>
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-gears me-2"></i>
+                    @(Model.Id == 0 ? "Configurar Nueva Plantilla" : "Editar Plantilla Técnica")
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formCreateTemplate" asp-action="SaveTemplate" method="post">
+            <form id="formTemplate" asp-action="SaveTemplate" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-12">
@@ -47,12 +53,12 @@
 
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">COLS x CARA</label>
-                            <input asp-for="ColsPerFace" type="number" class="form-control text-center fw-bold border-2" value="25">
+                            <input asp-for="ColsPerFace" type="number" class="form-control text-center fw-bold border-2">
                         </div>
 
                         <div class="col-12 mt-3">
                             <div class="form-check form-switch card p-2 ps-5 border-2 shadow-sm">
-                                <input asp-for="IsDoubleFace" class="form-check-input" type="checkbox" id="checkFace" checked>
+                                <input asp-for="IsDoubleFace" class="form-check-input" type="checkbox" id="checkFace">
                                 <label class="form-check-label fw-bold small" for="checkFace">¿Es de Doble Cara? (1-25 y 26-50)</label>
                             </div>
                         </div>
@@ -60,8 +66,8 @@
                 </div>
                 <div class="modal-footer border-0 bg-light rounded-bottom-4">
                     <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="submitTemplateForm('formCreateTemplate', 'modalTemplate')">
-                        Guardar Plantilla <i class="fa-solid fa-floppy-disk ms-2"></i>
+                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow" onclick="submitTemplateForm('formTemplate', 'modalTemplate')">
+                        Guardar Cambios <i class="fa-solid fa-floppy-disk ms-2"></i>
                     </button>
                 </div>
             </form>

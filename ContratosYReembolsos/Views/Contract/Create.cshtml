@@ -1,5 +1,6 @@
 ﻿@{
 	ViewData["Title"] = "Registro de Contratos";
+	ViewData["NoPadding"] = false;
 }
 
 <style>
@@ -321,6 +322,7 @@
 </style>
 
 <div class="container-fluid px-4">
+	@Html.AntiForgeryToken()
 	<div class="stepper-card">
 		<div class="stepper-header">
 			<div class="step-item active" id="nav-1">
@@ -383,7 +385,7 @@
 			getUnitPickerModal: '@Url.Action("GetUnitPicker", "Service")',
 			getDailyAvailability: '@Url.Action("GetDailyAvailability", "Service")',
 			getWeeklyAvailability: '@Url.Action("GetWeeklyAvailability", "Service")',
-			getPrefix: '@Url.Action("GetPrefix", "Contract")',
+			getPrefix: '@Url.Action("GetBranchPrefix", "Contract")',
 			saveContract: '@Url.Action("Create", "Contract")',
 			downloadContract: '@Url.Action("DescargarContratoPDF", "Contract")',
 		};
@@ -391,11 +393,12 @@
 		let contractData = {
 			branchId: 0,
 			solicitor: { id: '', dni: '', name: '', cip: '', type: '' },
+			affiliate: { dni: '', name: '', cip: '' },
 			deceased: {
-				id: '', dni: '', name: '', deathDate: '',
+				id: '', dni: '', name: '', cip: '', deathDate: '',
 				burialDate: '', burialTime: '',
 				ubigeoFull: '', inei: '',
-				wakeId: '', wakeName: '',
+				wakeId: '', wakeName: '', customWakeAddress: '',
 				cemeteryId: '', cemeteryName: '',
 				intermentStructureId: null,
 				intermentSpaceId: null,
@@ -407,6 +410,12 @@
 			mobilityItems: [],
 			serviceItems: [], // Reemplaza a assetItems
 			agreementServiceItems: []     // Para Capillas, Biombos (activos fijos)
+		};
+
+		const SERVICIO_SEPULTURA_AUTO = {
+			'Pabellon': 3,   // Servicio de Nicho
+			'Tumba': 5,      // Servicio de Tumba
+			'Columbario': 34 // Servicio de Columbario
 		};
 
 		let searchTarget = 'Solicitor';
@@ -568,7 +577,7 @@
 					const tr = $(`
 						<tr style="cursor:pointer" class="align-middle">
 							<td><b>${item.dni}</b></td>
-							<td>${item.relationship || 'Familiar'}</td> <td>${item.name}</td>
+							<td>${item.cip || '---'}</td> <td>${item.name}</td>
 							<td class="text-end"><button class="btn btn-sm btn-primary rounded-pill">Seleccionar</button></td>
 						</tr>
 					`);
@@ -581,23 +590,64 @@
 		}
 
 		function selectAffiliate(item) {
-			if (searchTarget === 'Solicitor') {
+			// Identificamos el objetivo de la búsqueda
+			const isSolicitor = (searchTarget === 'Solicitor');
+			const isAffiliate = (searchTarget === 'Affiliate');
+			const isDeceased = (searchTarget === 'Deceased');
+
+			// Determinamos el prefijo de los IDs de los inputs
+			let targetPrefix = '';
+			if (isSolicitor) targetPrefix = '#Solicitor';
+			if (isAffiliate) targetPrefix = '#Affiliate';
+			if (isDeceased)  targetPrefix = '#Deceased';
+
+			const hasValidDni = item.dni && item.dni.toString().trim().length >= 8 && item.dni !== "999999999";
+
+			// Llenado de campos en la UI
+			if (hasValidDni) {
+				$(`${targetPrefix}Dni`).val(item.dni).prop('readonly', true).addClass('bg-light');
+			} else {
+				$(`${targetPrefix}Dni`).val('').prop('readonly', false).removeClass('bg-light').focus();
+				Swal.fire('Atención', 'DNI no válido en base de datos. Ingréselo manualmente.', 'warning');
+			}
+
+			$(`${targetPrefix}Name`).val(item.name).prop('readonly', true).addClass('bg-light');
+			$(`${targetPrefix}Cip`).val(item.cip || '');
+
+			// Persistencia en el objeto contractData según el target
+			if (isSolicitor) {
 				contractData.solicitor.id = item.id;
 				contractData.solicitor.dni = item.dni;
-				contractData.solicitor.name = item.name;
 				contractData.solicitor.cip = item.cip;
+				contractData.solicitor.name = item.name;
 
+				// REGLA DE NEGOCIO: Si es titular, sus datos de afiliado son los mismos
+				if ($('#SolicitorType').val() === "Titular") {
+					contractData.affiliate.dni = item.dni;
+					contractData.affiliate.name = item.name;
+					contractData.affiliate.cip = item.cip;
+				}
+			}
+			else if (isAffiliate) {
+				contractData.affiliate.dni = item.dni;
+				contractData.affiliate.name = item.name;
+				contractData.affiliate.cip = item.cip;
+			}
+			else if (isDeceased) {
+				contractData.deceased.id = item.id;
+				contractData.deceased.dni = item.dni;
+				contractData.deceased.name = item.name;
+			}
 
-				$('#SolicitorDni').val(item.dni);
-				$('#SolicitorName').val(item.name);
-				$('#SolicitorCip').val(item.cip);
-			}
-			else if (searchTarget === 'Deceased') {
-				$('#DeceasedDni').val(item.dni);
-				$('#DeceasedName').val(item.name);
-				$('#DeceasedCip').val(item.cip);
-			}
 			closeSearchModal();
+		}
+
+		// Función auxiliar para solo números en el DNI manual
+		function isNumber(evt) {
+			evt = (evt) ? evt : window.event;
+			var charCode = (evt.which) ? evt.which : evt.keyCode;
+			if (charCode > 31 && (charCode < 48 || charCode > 57)) return false;
+			return true;
 		}
 
 		function toggleSolicitorType() {
@@ -607,44 +657,115 @@
 			const type = select.value;
 			contractData.solicitor.type = type;
 
-			const isTitular = (type === "Titular");
-			const btnLupa = document.getElementById('btnLupa');
-			const fields = ['SolicitorDni', 'SolicitorName', 'SolicitorCip'];
+			const btnLupa = document.getElementById('btnLupaSolicitor');
+			const dniField = document.getElementById('SolicitorDni');
+			const nameField = document.getElementById('SolicitorName');
+			const cipField = document.getElementById('SolicitorCip');
+			const sectionAffiliate = document.getElementById('sectionAffiliateData');
+			const helper = document.getElementById('typeHelper');
 
-			if (btnLupa) {
-				isTitular ? $(btnLupa).fadeIn(200) : $(btnLupa).fadeOut(200);
+			// Reset de estados
+			dniField.classList.remove('border-danger');
+			$('#dniErrorMsg').addClass('d-none');
+
+			switch (type) {
+				case "Titular":
+					$(sectionAffiliate).fadeOut(200); // Ocultamos sección inferior
+					$(btnLupa).fadeIn(200);          // Mostramos lupa SOLICITANTE
+
+					dniField.readOnly = true;
+					nameField.readOnly = true;
+					cipField.readOnly = true;
+					dniField.classList.add('bg-light');
+					nameField.classList.add('bg-light');
+
+					if (helper) helper.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i> El solicitante es el titular del beneficio.';
+					break;
+
+				case "Familiar":
+				case "TerceroPolicial":
+					$(sectionAffiliate).fadeIn(200).removeClass('d-none'); // Mostramos sección inferior
+					$(btnLupa).fadeOut(200);                               // OCULTAMOS lupa SOLICITANTE
+
+					dniField.readOnly = false;
+					nameField.readOnly = false;
+					cipField.readOnly = false;
+					dniField.classList.remove('bg-light');
+					nameField.classList.remove('bg-light');
+
+					// Limpiamos campos para obligar a nueva entrada si cambia el tipo
+					dniField.value = "";
+					nameField.value = "";
+					cipField.value = "";
+
+					if (helper) {
+						const icons = { "Familiar": "fa-person-rays", "TerceroPolicial": "fa-user-shield" };
+						helper.innerHTML = `<i class="fa-solid ${icons[type]} me-1"></i> El solicitante es un ${type}. <b>Debe buscar al Afiliado Titular abajo.</b>`;
+					}
+					break;
+
+				case "Tercero":
+					$(sectionAffiliate).fadeOut(200); // Ocultamos sección inferior
+					$(btnLupa).fadeOut(200);
+
+					dniField.readOnly = false;
+					nameField.readOnly = false;
+					cipField.readOnly = false;
+					dniField.classList.remove('bg-light');
+					nameField.classList.remove('bg-light');
+
+					// Limpiamos campos para obligar a nueva entrada si cambia el tipo
+					dniField.value = "";
+					nameField.value = "";
+					cipField.value = "";
+					
+					if (helper) helper.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i> El solicitante es un tercero no oficial.';
+
+				break;
 			}
-
-			fields.forEach(id => {
-				const el = document.getElementById(id);
-				if (!el) return;
-
-				if (isTitular) {
-					el.readOnly = true;
-					el.classList.add('bg-light');
-				} else {
-					el.readOnly = false;
-					el.classList.remove('bg-light');
-				}
-			});
 		}
 
 		function validateStep1() {
-			const dni = $('#SolicitorDni').val();
-			const name = $('#SolicitorName').val();
 			const type = $('#SolicitorType').val();
-			const cip = $('#SolicitorCip').val();
+			const sDni = $('#SolicitorDni').val();
+			const sName = $('#SolicitorName').val();
 
-			if (!dni || !name) {
-				Swal.fire('Atención', 'Debe buscar y seleccionar un solicitante.', 'warning');
+			if (!sDni || sDni.length < 8) {
+				Swal.fire('Atención', 'Debe ingresar el DNI del solicitante.', 'warning');
 				return false;
 			}
 
-			// PERSISTENCIA: Guardamos en nuestro "cerebro" global
-			contractData.solicitor.dni = dni;
-			contractData.solicitor.name = name;
+			// Si NO es titular, validar que se haya buscado al afiliado
+			if (type == "Familiar") {
+				const aDni = $('#AffiliateDni').val();
+				if (!aDni || aDni.length < 8) {
+					Swal.fire('Vínculo Obligatorio', 'Debe buscar y seleccionar un Afiliado Titular.', 'error');
+					return false;
+				}
+			} else if (type == "TerceroPolicial") {
+				const aDni = $('#AffiliateDni').val();
+				if (!aDni || aDni.length < 8) {
+					Swal.fire('Vínculo Obligatorio', 'Debe buscar y seleccionar un Afiliado Titular.', 'error');
+					return false;
+				}
+			}
+
+			// Sincronizar contractData final
+			contractData.solicitor.dni = sDni;
+			contractData.solicitor.name = sName;
 			contractData.solicitor.type = type;
-			contractData.solicitor.cip = cip;
+			contractData.solicitor.cip = $('#SolicitorCip').val();
+
+			// Si es titular, duplicamos datos al objeto affiliate
+			if (type === "Titular") {
+				contractData.affiliate.dni = sDni;
+				contractData.affiliate.name = sName;
+				contractData.affiliate.cip = contractData.solicitor.cip;
+			} else {
+				contractData.affiliate.dni = $('#AffiliateDni').val();
+				contractData.affiliate.name = $('#AffiliateName').val();
+				contractData.affiliate.cip = $('#AffiliateCip').val();
+			}
 
 			return true;
 		}
@@ -665,30 +786,57 @@
 		});
 
 		function filterDeceasedOptions() {
-			// 1. Obtenemos el tipo de solicitante que guardamos en el Paso 1
-			const solType = contractData.solicitor.type; // "Titular" o "Familiar"
-			const $deceasedSelect = $('#DeceasedType');
+			const solType = contractData.solicitor.type; // Capturado en Paso 1
+			const $select = $('#DeceasedType');
 			const $alert = $('#alertRestriction');
+			const $msg = $('#txtRestrictionMsg');
 
-			if (!$deceasedSelect.length) return;
+			if (!$select.length) return;
+
+			// Resetear opciones
+			$select.find('option').prop('disabled', false).show();
+			$alert.addClass('d-none');
 
 			if (solType === "Titular") {
-				// --- ESCENARIO A: EL TITULAR FIRMA ---
-				// El fallecido obligatoriamente debe ser un Beneficiario (Familiar)
-				$deceasedSelect.find('option[value="Titular"]').attr('disabled', true).hide();
-				$deceasedSelect.val("Beneficiario"); // Forzamos la selección a familiar
-
-				$alert.removeClass('d-none').addClass('animate__animated animate__shakeX');
-
-				// Ejecutamos el cambio para que se limpie el DNI y se active la lupa de búsqueda de familiares
-				handleDeceasedTypeChange();
+				// REGLA: Si solicita Titular, fallece un Beneficiario
+				$select.find('option[value="Titular"], option[value="Tercero"]').prop('disabled', true).hide();
+				$select.val("Beneficiario");
+				$msg.text("Usted es el Titular Solicitante, seleccione al familiar beneficiario fallecido.");
+				$alert.removeClass('d-none');
 			}
-			else {
-				$deceasedSelect.find('option[value="Titular"]').attr('disabled', false).show();
-				$deceasedSelect.val(""); // Dejamos que el usuario elija
+			else if (solType === "Familiar" || solType === "TerceroPolicial") {
+				// REGLA: Si solicita Familiar o 3ro Policial, fallece el Titular (Autocompletar)
+				$select.find('option[value="Beneficiario"], option[value="Tercero"]').prop('disabled', true).hide();
+				$select.val("Titular");
+				$msg.text("Se han cargado automáticamente los datos del Titular afiliado.");
+				$alert.removeClass('d-none');
 
-				$alert.addClass('d-none');
+				// Autocompletar datos del Titular que vinculamos en el Paso 1
+				autoCompleteDeceasedWithAffiliate();
 			}
+			else if (solType === "Tercero") {
+				// REGLA: Si solicita un Tercero Civil, fallece un Tercero (Manual)
+				$select.find('option[value="Titular"], option[value="Beneficiario"]').prop('disabled', true).hide();
+				$select.val("Tercero");
+				$msg.text("Modo Tercero: Ingrese los datos del fallecido manualmente.");
+				$alert.removeClass('d-none');
+			}
+
+			// Disparar el cambio visual de inputs (lupas, readonlies)
+			handleDeceasedTypeChange();
+		}
+
+		function autoCompleteDeceasedWithAffiliate() {
+			// Tomamos los datos que guardamos en contractData.affiliate en el Paso 1
+			const affiliate = contractData.affiliate;
+
+			$('#DeceasedDni').val(affiliate.dni).prop('readonly', true).addClass('bg-light');
+			$('#DeceasedName').val(affiliate.name).prop('readonly', true).addClass('bg-light');
+
+			contractData.deceased.dni = affiliate.dni;
+			contractData.deceased.name = affiliate.name;
+			// El ID del fallecido en este caso es el mismo ID del afiliado buscado
+			contractData.deceased.id = contractData.solicitor.id;
 		}
 
 		function openSearchBeneficiaries() {
@@ -761,38 +909,65 @@
 		}
 
 		function selectBeneficiary(item) {
-			// 1. Guardamos en el objeto de datos global
+			const $dniInput = $('#DeceasedDni');
+			const $errorMsg = $('#deceasedDniError');
+
+			// 1. Validamos integridad del DNI
+			const hasValidDni = item.dni && item.dni.toString().trim().length >= 8;
+
+			if (hasValidDni) {
+				$dniInput.val(item.dni).prop('readonly', true).addClass('bg-light').removeClass('border-danger text-danger');
+				$errorMsg.addClass('d-none');
+			} else {
+				// Habilitar llenado manual si no hay dato en BD
+				$dniInput.val('').prop('readonly', false).removeClass('bg-light').addClass('border-danger text-danger').focus();
+				$errorMsg.removeClass('d-none');
+
+				Swal.fire({
+					title: 'DNI No Registrado',
+					text: 'El familiar seleccionado no tiene un DNI en el sistema. Por favor, ingréselo manualmente.',
+					icon: 'info',
+					confirmButtonColor: '#004a99'
+				});
+			}
+
+			// 2. Llenamos el nombre y persistimos ID
+			$('#DeceasedName').val(item.name);
 			contractData.deceased.id = item.id;
-			contractData.deceased.dni = item.dni;
 			contractData.deceased.name = item.name;
 
-			// 2. Llenamos los campos visibles del Paso 2
-			$('#DeceasedDni').val(item.dni);
-			$('#DeceasedName').val(item.name);
-
-			// 3. Cerramos el modal
 			closeSearchModal();
 		}
 
 		function handleDeceasedTypeChange() {
 			const type = $('#DeceasedType').val();
 			const $btnLupa = $('#btnLupaDeceased');
+			const $dniInput = $('#DeceasedDni');
+			const $nameInput = $('#DeceasedName');
+
+			// Si es Titular y viene de Familiar/3roPolicial, ya está autocompletado y bloqueado
+			const isAutoFilled = (contractData.solicitor.type === "Familiar" || contractData.solicitor.type === "TerceroPolicial");
 
 			if (type === "Titular") {
-				$btnLupa.fadeOut(200);
-				// Sincronizar con datos del titular del Paso 1
-				$('#DeceasedDni').val(contractData.solicitor.dni);
-				$('#DeceasedName').val(contractData.solicitor.name);
-				contractData.deceased.id = contractData.solicitor.id;
-
-				// Pequeño efecto visual para confirmar carga
-				$('#DeceasedName').addClass('is-valid');
-				setTimeout(() => $('#DeceasedName').removeClass('is-valid'), 1500);
+				if (isAutoFilled) {
+					$btnLupa.fadeOut(200); // No necesita buscar, ya se trajo del Paso 1
+					$dniInput.prop('readonly', true).addClass('bg-light');
+					$nameInput.prop('readonly', true).addClass('bg-light');
+				} else {
+					$btnLupa.fadeIn(200);
+					document.getElementById('btnLupaDeceased').onclick = () => openSearchAffiliate('Deceased');
+				}
 			}
 			else if (type === "Beneficiario") {
-				$('#DeceasedDni').val('');
-				$('#DeceasedName').val('');
 				$btnLupa.fadeIn(200);
+				document.getElementById('btnLupaDeceased').onclick = () => openSearchBeneficiaries();
+				$dniInput.prop('readonly', true).addClass('bg-light');
+				$nameInput.prop('readonly', true).addClass('bg-light');
+			}
+			else if (type === "Tercero") {
+				$btnLupa.fadeOut(200);
+				$dniInput.prop('readonly', false).removeClass('bg-light').val('').focus();
+				$nameInput.prop('readonly', false).removeClass('bg-light').val('').attr("placeholder", "Escriba nombres completos...");
 			}
 		}
 
@@ -890,18 +1065,64 @@
 
 		async function loadWakes() {
 			const $wakeSelect = $('#WakePlace');
+			// Pasamos el branchId en la URL
+			const url = `${urls.getWakes}?branchId=${contractData.branchId}`;
+
 			try {
-				const resp = await fetch(`${urls.getWakes}`);
+				const resp = await fetch(url);
 				const data = await resp.json();
 
-				let options = '<option value="">Seleccione el local...</option>';
+				// Opción inicial por defecto
+				let options = '<option value="" data-internal="false">Particular / Domicilio</option>';
+
 				data.forEach(w => {
-					options += `<option value="${w.id}">${w.name}</option>`;
+					// IMPORTANTE: El atributo data-internal permitirá al JS saber si cobrar el ID 11
+					options += `<option value="${w.id}" data-internal="${w.isInternal}">${w.name}</option>`;
 				});
+
+				// Opción para direcciones manuales
+				options += '<option value="999" data-internal="false">OTRO (ESPECIFICAR DIRECCIÓN)</option>';
+
 				$wakeSelect.html(options);
 			} catch (e) {
+				console.error("Error al cargar velatorios:", e);
 				$wakeSelect.html('<option value="">Error al cargar locales</option>');
 			}
+		}
+
+		function handleWakeChange() {
+			const $select = $('#WakePlace');
+			const selectedOption = $select.find('option:selected');
+			const isInternal = selectedOption.data('internal') === true;
+			const isOther = $select.val() === "999" || selectedOption.text().includes("Particular");
+
+			// 1. Mostrar/Ocultar campo de dirección si es externo u "Otro"
+			if (isOther) {
+				$('#divWakeAddress').removeClass('d-none').fadeIn();
+			} else {
+				$('#divWakeAddress').addClass('d-none');
+				$('#WakeAddressCustom').val('');
+			}
+
+			// 2. LÓGICA COBRO AUTOMÁTICO (ID 11)
+			const ID_VELATORIO_AUTO = 11;
+			if (isInternal) {
+				// Evitar duplicados y agregar
+				if (!contractData.serviceItems.some(s => s.id === ID_VELATORIO_AUTO)) {
+					contractData.serviceItems.push({
+						id: ID_VELATORIO_AUTO,
+						name: "Servicio de Capilla/Velatorio...",
+						category: 'Servicios',
+						price: 0
+					});
+					Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Servicio de Velatorio añadido', showConfirmButton: false, timer: 1500 });
+				}
+			} else {
+				// Quitar si se selecciona uno externo
+				contractData.serviceItems = contractData.serviceItems.filter(s => s.id !== ID_VELATORIO_AUTO);
+			}
+
+			updateSelectionUI();
 		}
 
 		function openSearchCemetery() {
@@ -1220,62 +1441,147 @@
 		function confirmNicheSelection(id, dummy, row, col) {
 			const pavilionId = $('#cboPavilion').val();
 			const pavilionName = $('#cboPavilion option:selected').text();
-			const type = $('input[name="BurialType"]:checked').val();
+			const type = $('input[name="BurialType"]:checked').val(); // 'Pabellon', 'Tumba' o 'Columbario'
 
-			// Sincronización directa con el objeto global
 			contractData.deceased.intermentSpaceId = parseInt(id);
-			contractData.deceased.structureId = parseInt(pavilionId); // Cambiado de intermentStructureId a structureId
+			contractData.deceased.structureId = parseInt(pavilionId);
 			contractData.deceased.burialDetail = `${pavilionName} - Fila ${row} - Nro ${col} (${type})`;
 
-			// UI Feedback
+			// --- MAPEO DE IDs CORRECTO ---
+			const SERVICIO_SEPULTURA_AUTO = {
+				'Pabellon': 3,    // <--- CORREGIDO A ID 3
+				'Tumba': 5,
+				'Columbario': 34
+			};
+
+			const nombres = {
+				'Pabellon': 'Derecho de Nicho',
+				'Tumba': 'Derecho de Tumba',
+				'Columbario': 'Derecho de Columbario'
+			};
+
+			const idServicio = SERVICIO_SEPULTURA_AUTO[type];
+
+			if (idServicio) {
+				// 1. Limpiar previos (usamos los IDs reales para el filtro)
+				const idsSepultura = [3, 5, 34];
+				contractData.serviceItems = contractData.serviceItems.filter(s => !idsSepultura.includes(s.id));
+
+				// 2. Insertar OBJETO con nombre temporal para evitar 'undefined'
+				contractData.serviceItems.push({
+					id: idServicio,
+					name: nombres[type],
+					category: 'Servicios',
+					price: 0
+				});
+			}
+
 			$('#txtNicheSelected').text(contractData.deceased.burialDetail);
 			$('#selectedNicheDisplay').removeClass('d-none');
-
 			closeSearchModal();
 		}
 
 		function validateStep2() {
-			const d = contractData.deceased; // Atajo al objeto global
+			const d = contractData.deceased;
+			const type = $('#DeceasedType').val();
 
-			// 1. Captura de inputs que no tienen 'onchange' automático
+			// 1. Captura de datos desde la UI
 			d.dni = $('#DeceasedDni').val();
 			d.name = $('#DeceasedName').val();
 			d.deathDate = $('#DeathDate').val();
 			d.burialDate = $('#BurialDate').val();
 			d.burialTime = $('#BurialTime').val();
 			d.inei = $('#DeathDist').val();
-			d.wakeId = $('#WakePlace').val() ? parseInt($('#WakePlace').val()) : null;
 
-			// 2. Validaciones Críticas
-			if (!d.dni) { Swal.fire('Atención', 'Debe seleccionar un difunto.', 'warning'); return false; }
-			if (!d.deathDate) { Swal.fire('Atención', 'La fecha de fallecimiento es obligatoria.', 'warning'); return false; }
-			if (!d.inei) { Swal.fire('Atención', 'Debe completar el lugar (Ubigeo).', 'warning'); return false; }
-			if (!d.cemeteryId) { Swal.fire('Atención', 'Debe seleccionar un cementerio.', 'warning'); return false; }
+			// Captura de Velatorio
+			const wakeVal = $('#WakePlace').val();
+			const wakeText = $('#WakePlace option:selected').text();
+			const customAddr = $('#WakeAddressCustom').val() ? $('#WakeAddressCustom').val().trim() : '';
 
-			// 3. Validación de Cementerio Propio (Mapa)
-			// Si la sección de ubicación específica está visible, el spaceId es obligatorio
-			const isInternalCemetery = !$('#sectionSpecificLocation').hasClass('d-none');
-			if (isInternalCemetery && !d.intermentSpaceId) {
-				Swal.fire('Mapa Requerido', 'Debe elegir un lugar específico en el mapa para esta sede.', 'error');
+			// Sincronizamos el WakeId (null si es el "999" o si es Particular "")
+			d.wakeId = (wakeVal && wakeVal !== "999" && wakeVal !== "") ? parseInt(wakeVal) : null;
+
+			// Determinamos si la opción actual requiere dirección obligatoria (Otro o Particular)
+			const requiereDireccionManual = wakeVal === "999" || wakeText.toUpperCase().includes("PARTICULAR") || wakeText.toUpperCase().includes("DOMICILIO");
+
+			if (requiereDireccionManual) {
+				// Validamos que realmente haya escrito una dirección
+				if (!customAddr || customAddr.length < 5) {
+					Swal.fire('Dirección Requerida', 'Por favor, ingrese la dirección exacta del velatorio externo.', 'warning');
+					$('#WakeAddressCustom').focus();
+					return false;
+				}
+
+				// Persistencia para el resumen visual (Paso 4) y la Entidad C#
+				d.wakeName = `${wakeText}: ${customAddr}`;
+				d.customWakeAddress = customAddr; // <--- PERSISTENCIA CRÍTICA PARA EL BACKEND
+			} else {
+				// Si es un velatorio interno propio de la base de datos
+				d.wakeName = wakeText;
+				d.customWakeAddress = null; // No hace falta dirección manual, ya está en la BD
+			}
+
+			// 2. Validaciones de Selección
+			if (!type) {
+				Swal.fire('Atención', 'Debe seleccionar la condición del fallecido.', 'warning');
 				return false;
 			}
 
-			// 4. Limpieza de datos si es cementerio externo
+			if (!d.dni || d.dni.length < 8) {
+				Swal.fire('DNI Requerido', 'Debe ingresar un DNI de 8 dígitos para el fallecido.', 'warning');
+				$('#DeceasedDni').addClass('border-danger').focus();
+				return false;
+			}
+
+			if (!d.name || d.name.trim().length < 5) {
+				Swal.fire('Atención', 'Debe seleccionar o registrar el nombre completo del difunto.', 'warning');
+				return false;
+			}
+
+			// 3. Validaciones de Fechas
+			if (!d.deathDate) {
+				Swal.fire('Fecha Requerida', 'Debe indicar la fecha de fallecimiento.', 'warning');
+				return false;
+			}
+
+			if (!d.burialDate || !d.burialTime) {
+				Swal.fire('Programación Requerida', 'Debe indicar la fecha y hora programada para el sepelio.', 'warning');
+				return false;
+			}
+
+			// 4. Validación de Ubicación (Ubigeo)
+			if (!d.inei) {
+				Swal.fire('Ubicación Requerida', 'Debe seleccionar el Departamento, Provincia y Distrito de fallecimiento.', 'warning');
+				return false;
+			}
+
+			// 5. Validación de Cementerio y Mapa (Si es interno)
+			if (!d.cemeteryId) {
+				Swal.fire('Cementerio Requerido', 'Debe buscar y seleccionar un cementerio de destino.', 'warning');
+				return false;
+			}
+
+			const isInternalCemetery = !$('#sectionSpecificLocation').hasClass('d-none');
+			if (isInternalCemetery && !d.intermentSpaceId) {
+				Swal.fire('Lugar en Mapa', 'Ha seleccionado un cementerio administrado. Debe elegir el pabellón/nicho en el mapa.', 'error');
+				return false;
+			}
+
+			// 6. Limpieza de datos de estructura si es cementerio externo
 			if (!isInternalCemetery) {
 				d.intermentSpaceId = null;
-				d.intermentStructureId = null;
+				d.structureId = null;
 				d.burialDetail = "Cementerio Externo / Provincia";
 			}
 
-			// Guardamos el texto del Ubigeo solo para el resumen visual
+			// 7. Preparación de datos para el Resumen (Paso 4)
 			d.ubigeoFull = `${$('#DeathDept').val()} - ${$('#DeathProv option:selected').text()} - ${$('#DeathDist option:selected').text()}`;
+			d.type = type;
 
-			console.log("Paso 2 validado correctamente:", d);
+			console.log("Paso 2 validado y persistido correctamente:", d);
 			return true;
 		}
 
-
-		//ANTIGUO PASO 4
 		//AHORA PASO 3
 
 		let currentServiceId = null;
@@ -1291,31 +1597,24 @@
 				return;
 			}
 
-			// 1. UI: Activar pestaña visualmente
+			// 1. UI: Activar pestaña
 			document.querySelectorAll('#pills-tab .nav-link').forEach(btn => {
-				// Comparamos el texto o un atributo data si lo prefieres
 				btn.classList.toggle('active', btn.innerText.trim().includes(category));
 			});
 
-			// 2. Control del Selector de Agencia (Solo se ve en la pestaña 'Convenio')
+			// 2. Control Agencia
 			if (category === 'Convenio') {
 				agencySection.classList.remove('d-none');
 				if (!contractData.agencyId) {
-					container.innerHTML = `
-						<div class="text-center py-5 w-100 animate__animated animate__fadeIn">
-							<i class="fa-solid fa-arrow-up fa-2x text-success mb-3 opacity-50"></i>
-							<p class="text-muted">Por favor, seleccione una Agencia del Convenio arriba para ver sus servicios.</p>
-						</div>`;
+					container.innerHTML = `<div class="text-center py-5 w-100"><p class="text-muted">Seleccione una Agencia arriba.</p></div>`;
 					return;
 				}
 			} else {
 				agencySection.classList.add('d-none');
 			}
 
-			// 3. Spinner de carga
 			container.innerHTML = '<div class="text-center py-5 w-100"><div class="spinner-border text-primary"></div></div>';
 
-			// 4. Determinar URL según categoría
 			let url = "";
 			if (category === 'Inventario') url = `@Url.Action("GetInventoryStock", "Contract")?branchId=${contractData.branchId}`;
 			else if (category === 'Movilidad') url = `@Url.Action("GetAvailableVehicleTypesByBranch", "Contract")?branchId=${contractData.branchId}`;
@@ -1325,11 +1624,26 @@
 			try {
 				const response = await fetch(url);
 				if (!response.ok) throw new Error("Error en servidor");
-				const data = await response.json();
 
-				container.innerHTML = data.length ? '' : '<p class="text-center py-5 w-100 text-muted small">No hay elementos disponibles en esta categoría.</p>';
+				const data = await response.json(); // <-- AHORA DATA ESTÁ DEFINIDO CORRECTAMENTE
 
-				// 5. Renderizado por grupos (Inventario, Servicios y Convenio usan grupos)
+				// --- LÓGICA DE SINCRONIZACIÓN MEJORADA ---
+				if (category === 'Servicios' && contractData.serviceItems.length > 0) {
+					contractData.serviceItems.forEach((itemEnCarrito, index) => {
+						// Buscamos el servicio real por ID en la data que acaba de llegar
+						const servicioReal = data.find(d => d.id === itemEnCarrito.id);
+						if (servicioReal) {
+							// PISAMOS el objeto temporal con la data real de la BD
+							contractData.serviceItems[index] = servicioReal;
+						}
+					});
+					// Refrescamos el ticket de la derecha para quitar el "Cargando..."
+					updateSelectionUI();
+				}
+				// ------------------------------------------
+
+				container.innerHTML = data.length ? '' : '<p class="text-center py-5 w-100 text-muted small">No hay elementos disponibles.</p>';
+
 				if (category !== 'Movilidad') {
 					const grouped = data.reduce((acc, item) => {
 						const catName = item.category || "Otros";
@@ -1340,26 +1654,14 @@
 
 					for (const catName in grouped) {
 						const icon = category === 'Inventario' ? 'fa-box-archive' : (category === 'Convenio' ? 'fa-handshake' : 'fa-bell-concierge');
-						const color = category === 'Convenio' ? 'text-success' : 'text-primary';
-
-						container.innerHTML += `
-							<div class="col-12 mt-3 mb-2 animate__animated animate__fadeIn">
-								<h6 class="text-uppercase fw-bold text-muted small border-bottom pb-2" style="font-size:0.7rem">
-									<i class="fa-solid ${icon} me-2 ${color}"></i>${catName}
-								</h6>
-							</div>`;
+						container.innerHTML += `<div class="col-12 mt-3 mb-2"><h6 class="text-uppercase fw-bold text-muted small border-bottom pb-2"><i class="fa-solid ${icon} me-2"></i>${catName}</h6></div>`;
 
 						grouped[catName].forEach(item => {
-							// Mapeamos la categoría interna para handleSelection
-							let selectionType = category;
-							if (category === 'Servicios') selectionType = 'Servicios-Internos';
-							if (category === 'Convenio') selectionType = 'Servicios-Convenio';
-
+							let selectionType = category === 'Servicios' ? 'Servicios-Internos' : (category === 'Convenio' ? 'Servicios-Convenio' : category);
 							container.innerHTML += createProductCard(item, selectionType);
 						});
 					}
 				} else {
-					// Movilidad (Lista simple)
 					data.forEach(item => {
 						container.innerHTML += createProductCard(item, 'Movilidad');
 					});
@@ -1402,6 +1704,19 @@
 		}
 
 		function handleSelection(type, item) {
+			const idsObligatorios = [3, 5, 34];
+			if (type === 'Servicios-Internos' && idsObligatorios.includes(item.id)) {
+				Swal.fire({
+					toast: true,
+					position: 'top-end',
+					icon: 'info',
+					title: 'Este servicio es obligatorio para la ubicación elegida',
+					showConfirmButton: false,
+					timer: 2500
+				});
+				return; // Bloquea la deselección manual
+			}
+
 			if (type === 'Inventario') {
 				const idx = contractData.stockItems.findIndex(x => x.id === item.id);
 				if (idx === -1) {
@@ -1586,7 +1901,7 @@
 
 		//PASO
 		//NUMERO
-		//5
+		//4
 
 		async function renderSummary() {
 			// 1. Prefijo (Consistente con tu lógica)
@@ -1701,17 +2016,55 @@
 				});
 
 				// Mapeo corregido según tu ContractController y ContractService
+				// const payload = {
+				// 	branchId: parseInt(contractData.branchId),
+				// 	agencyId: contractData.useAgreement ? parseInt(contractData.agencyId || 0) : null,
+				// 	solicitor: contractData.solicitor,
+				// 	deceased: contractData.deceased,
+				// 	affiliate: contractData.affiliate,
+				// 	stockItems: contractData.stockItems.map(i => i.id),
+				// 	serviceItems: contractData.serviceItems.map(i => i.id),
+				// 	externalServiceItems: contractData.agreementServiceItems.map(i => i.id),
+				// 	mobilityItems: contractData.mobilityItems, // Ya es lista de IDs
+				// 	useAgreement: contractData.useAgreement
+				// };
+
 				const payload = {
 					branchId: parseInt(contractData.branchId),
 					agencyId: contractData.useAgreement ? parseInt(contractData.agencyId || 0) : null,
-					solicitor: contractData.solicitor,
-					deceased: contractData.deceased,
-					// Enviamos solo los IDs para las listas del servidor
+					useAgreement: contractData.useAgreement,
+
+					solicitor: {
+						Dni: contractData.solicitor.dni,
+						Name: contractData.solicitor.name,
+						Type: contractData.solicitor.type,
+						Cip: contractData.solicitor.cip || ''
+					},
+
+					affiliate: {
+						Dni: contractData.affiliate.dni,
+						FullName: contractData.affiliate.name,
+						Cip: contractData.affiliate.cip || ''
+					},
+
+					deceased: {
+						Dni: contractData.deceased.dni,
+						Name: contractData.deceased.name,
+						DeathDate: contractData.deceased.deathDate,
+						BurialDate: contractData.deceased.burialDate,
+						BurialTime: contractData.deceased.burialTime,
+						Inei: contractData.deceased.inei,
+						WakeId: contractData.deceased.wakeId,
+						CustomWakeAddress: contractData.deceased.customWakeAddress,
+						CemeteryId: parseInt(contractData.deceased.cemeteryId),
+						StructureId: contractData.deceased.structureId ? parseInt(contractData.deceased.structureId) : null,
+						IntermentSpaceId: contractData.deceased.intermentSpaceId ? parseInt(contractData.deceased.intermentSpaceId) : null
+					},
+
 					stockItems: contractData.stockItems.map(i => i.id),
 					serviceItems: contractData.serviceItems.map(i => i.id),
 					externalServiceItems: contractData.agreementServiceItems.map(i => i.id),
-					mobilityItems: contractData.mobilityItems, // Ya es lista de IDs
-					useAgreement: contractData.useAgreement
+					mobilityItems: contractData.mobilityItems
 				};
 
 				try {

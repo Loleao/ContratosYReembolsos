@@ -1,274 +1,330 @@
 ﻿@using ContratosYReembolsos.Models.Entities.Agencies
+@using Microsoft.AspNetCore.Authorization
 @model IEnumerable<Agency>
+@inject IAuthorizationService AuthorizationService
 
-<div class="container py-4">
+@{
+    ViewData["Title"] = "Agencias en Convenio";
+
+    // Evaluación centralizada de políticas
+    var canEdit = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Convenios.Editar")).Succeeded;
+    var canDelete = (await AuthorizationService.AuthorizeAsync(User, "Permissions.Convenios.Eliminar")).Succeeded;
+}
+
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    @* --- NAVEGACIÓN PARA ADMIN --- *@
     @if (ViewBag.IsAdmin == true)
     {
         <nav aria-label="breadcrumb" class="mb-3">
-            <ol class="breadcrumb bg-light p-2 rounded-3 shadow-sm">
-                <li class="breadcrumb-item"><a asp-action="Index" asp-route-selectedBranchId="">Filiales</a></li>
+            <ol class="breadcrumb bg-white p-2 rounded-3 shadow-sm border px-3">
+                <li class="breadcrumb-item"><a asp-action="Index" asp-route-selectedBranchId="" class="text-decoration-none">Filiales</a></li>
                 <li class="breadcrumb-item active fw-bold text-primary">@ViewBag.BranchName</li>
             </ol>
         </nav>
     }
 
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    @* --- ENCABEZADO --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-handshake me-2 text-primary"></i>Agencias en Convenio</h4>
-            <p class="text-muted small mb-0">Sedes operativas en @ViewBag.BranchName</p>
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-handshake me-2 text-primary"></i>Agencias en Convenio
+            </h4>
+            <p class="text-muted small mb-0">Gestión operativa de convenios en @ViewBag.BranchName</p>
         </div>
-        <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateAgencyModal()">
-            <i class="fa-solid fa-plus me-2"></i>Nuevo Convenio
-        </button>
+
+        @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.Convenios.Crear")).Succeeded)
+        {
+            <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="openCreateAgencyModal()">
+                <i class="fa-solid fa-plus me-2"></i>Nuevo Convenio
+            </button>
+        }
     </div>
 
-    <div class="row g-3">
-        @if (!Model.Any())
-        {
-            <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-handshake-slash fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No hay agencias registradas en esta filial.</p>
-            </div>
-        }
-        else
-        {
-            @foreach (var item in Model)
-            {
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 transition-hover border-top border-4 @(item.IsActive ? "border-success" : "border-danger")">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-0">@item.Name</h6>
-                                    <small class="text-muted">RUC: @item.RUC</small>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                                    <ul class="dropdown-menu border-0 shadow rounded-3">
-                                        <li>
-                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openEditAgencyModal(@item.Id)">
-                                                <i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar
-                                            </a>
-                                        </li>
-                                        @if (item.IsActive)
+    @* --- TABLA DE CONVENIOS --- *@
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="text-muted small text-uppercase fw-bold">
+                        <th class="ps-4 py-3">Razón Social / RUC</th>
+                        <th>Contacto Principal</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-end pe-4">Acciones de Gestión</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <i class="fa-solid fa-handshake-slash fa-3x text-muted opacity-25 mb-3"></i>
+                                <p class="text-muted">No se encontraron agencias en esta sede.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary-subtle text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="min-width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-building-user"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">@item.Name</div>
+                                            <span class="badge bg-light text-muted border fw-normal" style="font-size: 10px;">RUC: @item.RUC</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-dark fw-semibold small">@(item.ContactPerson ?? "Sin asignar")</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted" style="font-size: 11px;">@item.Phone</span>
+                                        @if (!string.IsNullOrEmpty(item.Phone))
                                         {
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="deactivateAgency(@item.Id, '@item.Name')">
-                                                    <i class="fa-solid fa-ban me-2 text-warning"></i>Dar de baja
-                                                </a>
-                                            </li>
-                                        }
-                                        else
-                                        {
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0)" onclick="activateAgency(@item.Id, '@item.Name')">
-                                                    <i class="fa-solid fa-check me-2 text-success"></i>Activar
-                                                </a>
-                                            </li>
-                                        }
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDeleteWithSuggestion(@item.Id, '@item.Name')">
-                                                <i class="fa-solid fa-trash-can me-2"></i>Eliminar
+                                            <a href="https://wa.me/51@item.Phone.Replace(" ", " ")" target="_blank" class="text-success lh-1">
+                                                <i class="fa-brands fa-whatsapp"></i>
                                             </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">Inactivo</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        @if (canEdit)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-xs"
+                                                    onclick="openEditAgencyModal(@item.Id)" title="Editar datos">
+                                                <i class="fa-solid fa-pen-to-square me-1"></i> Editar
+                                            </button>
 
-                            <div class="mb-2">
-                                <small class="text-muted d-block"><i class="fa-solid fa-user-tie me-2"></i>Contacto</small>
-                                <span class="fw-bold small">@(item.ContactPerson ?? "No asignado")</span>
-                            </div>
+                                            @if (item.IsActive)
+                                            {
+                                                <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold shadow-xs"
+                                                        onclick="deactivateAgency(@item.Id, '@item.Name')" title="Dar de baja">
+                                                    <i class="fa-solid fa-ban me-1"></i> Baja
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold shadow-xs"
+                                                        onclick="activateAgency(@item.Id, '@item.Name')" title="Activar">
+                                                    <i class="fa-solid fa-check me-1"></i> Activar
+                                                </button>
+                                            }
+                                        }
 
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                <span class="small text-muted"><i class="fa-solid fa-phone me-1"></i> @item.Phone</span>
-                                @if (!string.IsNullOrEmpty(item.Phone))
-                                {
-                                    <a href="https://wa.me/51@item.Phone.Replace(" ", " ")" target="_blank" class="btn btn-sm btn-success rounded-circle">
-                                        <i class="fa-brands fa-whatsapp"></i>
-                                    </a>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
+                                        @if (canDelete)
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold shadow-xs"
+                                                    onclick="confirmDeleteWithSuggestion(@item.Id, '@item.Name')" title="Eliminar permanentemente">
+                                                <i class="fa-solid fa-trash-can me-1"></i> Borrar
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div id="modalAgencyContainer"></div>
+@Html.AntiForgeryToken()
 
-<script>
-    const currentBranchId = '@ViewBag.SelectedBranchId';
-    const urlGetCreate = '@Url.Action("GetCreateAgency", "Agency")';
-    const urlGetEdit = '@Url.Action("GetEditAgency", "Agency")';
-    const urlDelete = '@Url.Action("Delete", "Agency")';
+@section Scripts {
+    <script>
+        const currentBranchId = '@ViewBag.SelectedBranchId';
+        const urlGetCreate = '@Url.Action("GetCreateAgency", "Agency")';
+        const urlGetEdit = '@Url.Action("GetEditAgency", "Agency")';
 
-    async function openCreateAgencyModal() {
-        try {
-            const response = await fetch(`${urlGetCreate}?branchId=${currentBranchId}`);
-            const html = await response.text();
-            document.getElementById('modalAgencyContainer').innerHTML = html;
-            new bootstrap.Modal(document.getElementById('modalCreateAgency')).show();
-        } catch (error) {
-            Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
-        }
-    }
-
-    async function submitAgencyForm() {
-        const form = document.getElementById('formCreateAgency');
-        if (!form.checkValidity()) { form.reportValidity(); return; }
-        const formData = new FormData(form);
-        try {
-            const response = await fetch(form.action, { method: 'POST', body: formData });
-            const result = await response.json();
-            if (result.success) {
-                location.reload();
-            } else {
-                Swal.fire('Error', result.message, 'error');
-            }
-        } catch (error) {
-            Swal.fire('Error', 'Error de red', 'error');
-        }
-    }
-
-    async function openEditAgencyModal(id) {
-        try {
-            const response = await fetch(`${urlGetEdit}?id=${id}`);
-            const html = await response.text();
-            document.getElementById('modalAgencyContainer').innerHTML = html;
-            new bootstrap.Modal(document.getElementById('modalEditAgency')).show();
-        } catch (error) {
-            Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
-        }
-    }
-
-    // Enviar formulario de edición
-    async function submitEditAgencyForm() {
-        const form = document.getElementById('formEditAgency');
-        const formData = new FormData(form);
-        try {
-            const response = await fetch(form.action, { method: 'POST', body: formData });
-            const result = await response.json();
-            if (result.success) {
-                Swal.fire('¡Actualizado!', result.message, 'success').then(() => location.reload());
-            } else {
-                Swal.fire('Atención', result.message, 'warning');
-            }
-        } catch (error) {
-            Swal.fire('Error', 'Error de servidor', 'error');
-        }
-    }
-
-    async function activateAgency(id, name) {
-        const result = await Swal.fire({
-            title: '¿Activar agencia?',
-            text: `La agencia "${name}" ya aparecerá en nuevos contratos.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, activar',
-            confirmButtonColor: '#ffc107',
-            cancelButtonText: 'Cancelar'
+        // Inicializar tooltips si usas
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
         });
 
-        if (result.isConfirmed) {
-            performAction('@Url.Action("Activate", "Agency")', id);
-        }
-    }
-
-    async function deactivateAgency(id, name) {
-        const result = await Swal.fire({
-            title: '¿Dar de baja?',
-            text: `La agencia "${name}" ya no aparecerá en nuevos contratos, pero se mantendrá en el historial.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, dar de baja',
-            confirmButtonColor: '#ffc107', // Color warning (amarillo)
-            cancelButtonText: 'Cancelar'
-        });
-
-        if (result.isConfirmed) {
-            performAction('@Url.Action("Deactivate", "Agency")', id);
-        }
-    }
-
-    // Función de Eliminación con Sugerencia (Tu petición especial)
-    function confirmDeleteWithSuggestion(id, name) {
-        Swal.fire({
-            title: '¿Estás seguro de eliminar?',
-            html: `Estás por eliminar permanentemente a <b>${name}</b>.<br><br><div class="alert alert-info small"><b>Sugerencia:</b> Dar de baja es más seguro para mantener el historial de auditoría.</div>`,
-            icon: 'error',
-            showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonColor: '#d33',
-            denyButtonColor: '#ffc107',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Eliminar permanentemente',
-            denyButtonText: 'Mejor dar de baja',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                // Usuario eligió Eliminar
-                performAction('@Url.Action("Delete", "Agency")', id);
-            } else if (result.isDenied) {
-                // Usuario eligió la sugerencia: Dar de baja
-                performAction('@Url.Action("Deactivate", "Agency")', id);
+        async function openCreateAgencyModal() {
+            try {
+                const response = await fetch(`${urlGetCreate}?branchId=${currentBranchId}`);
+                const html = await response.text();
+                document.getElementById('modalAgencyContainer').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('modalCreateAgency')).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
             }
-        });
-    }
-
-    async function performAction(url, id) {
-        try {
-            const response = await fetch(`${url}?id=${id}`, { method: 'POST' });
-            const data = await response.json();
-            if (data.success) {
-                Swal.fire('¡Hecho!', data.message, 'success').then(() => location.reload());
-            } else {
-                Swal.fire('Atención', data.message, 'error');
-            }
-        } catch (error) {
-            Swal.fire('Error', 'No se pudo completar la acción.', 'error');
         }
-    }
 
-    // Eliminar con confirmación de SweetAlert
-    function deleteAgency(id, name) {
-        Swal.fire({
-            title: '¿Eliminar Agencia?',
-            text: `Estás por eliminar el convenio con "${name}". Esta acción no se puede deshacer.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const response = await fetch(`${urlDelete}?id=${id}`, { method: 'POST' });
-                    const data = await response.json();
-                    if (data.success) {
-                        Swal.fire('Eliminado', data.message, 'success').then(() => location.reload());
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                } catch (error) {
-                    Swal.fire('Error', 'Ocurrió un error al intentar eliminar.', 'error');
+        async function openEditAgencyModal(id) {
+            try {
+                const response = await fetch(`${urlGetEdit}?id=${id}`);
+                const html = await response.text();
+                document.getElementById('modalAgencyContainer').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('modalEditAgency')).show();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+            }
+        }
+
+        async function activateAgency(id, name) {
+            const result = await Swal.fire({
+                title: '¿Activar convenio?',
+                text: `La agencia "${name}" volverá a estar disponible para contratos.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, activar',
+                confirmButtonColor: '#198754'
+            });
+            if (result.isConfirmed) performAction('@Url.Action("Activate", "Agency")', id);
+        }
+
+        async function deactivateAgency(id, name) {
+            const result = await Swal.fire({
+                title: '¿Dar de baja?',
+                text: `La agencia "${name}" dejará de aparecer en nuevos registros.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, dar de baja',
+                confirmButtonColor: '#ffc107'
+            });
+            if (result.isConfirmed) performAction('@Url.Action("Deactivate", "Agency")', id);
+        }
+
+        function confirmDeleteWithSuggestion(id, name) {
+            Swal.fire({
+                title: '¿Eliminar registro?',
+                html: `Estás por borrar a <b>${name}</b> permanentemente.<br><br><div class="alert alert-info py-2 small mb-0"><b>Tip:</b> "Dar de baja" mantiene el historial de auditoría.</div>`,
+                icon: 'error',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonColor: '#d33',
+                denyButtonColor: '#ffc107',
+                confirmButtonText: 'Borrar todo',
+                denyButtonText: 'Mejor dar de baja',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Llama al método Delete con el token de seguridad
+                    performAction('@Url.Action("Delete", "Agency")', id);
+                } else if (result.isDenied) {
+                    // Llama al método Deactivate con el token de seguridad
+                    performAction('@Url.Action("Deactivate", "Agency")', id);
                 }
+            });
+        }
+
+        async function performAction(url, id) {
+            Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                // Buscamos el token en el DOM (renderizado fuera del script)
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenElement ? tokenElement.value : '';
+
+                const response = await fetch(`${url}?id=${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'RequestVerificationToken': token
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Completado', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', data.message, 'warning');
+                }
+            } catch (error) {
+                console.error("Error en performAction:", error);
+                Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
             }
-        });
-    }
-</script>
+        }
+
+        async function submitAgencyForm() {
+            const form = document.getElementById('formCreateAgency');
+            if (!form || !form.checkValidity()) {
+                if(form) form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+
+            Swal.fire({ title: 'Guardando convenio...', didOpen: () => { Swal.showLoading(); }, allowOutsideClick: false });
+
+            try {
+                const response = await fetch(form.action, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo conectar con el servidor.', 'error');
+            }
+        }
+
+        async function submitEditAgencyForm() {
+            const form = document.getElementById('formEditAgency');
+            if (!form || !form.checkValidity()) {
+                if(form) form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+
+            Swal.fire({ title: 'Actualizando datos...', didOpen: () => { Swal.showLoading(); }, allowOutsideClick: false });
+
+            try {
+                const response = await fetch(form.action, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('¡Actualizado!', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Fallo en la comunicación con el servidor.', 'error');
+            }
+        }
+    </script>
+}
 
 <style>
-    .transition-hover {
-        transition: all 0.3s ease;
+    .table thead th {
+        font-weight: 700;
+        border-bottom: none;
     }
 
-        .transition-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1) !important;
-        }
+    .table tbody tr:hover {
+        background-color: #f8fbff !important;
+    }
+
+    .shadow-xs {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-sm {
+        font-size: 0.75rem;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff !important;
+    }
 </style>

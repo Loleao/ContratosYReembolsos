@@ -1,24 +1,24 @@
 ﻿@using ContratosYReembolsos.Models.ViewModels.Users
 @model IEnumerable<UserListViewModel>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">Gestión de Personal</h3>
-            <p class="text-muted small">Administra los usuarios y sus accesos por filial</p>
+            <p class="text-muted small">Administra los usuarios, sus credenciales de acceso y filiales asignadas.</p>
         </div>
-        <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+        <button type="button" onclick="openUserModal()" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
             <i class="fa-solid fa-user-plus me-2"></i> Nuevo Trabajador
-        </a>
+        </button>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Trabajador</th>
+                        <tr class="text-muted small text-uppercase">
+                            <th class="ps-4 py-3">Trabajador / Usuario</th>
                             <th>DNI</th>
                             <th>Filial Asignada</th>
                             <th>Rol</th>
@@ -31,45 +31,61 @@
                             <tr>
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-sm bg-light text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="fa-solid fa-user"></i>
+                                        <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                            <i class="fa-solid fa-user-tie fs-5"></i>
                                         </div>
                                         <div>
-                                            <p class="mb-0 fw-bold">@item.FullName</p>
-                                            <small class="text-muted">@item.Email</small>
+                                            <p class="mb-0 fw-bold text-dark">@item.FullName</p>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-light text-primary border me-2" style="font-size: 0.7rem;">
+                                                    <i class="fa-solid fa-id-badge me-1"></i> @item.UserName
+                                                </span>
+                                                <small class="text-muted">@item.Email</small>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td><span class="badge bg-secondary">@item.DNI</span></td>
                                 <td>
-                                    <span class="text-dark">
-                                        <i class="fa-solid fa-building text-muted me-1"></i> @item.BranchName
-                                    </span>
+                                    <span class="fw-medium text-dark">@item.DNI</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-pill px-3 py-1 border">
+                                            <i class="fa-solid fa-building-user text-muted me-2" style="font-size: 0.8rem;"></i>
+                                            <span class="small fw-bold">@item.BranchName</span>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     @if (item.Role == "Admin")
                                     {
-                                        <span class="badge bg-danger-subtle text-danger border border-danger">Admin</span>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3">
+                                            <i class="fa-solid fa-user-shield me-1"></i> Admin
+                                        </span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-info-subtle text-info border border-info">@item.Role</span>
+                                        <span class="badge bg-info-subtle text-info border border-info rounded-pill px-3">
+                                            <i class="fa-solid fa-user-gear me-1"></i> @item.Role
+                                        </span>
                                     }
                                 </td>
                                 <td class="text-end pe-4">
-                                    <a asp-action="ManagePermissions" asp-route-userId="@item.Id"
-                                       class="btn btn-sm btn-light text-primary rounded-circle me-1"
-                                       title="Gestionar Permisos">
-                                        <i class="fa-solid fa-shield"></i>
-                                    </a>
+                                    <div class="btn-group">
+                                        <a asp-action="ManagePermissions" asp-route-userId="@item.Id"
+                                           class="btn btn-sm btn-light text-primary rounded-circle me-1 border"
+                                           title="Gestionar Permisos">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </a>
 
-                                    <button class="btn btn-sm btn-light rounded-circle me-1" title="Editar">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </button>
+                                        <button type="button" onclick="openUserModal('@item.Id')" class="btn btn-sm btn-light rounded-circle me-1 border" title="Editar Datos">
+                                            <i class="fa-solid fa-user-pen"></i>
+                                        </button>
 
-                                    <button class="btn btn-sm btn-light text-danger rounded-circle" title="Dar de baja">
-                                        <i class="fa-solid fa-user-minus"></i>
-                                    </button>
+                                        <button class="btn btn-sm btn-light text-danger rounded-circle border" title="Dar de baja">
+                                            <i class="fa-solid fa-user-xmark"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -80,13 +96,116 @@
     </div>
 </div>
 
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary" id="userModalLabel">Formulario de Trabajador</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .btn-sm.rounded-circle {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 0;
+        transition: all 0.2s;
+    }
+
+        .btn-sm.rounded-circle:hover {
+            background-color: #fff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .avatar-sm {
+        transition: transform 0.3s ease;
+    }
+
+    tr:hover .avatar-sm {
+        transform: scale(1.1);
     }
 </style>
+
+
+@section Scripts {
+    <script>
+        let userModal;
+
+        // Usamos $(function() { ... }) para asegurar que el DOM esté listo
+        $(function () {
+            const modalElement = document.getElementById('userModal');
+            if (modalElement) {
+                userModal = new bootstrap.Modal(modalElement);
+            }
+        });
+
+        function openUserModal(userId = "") {
+            // Verificar que userModal se haya inicializado
+            if (!userModal) {
+                userModal = new bootstrap.Modal(document.getElementById('userModal'));
+            }
+
+            const container = document.getElementById('userModalBody');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            userModal.show();
+
+            const url = '@Url.Action("GetUserForm", "User")' + (userId ? `?id=${userId}` : '');
+
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    container.innerHTML = html;
+
+                    const form = $("#userForm");
+                    // Re-analizar el formulario para activar validaciones
+                    if ($.validator && $.validator.unobtrusive) {
+                        $.validator.unobtrusive.parse(form);
+                    }
+
+                    form.on("submit", function (e) {
+                        e.preventDefault();
+                        if (!form.valid()) return;
+
+                        const formData = new FormData(this);
+
+                        fetch(this.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                location.reload();
+                            } else {
+                                return response.text();
+                            }
+                        })
+                        .then(html => {
+                            if (html) {
+                                container.innerHTML = html;
+                                $.validator.unobtrusive.parse("#userForm");
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = '<div class="alert alert-danger">Error al cargar datos.</div>';
+                });
+        }
+    </script>
+}

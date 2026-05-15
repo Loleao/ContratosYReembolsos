@@ -77,21 +77,35 @@ namespace ContratosYReembolsos.Services.Implementations
             // Identificar si es Admin por sus claims
             bool isAdmin = userClaims.Any(c => c.Equals("Admin", StringComparison.OrdinalIgnoreCase));
 
+            // 1. Empezamos la consulta filtrando solo por lo básico que SQL siempre entiende:
+            //    - Que no esté leída.
+            //    - Que pertenezca a la sede del usuario (o sea global).
             var query = _context.Notificaciones.Where(n => !n.IsRead);
 
             if (!isAdmin)
             {
-                // Filtro estricto para usuarios mortales
-                query = query.Where(n =>
-                    (n.RequiredPermission == null || userClaims.Contains(n.RequiredPermission)) &&
-                    (n.BranchId == null || n.BranchId == userBranchId)
-                );
+                query = query.Where(n => n.BranchId == null || n.BranchId == userBranchId);
             }
 
-            return await query
+            // 2. Ejecutamos la consulta y traemos los resultados a MEMORIA (.ToListAsync())
+            //    Traemos un número razonable para filtrar en C# (ej. las últimas 50)
+            var rawNotifications = await query
                 .OrderByDescending(n => n.CreatedAt)
-                .Take(10)
+                .Take(50)
                 .ToListAsync();
+
+            // 3. Ahora filtramos por PERMISOS en C# (Memoria)
+            //    Esto evita que EF Core genere el SQL con OPENJSON que rompe tu servidor.
+            if (!isAdmin)
+            {
+                return rawNotifications
+                    .Where(n => string.IsNullOrEmpty(n.RequiredPermission) || userClaims.Contains(n.RequiredPermission))
+                    .Take(10)
+                    .ToList();
+            }
+
+            // Si es Admin, devolvemos las 10 primeras directamente
+            return rawNotifications.Take(10).ToList();
         }
 
         public async Task MarkAsReadAsync(int notificationId)

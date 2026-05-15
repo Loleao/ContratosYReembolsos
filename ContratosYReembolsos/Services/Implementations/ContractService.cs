@@ -1,4 +1,5 @@
 ﻿using ContratosYReembolsos.Data.Contexts;
+using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Contracts;
 using ContratosYReembolsos.Models.Entities.FixedAssets;
@@ -14,11 +15,47 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
     {
         private readonly ApplicationDbContext _context;
         private readonly LimaContractsDbContext _limaContext;
+        private readonly ICurrentUserService _currentUser;
 
-        public ContractService(ApplicationDbContext context, LimaContractsDbContext limaContext)
+        public ContractService(ApplicationDbContext context, LimaContractsDbContext limaContext, ICurrentUserService currentUser)
         {
             _context = context;
             _limaContext = limaContext;
+            _currentUser = currentUser;
+        }
+
+        public async Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync()
+        {
+            var branches = await _context.Filiales
+                .Include(b => b.Ubigeo)
+                .OrderBy(b => b.Name)
+                .ToListAsync();
+
+            return branches
+                .GroupBy(b => b.Ubigeo?.Region ?? "SIN REGIÓN")
+                .OrderBy(g => g.Key);
+        }
+
+        public async Task<List<ContractListDto>> GetContractListByBranchAsync(int? branchId)
+        {
+            int finalBranchId = _currentUser.IsAdmin ? (branchId ?? 0) : (_currentUser.BranchId ?? 0);
+
+            return await _context.Contratos
+                .Include(c => c.Branch)
+                .Where(c => c.BranchId == finalBranchId) // Filtro por Sede
+                .OrderByDescending(c => c.CreatedAt)
+                .Select(c => new ContractListDto
+                {
+                    Id = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    DeceasedName = c.DeceasedName,
+                    BurialDate = c.BurialDate,
+                    BurialTime = c.BurialTime,
+                    BranchName = c.Branch.Name,
+                    Status = c.Status
+                })
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<List<object>> SearchAffiliates(string dni, string cip, string name)
@@ -35,11 +72,32 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
         {
             return await _limaContext.Beneficiarios
                 .Where(b => b.idfaf == afiliadoId)
-                .Select(b => new { id = b.codBenef, dni = "999999999", name = b.Name, relationship = b.codParent })
-                .Cast<object>().ToListAsync();
+                .Select(b => new
+                {
+                    id = b.codBenef,
+                    dni = "",
+                    name = b.Name,
+                    relationship = b.codParent
+                })
+                .Cast<object>()
+                .ToListAsync();
         }
 
-        public async Task<List<object>> GetWakes() => await _limaContext.Velatorios.Select(w => new { id = w.Id, name = w.Name }).OrderBy(w => w.name).Cast<object>().ToListAsync();
+        public async Task<List<object>> GetWakes(int branchId)
+        {
+            return await _context.Velatorios // Asegúrate que este sea el nombre en tu ApplicationDbContext
+                .Where(w => w.IsActive && (w.BranchId == branchId || w.IsInternal == false))
+                .OrderByDescending(w => w.IsInternal) // Primero los propios
+                .ThenBy(w => w.Name)
+                .Select(w => new {
+                    id = w.Id,
+                    name = w.Name,
+                    address = w.Address,
+                    isInternal = w.IsInternal // Fundamental para el JS
+                })
+                .Cast<object>()
+                .ToListAsync();
+        }
 
         public async Task<List<string>> GetRegions() => await _context.Ubigeos.Select(u => u.Region).Distinct().Where(r => r != null).OrderBy(r => r).ToListAsync();
         public async Task<List<string>> GetProvinces(string region) => await _context.Ubigeos.Where(u => u.Region == region).Select(u => u.Province).Distinct().Where(p => p != null).OrderBy(p => p).ToListAsync();
@@ -49,7 +107,16 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
         {
             var branch = await _context.Filiales.FindAsync(branchId);
             if (branch == null) return null;
-            return new { hasWake = branch.HasWakeService, branchName = branch.Name };
+
+            // Evaluamos dinámicamente si la sede tiene cargado algún velatorio interno y activo
+            bool tieneVelatorioPropio = await _context.Velatorios
+                .AnyAsync(w => w.BranchId == branchId && w.IsInternal && w.IsActive);
+
+            return new
+            {
+                hasWake = tieneVelatorioPropio,
+                branchName = branch.Name
+            };
         }
 
         public async Task<List<object>> GetCemeteries(string? inei, int? branchId)
@@ -140,6 +207,8 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
 
         public async Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model)
         {
+            if (!_currentUser.IsAdmin) model.BranchId = _currentUser.BranchId ?? 0;
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -153,9 +222,13 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     UbigeoId = model.Deceased.Inei,
                     AgencyId = model.AgencyId > 0 ? model.AgencyId : (int?)null,
 
+                    AffiliateDni = model.Affiliate.Dni,
+                    AffiliateFullName = model.Affiliate.FullName,
+                    AffiliateCIP = model.Affiliate.Cip,
+
                     SolicitorDni = model.Solicitor.Dni,
                     SolicitorName = model.Solicitor.Name,
-                    SolicitorType = model.Solicitor.Type, // <-- AGREGA ESTA LÍNEA
+                    SolicitorType = model.Solicitor.Type,
 
                     DeceasedDni = model.Deceased.Dni,
                     DeceasedName = model.Deceased.Name,
@@ -168,6 +241,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
 
                     CemeteryId = model.Deceased.CemeteryId,
                     WakeId = model.Deceased.WakeId,
+                    CustomWakeAddress = model.Deceased.CustomWakeAddress, // Guardará la dirección manual del input
                     IntermentStructureId = model.Deceased.StructureId,
                     IntermentSpaceId = model.Deceased.IntermentSpaceId,
 
@@ -273,6 +347,7 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 return (false, errorMsg, 0, "");
             }
         }
+
         public async Task<List<ContractListDto>> GetContractListAsync()
         {
             return await _context.Contratos
@@ -414,9 +489,10 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .Include(c => c.Ubigeo)
                 .Include(c => c.IntermentStructure)
                 .Include(c => c.IntermentSpace)
+                .Include(c => c.Wake) // Tabla de velatorios
                 .Include(c => c.ProductDetails).ThenInclude(p => p.Product)
-                .Include(c => c.ServiceDetails).ThenInclude(s => s.FuneralService) // Internos
-                .Include(c => c.ExternalServiceDetails).ThenInclude(s => s.FuneralService) // Convenio
+                .Include(c => c.ServiceDetails).ThenInclude(s => s.FuneralService)
+                .Include(c => c.ExternalServiceDetails).ThenInclude(s => s.FuneralService)
                 .Include(c => c.MovilityDetails).ThenInclude(m => m.VehicleType)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -432,9 +508,15 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 BranchName = contract.Branch?.Name ?? "No especificada",
                 AgencyName = contract.Agency?.Name ?? "FONAFUN - ADMINISTRACIÓN DIRECTA",
 
+                // Datos del Afiliado Titular
+                AffiliateDni = contract.AffiliateDni,
+                AffiliateFullName = contract.AffiliateFullName,
+                AffiliateCIP = contract.AffiliateCIP,
+
                 SolicitorName = contract.SolicitorName,
                 SolicitorDni = contract.SolicitorDni,
                 SolicitorType = contract.SolicitorType,
+                SolicitorCip = contract.SolicitorCip ?? "",
                 DeceasedName = contract.DeceasedName,
                 DeceasedDni = contract.DeceasedDni,
 
@@ -448,11 +530,100 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     ? $"{contract.IntermentStructure?.Name} (Fila: {contract.IntermentSpace.RowLetter}, Col: {contract.IntermentSpace.ColumnNumber})"
                     : (contract.IntermentStructure?.Name ?? "Ubicación por confirmar"),
 
-                Products = contract.ProductDetails.Select(p => p.Product.Name).ToList(),
+                // Velatorio dinámico
+                WakeName = contract.Wake?.Name ?? (string.IsNullOrEmpty(contract.CustomWakeAddress) ? "Particular / Domicilio" : "Otro Velatorio"),
+                CustomWakeAddress = contract.CustomWakeAddress,
+
+                // Listas simples
+                Products = contract.ProductDetails.Select(p => p.Product?.Name ?? "Bien").ToList(),
                 Movilities = contract.MovilityDetails.Select(m => m.VehicleType?.Name ?? "Movilidad").ToList(),
-                InternalServices = contract.ServiceDetails.Select(s => s.FuneralService.Name).ToList(),
-                ExternalServices = contract.ExternalServiceDetails.Select(s => s.FuneralService.Name).ToList()
+                ExternalServices = contract.ExternalServiceDetails.Select(s => s.FuneralService?.Name ?? "Servicio").ToList(),
+
+                // --- LLENADO DE NUEVAS COLECCIONES COMPLEJAS ---
+                DetailedProducts = contract.ProductDetails.Select(p => new ProductDetailItemDto
+                {
+                    Id = p.Id,
+                    Name = p.Product?.Name ?? "Suministro",
+                    Quantity = p.Quantity,
+                    DeliveryDate = p.DeliveryDate,
+                    Observations = p.Observations,
+                    Status = p.Status.ToString()
+                }).ToList(),
+
+                DetailedInternalServices = contract.ServiceDetails.Select(s => new ServiceDetailItemDto
+                {
+                    Id = s.Id,
+                    Name = s.FuneralService?.Name ?? "Servicio Interno",
+                    Quantity = s.Quantity,
+                    UnitPrice = s.UnitPrice,
+                    Status = s.Status.ToString()
+                }).ToList()
             };
+        }
+
+        public async Task<(bool success, string message)> ConfirmProductDeliveryAsync(ConfirmProductDeliveryInput input)
+        {
+            try
+            {
+                var productDetail = await _context.DetallesProductosContrato.FindAsync(input.Id);
+                if (productDetail == null) return (false, "No se encontró el registro del bien.");
+
+                productDetail.DeliveryDate = input.DeliveryDate;
+                productDetail.Observations = input.Observations;
+                productDetail.Status = ProductDeliveryStatus.Entregado; // Cambia el Enum a Entregado
+
+                _context.DetallesProductosContrato.Update(productDetail);
+                await _context.SaveChangesAsync();
+
+                return (true, "La entrega del bien ha sido registrada y auditada correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.InnerException?.Message ?? ex.Message);
+            }
+        }
+
+        public async Task<(bool success, string message)> AdvanceServiceStatusAsync(AdvanceServiceStatusInput input)
+        {
+            try
+            {
+                var serviceDetail = await _context.DetallesServiciosContrato.FindAsync(input.Id);
+                if (serviceDetail == null) return (false, "No se encontró el registro del servicio propio.");
+
+                switch (serviceDetail.Status)
+                {
+                    case ServiceExecutionStatus.Pendiente:
+                        // Etapa 1: El servicio se pone en marcha (En Curso)
+                        serviceDetail.Status = ServiceExecutionStatus.EnProgreso;
+                        serviceDetail.Observations = string.IsNullOrEmpty(input.Observations)
+                            ? "Servicio funerario puesto en marcha."
+                            : input.Observations;
+                        break;
+
+                    case ServiceExecutionStatus.EnProgreso:
+                        // Etapa 2: Cierre definitivo del servicio (Ejecutado)
+                        serviceDetail.Status = ServiceExecutionStatus.Ejecutado;
+                        serviceDetail.ExecutionDate = DateTime.Now; // Estampa de tiempo real de cierre
+                        if (!string.IsNullOrEmpty(input.Observations))
+                            serviceDetail.Observations = input.Observations;
+                        break;
+
+                    case ServiceExecutionStatus.Ejecutado:
+                        return (false, "Este servicio ya ha sido ejecutado y cerrado previamente.");
+
+                    default:
+                        return (false, "El estado actual del servicio no permite realizar avances.");
+                }
+
+                _context.DetallesServiciosContrato.Update(serviceDetail);
+                await _context.SaveChangesAsync();
+
+                return (true, $"Servicio actualizado correctamente a: {serviceDetail.Status}");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.InnerException?.Message ?? ex.Message);
+            }
         }
 
         public async Task<List<ExhumationHistoryItemViewModel>> GetMovementHistoryAsync(int contractId)

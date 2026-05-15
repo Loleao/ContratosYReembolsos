@@ -20,6 +20,7 @@ namespace ContratosYReembolsos.Data.Contexts
         public DbSet<Agency> Agencias { get; set; }
         public DbSet<Cemetery> Cementerios { get; set; }
         public DbSet<Contract> Contratos { get; set; }
+        public DbSet<Wake> Velatorios { get; set; }
         public DbSet<FuneralService> ServiciosFunerarios { get; set; }
         public DbSet<Exhumation> Exhumaciones { get; set; }
         public DbSet<ContractProductDetail> DetallesProductosContrato { get; set; }
@@ -103,6 +104,12 @@ namespace ContratosYReembolsos.Data.Contexts
                 .HasOne(c => c.IntermentSpace)
                 .WithMany() // No ponemos .WithOne(n => n.Contract) aquí si no es necesario
                 .HasForeignKey(c => c.IntermentSpaceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Branch>()
+                .HasMany(b => b.Contracts)      // Una Filial tiene muchos Contratos
+                .WithOne(c => c.Branch)         // Un Contrato pertenece a una Filial
+                .HasForeignKey(c => c.BranchId) // La llave foránea es BranchId (y no BranchId1)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Product>()

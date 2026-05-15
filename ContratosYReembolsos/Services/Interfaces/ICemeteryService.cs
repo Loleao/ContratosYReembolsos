@@ -1,5 +1,6 @@
 ﻿using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Branches;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {
@@ -8,6 +9,8 @@ namespace ContratosYReembolsos.Services.Interfaces
         // Consultas y Navegación
         Task<List<Branch>> GetBranchesWithCemeteries();
         Task<List<Cemetery>> GetCemeteriesByBranch(int branchId);
+        Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync();
+        Task<Branch> GetBranchByIdAsync(int branchId);
         Task<Cemetery?> GetById(int id);
         Task<IntermentStructure?> GetStructureDetails(int id);
         Task<List<IntermentStructureTemplate>> GetTemplates();
@@ -17,6 +20,8 @@ namespace ContratosYReembolsos.Services.Interfaces
         // Gestión de Cementerios y Modelos
         Task<(bool success, string message)> CreateCemetery(Cemetery model);
         Task<(bool success, string message)> SaveTemplate(IntermentStructureTemplate model);
+        Task<(bool success, string message)> DeleteTemplate(int id);
+
 
         // Construcción de Infraestructura
         Task<(bool success, string message)> BuildStructure(IntermentStructure model, int? templateId);

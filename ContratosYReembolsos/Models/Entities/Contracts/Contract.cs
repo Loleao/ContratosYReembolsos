@@ -1,4 +1,5 @@
-﻿using ContratosYReembolsos.Models.Entities.Agencies;
+﻿using System.ComponentModel.DataAnnotations;
+using ContratosYReembolsos.Models.Entities.Agencies;
 using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Models.Entities.Cemeteries;
 
@@ -14,9 +15,17 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         public int BranchId { get; set; }
         public virtual Branch? Branch { get; set; }
 
+        //Afiliado
+
+        public string? AffiliateDni { get; set; }
+        public string? AffiliateFullName { get; set; }
+        public string? AffiliateCIP { get; set; }
+
+
         // Personas
         public string SolicitorDni { get; set; }
         public string SolicitorName { get; set; }
+        public string? SolicitorCip { get; set; }
         public string SolicitorType { get; set; }
         public string DeceasedDni { get; set; }
         public string DeceasedName { get; set; }
@@ -30,6 +39,8 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         public virtual Ubigeo? Ubigeo { get; set; }
 
         public int? WakeId { get; set; }
+        public virtual Wake? Wake { get; set; }
+        public string? CustomWakeAddress { get; set; }
 
         public int CemeteryId { get; set; }
         public virtual Cemetery? Cemetery { get; set; }

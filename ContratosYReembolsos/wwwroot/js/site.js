@@ -63,17 +63,22 @@ $(document).ready(function () {
 // CONFIGURACIÓN DE SIGNALR (TIEMPO REAL)
 // ==========================================
 
-// 1. Crear la conexión apuntando a la ruta que definimos en Program.cs
+// 1. Construir la ruta combinando la base de la app con el nombre del hub
+// window.AppBaseUrl ya incluye la barra final o el nombre de la sub-app
+const hubUrl = window.AppBaseUrl + "notificationHub";
+
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/notificationHub")
-    .withAutomaticReconnect() // Reintento automático si se pierde el internet
+    .withUrl(hubUrl, {
+        // Mantenemos estas opciones para máxima compatibilidad con proxies
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
+    })
+    .withAutomaticReconnect()
     .build();
 
-// 2. Escuchar el evento "ReceiveNotification" enviado por el NotificationService.cs
+// 2. Escuchar el evento "ReceiveNotification"
 connection.on("ReceiveNotification", function () {
     console.log("¡Se recibió una señal de SignalR! Actualizando campana...");
-
-    // Si tienes la función de cargar notificaciones, la ejecutamos
     if (typeof loadNotifications === "function") {
         loadNotifications();
     }
@@ -82,9 +87,9 @@ connection.on("ReceiveNotification", function () {
 // 3. Iniciar la conexión
 connection.start()
     .then(function () {
-        console.log("SignalR: Conexión establecida con éxito.");
+        // Verificamos en consola a qué URL se conectó realmente
+        console.log("SignalR: Conexión establecida con éxito en: " + hubUrl);
 
-        // Unirse al grupo de la sede actual (BranchId)
         if (window.UserContext && window.UserContext.branchId) {
             const branchIdStr = window.UserContext.branchId.toString();
 

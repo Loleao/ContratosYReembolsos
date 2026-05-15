@@ -51,59 +51,71 @@ namespace ContratosYReembolsos.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLatest()
         {
-            var allUserClaims = User.Claims.Select(c => c.Value).ToList();
-            var branchClaim = User.FindFirst("BranchId")?.Value;
-            int? branchId = string.IsNullOrEmpty(branchClaim) ? null : int.Parse(branchClaim);
-            bool isAdmin = User.IsInRole("Admin");
-
-            if (isAdmin || branchId.HasValue)
+            try
             {
-                var stockQuery = _context.ProductosStock.Include(ps => ps.Product).AsQueryable();
+                var allUserClaims = User.Claims.Select(c => c.Value).ToList();
+                var branchClaim = User.FindFirst("BranchId")?.Value;
+                int? branchId = string.IsNullOrEmpty(branchClaim) ? null : int.Parse(branchClaim);
+                bool isAdmin = User.IsInRole("Admin");
+                var userName = User.Identity?.Name;
 
-                if (!isAdmin)
+                if (isAdmin || branchId.HasValue)
                 {
-                    stockQuery = stockQuery.Where(ps => ps.BranchId == branchId);
+                    var stockQuery = _context.ProductosStock.Include(ps => ps.Product).AsQueryable();
+
+                    if (!isAdmin)
+                    {
+                        stockQuery = stockQuery.Where(ps => ps.BranchId == branchId);
+                    }
+
+                    var lowStockItems = await stockQuery
+                        .Where(ps => ps.Quantity <= ps.MinimumStock)
+                        .ToListAsync();
+
+                    foreach (var item in lowStockItems)
+                    {
+                        // 1. Definimos la llave única
+                        string gKey = $"LOW_STOCK_{item.ProductId}_{item.BranchId}";
+
+                        // 2. Generamos la URL dinámica correcta
+                        string targetUrl = Url.Action("Inventory", "Inventory", new { branchId = item.BranchId });
+
+                        // 3. PASAMOS la gKey al servicio (Era el parámetro que faltaba)
+                        await _notificationService.CreateAsync(
+                            "Bajo Stock detectado",
+                            $"El producto {item.Product.Name} requiere reposición.",
+                            "Inventario.Ver",
+                            item.BranchId,
+                            targetUrl,
+                            "fa-triangle-exclamation",
+                            gKey // <--- ¡AQUÍ ESTÁ LA CORRECCIÓN!
+                        );
+                    }
                 }
 
-                var lowStockItems = await stockQuery
-                    .Where(ps => ps.Quantity <= ps.MinimumStock)
-                    .ToListAsync();
+                Console.WriteLine($"[DEBUG] Usuario: {userName} | BranchClaim: '{branchClaim}'");
 
-                foreach (var item in lowStockItems)
+                var notifications = await _notificationService.GetActiveNotificationsAsync(allUserClaims, branchId);
+
+                return Json(new
                 {
-                    // 1. Definimos la llave única
-                    string gKey = $"LOW_STOCK_{item.ProductId}_{item.BranchId}";
-
-                    // 2. Generamos la URL dinámica correcta
-                    string targetUrl = Url.Action("Inventory", "Inventory", new { branchId = item.BranchId });
-
-                    // 3. PASAMOS la gKey al servicio (Era el parámetro que faltaba)
-                    await _notificationService.CreateAsync(
-                        "Bajo Stock detectado",
-                        $"El producto {item.Product.Name} requiere reposición.",
-                        "Inventario.Ver",
-                        item.BranchId,
-                        targetUrl,
-                        "fa-triangle-exclamation",
-                        gKey // <--- ¡AQUÍ ESTÁ LA CORRECCIÓN!
-                    );
-                }
+                    count = notifications.Count,
+                    items = notifications.Select(n => new
+                    {
+                        id = n.Id,
+                        title = n.Title,
+                        message = n.Message,
+                        iconClass = n.IconClass,
+                        targetUrl = n.TargetUrl,
+                        timeAgo = GetRelativeTime(n.CreatedAt) // Usamos tu función de tiempo
+                    })
+                });
             }
-
-            var notifications = await _notificationService.GetActiveNotificationsAsync(allUserClaims, branchId);
-
-            return Json(new
+            catch (Exception ex)
             {
-                count = notifications.Count,
-                items = notifications.Select(n => new {
-                    id = n.Id,
-                    title = n.Title,
-                    message = n.Message,
-                    iconClass = n.IconClass,
-                    targetUrl = n.TargetUrl,
-                    timeAgo = GetRelativeTime(n.CreatedAt) // Usamos tu función de tiempo
-                })
-            });
+                // Esto devolverá el texto del error al navegador en lugar de un 500 genérico
+                return StatusCode(500, new { message = ex.Message, inner = ex.InnerException?.Message });
+            }
         }
 
         // Función auxiliar opcional para el tiempo relativo

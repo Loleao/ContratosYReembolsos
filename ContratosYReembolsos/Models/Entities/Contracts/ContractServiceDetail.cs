@@ -16,5 +16,19 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
+
+        public DateTime? ExecutionDate { get; set; }
+
+        public string? Observations { get; set; }
+
+        public ServiceExecutionStatus Status { get; set; } = ServiceExecutionStatus.Pendiente;
+    }
+
+    public enum ServiceExecutionStatus
+    {
+        Pendiente = 0,
+        EnProgreso = 1,
+        Ejecutado = 2,
+        Cancelado = 3
     }
 }

@@ -17,6 +17,10 @@
 
     <link rel="stylesheet" href="~/ContratosYReembolsos.styles.css" asp-append-version="true" />
 
+    <script>
+        window.AppBaseUrl = '@Url.Content("~/")';
+    </script>
+
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -38,9 +42,11 @@
                 </div>
             </header>
 
-            <div class="container-fluid p-4">
-                @RenderBody()
-            </div>
+            <main role="main" class="content-area @(ViewData["NoPadding"] != null && (bool)ViewData["NoPadding"] ? "is-fixed" : "allow-scroll")">
+                <div class="@(ViewData["NoPadding"] != null && (bool)ViewData["NoPadding"] ? "" : "container-fluid p-4")">
+                    @RenderBody()
+                </div>
+            </main>
         </main>
     </div>
 
@@ -51,11 +57,19 @@
         };
 
         window.UserContext = {
-            branchId: '@User.FindFirst("BranchId")?.Value'
+            userName: '@User.Identity.Name',
+            branchId: '@User.FindFirst("BranchId")?.Value',
+            isAdmin: @User.IsInRole("Admin").ToString().ToLower()
         };
+
+        // Esto imprimirá los datos apenas cargue la página
+        console.log("--- DATOS DEL USUARIO LOGUEADO ---");
+        console.table(window.UserContext);
     </script>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- 2. AGREGAR JS DE SELECT2 (DEBE IR DESPUÉS DE JQUERY) -->

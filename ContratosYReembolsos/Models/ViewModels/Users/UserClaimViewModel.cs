@@ -5,6 +5,7 @@
         public string Value { get; set; }
         public string DisplayName { get; set; }
         public string Group { get; set; } // Para organizar la vista por secciones
+        public string Category { get; set; } // Para organizar la vista por secciones
         public bool IsSelected { get; set; }
     }
 }

@@ -1,35 +1,75 @@
 ﻿<div class="animate__animated animate__fadeIn">
     <h4 class="text-primary fw-bold mb-4">
-        <i class="fa-solid fa-user-pen me-2"></i> Datos del Solicitante
+        <i class="fa-solid fa-user-pen me-2"></i> Paso 1: Datos del Solicitante
     </h4>
 
     <div class="row g-4">
         <div class="col-md-12">
-            <label class="form-label fw-bold text-muted small">RELACIÓN CON EL AFILIADO</label>
+            <label class="form-label fw-bold text-muted small">TIPO DE SOLICITANTE</label>
             <select id="SolicitorType" class="form-select form-select-lg rounded-pill border-2" onchange="toggleSolicitorType()">
                 <option value="Titular">Titular (El mismo afiliado)</option>
-                <option value="Familiar">Familiar / Tercero</option>
+                <option value="Familiar">Familiar Directo</option>
+                <option value="TerceroPolicial">Tercero Policial (Efectivo PNP)</option>
+                <option value="Tercero">Tercero / Otro (Civil)</option>
             </select>
+            <div id="typeHelper" class="form-text mt-2 text-primary">
+                <i class="fa-solid fa-circle-info me-1"></i> El solicitante es el titular del beneficio.
+            </div>
         </div>
 
         <div class="col-md-4">
-            <label class="form-label fw-bold text-muted small">DNI</label>
+            <label class="form-label fw-bold text-muted small">DNI SOLICITANTE</label>
             <div class="input-group">
-                <input type="text" id="SolicitorDni" class="form-control form-control-lg border-2 rounded-start-pill" placeholder="Buscar DNI..." readonly>
-                <button class="btn btn-primary px-4 rounded-end-pill" type="button" id="btnLupa" onclick="openSearchAffiliate('Solicitor')">
+                <input type="text" id="SolicitorDni" class="form-control form-control-lg border-2 rounded-start-pill shadow-none" maxlength="8" onkeypress="return isNumber(event)">
+                <button class="btn btn-primary px-4 rounded-end-pill shadow-none" type="button" id="btnLupaSolicitor" onclick="openSearchAffiliate('Solicitor')">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>
         </div>
 
         <div class="col-md-4">
-            <label class="form-label fw-bold text-muted small">CIP</label>
+            <label class="form-label fw-bold text-muted small">CIP SOLICITANTE</label>
             <input type="text" id="SolicitorCip" class="form-control form-control-lg border-2 rounded-pill bg-light" placeholder="N° CIP" readonly>
         </div>
 
-        <div class="col-md-12">
-            <label class="form-label fw-bold text-muted small">APELLIDOS Y NOMBRES</label>
-            <input type="text" id="SolicitorName" class="form-control form-control-lg border-2 rounded-pill bg-light" placeholder="Datos del solicitante" readonly>
+        <div class="col-md-4">
+            <label class="form-label fw-bold text-muted small">APELLIDOS Y NOMBRES SOLICITANTE</label>
+            <input type="text" id="SolicitorName" class="form-control form-control-lg border-2 rounded-pill bg-light" placeholder="Nombres..." readonly>
+        </div>
+
+        <div id="sectionAffiliateData" class="col-md-12 d-none">
+            <div class="p-4 border-2 border-primary border-dashed rounded-4" style="background-color: rgba(13, 110, 253, 0.05);">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                        <i class="fa-solid fa-link small"></i>
+                    </div>
+                    <h6 class="text-primary fw-bold mb-0">Vincular a Afiliado Titular (Obligatorio)</h6>
+                </div>
+
+                <p class="text-muted small mb-3">
+                    Como el solicitante no es el titular, debe buscar y seleccionar al afiliado al que pertenece el beneficio.
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-muted small">DNI AFILIADO</label>
+                        <div class="input-group">
+                            <input type="text" id="AffiliateDni" class="form-control border-2 rounded-start-pill bg-white" placeholder="Buscar titular..." readonly>
+                            <button class="btn btn-primary rounded-end-pill" type="button" onclick="openSearchAffiliate('Affiliate')">
+                                <i class="fa-solid fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small">CIP AFILIADO</label>
+                        <input type="text" id="AffiliateCip" class="form-control border-2 rounded-pill bg-light" readonly>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-muted small">NOMBRES Y APELLIDOS DEL TITULAR</label>
+                        <input type="text" id="AffiliateName" class="form-control border-2 rounded-pill bg-light" readonly>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

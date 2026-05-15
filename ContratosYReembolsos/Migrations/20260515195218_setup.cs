@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ContratosYReembolsos.Migrations
 {
     /// <inheritdoc />
-    public partial class Setup : Migration
+    public partial class setup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -140,6 +140,23 @@ namespace ContratosYReembolsos.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Velatorios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsInternal = table.Column<bool>(type: "bit", nullable: false),
+                    BranchId = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Velatorios", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ActivosSubcategorias",
                 columns: table => new
                 {
@@ -213,8 +230,7 @@ namespace ContratosYReembolsos.Migrations
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    HasWakeService = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -849,6 +865,9 @@ namespace ContratosYReembolsos.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BranchId = table.Column<int>(type: "int", nullable: false),
+                    AffiliateDni = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AffiliateFullName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AffiliateCIP = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SolicitorDni = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SolicitorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SolicitorType = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -1589,6 +1608,9 @@ namespace ContratosYReembolsos.Migrations
 
             migrationBuilder.DropTable(
                 name: "VehiculosServicios");
+
+            migrationBuilder.DropTable(
+                name: "Velatorios");
 
             migrationBuilder.DropTable(
                 name: "ActivosTransferencias");

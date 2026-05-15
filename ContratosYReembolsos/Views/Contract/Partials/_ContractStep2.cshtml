@@ -4,7 +4,6 @@
     </h4>
 
     <div class="row g-4">
-        @* Bloque de Selección de Tipo *@
         <div class="col-md-6">
             <label class="form-label fw-bold text-muted small text-uppercase">Condición del Fallecido</label>
             <div class="input-group">
@@ -15,25 +14,30 @@
                     <option value="">Seleccione...</option>
                     <option value="Titular">Titular (Efectivo Policial)</option>
                     <option value="Beneficiario">Beneficiario (Familiar / Carga)</option>
+                    <option value="Tercero">Tercero (No registrado)</option>
                 </select>
             </div>
-            @* Alerta de restricción mejorada *@
-            <div id="alertRestriction" class="alert alert-primary mt-2 py-2 rounded-4 d-none animate__animated animate__headShake" style="font-size: 0.85rem;">
+
+            @* Alerta dinámica de restricción *@
+            <div id="alertRestriction" class="alert alert-info mt-2 py-2 rounded-4 d-none animate__animated animate__fadeIn" style="font-size: 0.85rem;">
                 <i class="fa-solid fa-circle-info me-2"></i>
-                Usted es el <b>Titular Solicitante</b>, seleccione al familiar fallecido.
+                <span id="txtRestrictionMsg"></span>
             </div>
         </div>
 
-        <div class="col-md-6"></div> @* Espaciador para equilibrio visual *@
+        <div class="col-md-6"></div>
 
-        @* Bloque de Datos de Identidad *@
         <div class="col-md-3">
             <label class="form-label fw-bold text-muted small text-uppercase">DNI del Difunto</label>
             <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                <input type="text" id="DeceasedDni" class="form-control border-2 border-end-0 bg-light" placeholder="00000000" readonly>
-                <button class="btn btn-primary px-4 border-2 border-start-0" type="button" id="btnLupaDeceased" onclick="openSearchBeneficiaries()">
+                <input type="text" id="DeceasedDni" class="form-control border-2 border-end-0 bg-light shadow-none"
+                       placeholder="00000000" maxlength="8" onkeypress="return isNumber(event)">
+                <button class="btn btn-primary px-4 border-2 border-start-0 shadow-none" type="button" id="btnLupaDeceased" onclick="openSearchBeneficiaries()">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
+            </div>
+            <div id="deceasedDniError" class="text-danger x-small mt-1 d-none fw-bold">
+                <i class="fa-solid fa-circle-exclamation me-1"></i> DNI no registrado.
             </div>
         </div>
 
@@ -43,7 +47,8 @@
                 <span class="input-group-text bg-light border-2 border-end-0 text-muted">
                     <i class="fa-solid fa-user"></i>
                 </span>
-                <input type="text" id="DeceasedName" class="form-control form-control-lg border-2 border-start-0 bg-light" placeholder="Datos cargados desde el buscador..." readonly>
+                <input type="text" id="DeceasedName" class="form-control form-control-lg border-2 border-start-0 bg-light"
+                       placeholder="Datos del difunto..." readonly>
             </div>
         </div>
     </div>
@@ -156,14 +161,30 @@
         </div>
 
         <div class="col-md-12 mt-4 d-none" id="sectionWakePlace">
-            <label class="form-label fw-bold text-muted small text-uppercase">Lugar de Velatorio</label>
-            <div class="input-group">
-                <span class="input-group-text bg-white border-2 border-end-0 rounded-start-pill text-primary">
-                    <i class="fa-solid fa-house-chimney-window"></i>
-                </span>
-                <select id="WakePlace" class="form-select form-select-lg border-2 border-start-0 rounded-end-pill">
-                    <option value="">Cargando locales...</option>
-                </select>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Lugar de Velatorio</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-2 border-end-0 rounded-start-pill text-primary">
+                            <i class="fa-solid fa-house-chimney-window"></i>
+                        </span>
+                        <select id="WakePlace" class="form-select form-select-lg border-2 border-start-0 rounded-end-pill" onchange="handleWakeChange()">
+                            <option value="">Cargando locales...</option>
+                        </select>
+                    </div>
+                </div>
+
+                @* Campo dinámico para dirección *@
+                <div class="col-md-6 d-none" id="divWakeAddress">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Dirección Exacta (Velatorio Externo)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-2 border-end-0 rounded-start-pill text-danger">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </span>
+                        <input type="text" id="WakeAddressCustom" class="form-control form-control-lg border-2 border-start-0 rounded-end-pill"
+                               placeholder="Escriba la dirección donde será el velorio...">
+                    </div>
+                </div>
             </div>
         </div>
 

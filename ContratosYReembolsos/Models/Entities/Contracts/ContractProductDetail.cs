@@ -14,17 +14,22 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
         public int ProductId { get; set; }
         public virtual Product? Product { get; set; }
 
-        // Si es un Activo Fijo (Ej: Capilla Ardiente), el ID específico de la unidad
-        public int? FixedAssetId { get; set; }
-        public virtual FixedAsset? FixedAsset { get; set; }
-
         // Cantidad entregada como beneficio
         public decimal Quantity { get; set; }
+
+        public ProductDeliveryStatus Status { get; set; } = ProductDeliveryStatus.Pendiente;
 
         // Fecha en que el beneficio fue entregado/instalado
         public DateTime DeliveryDate { get; set; } = DateTime.Now;
 
         // Nota adicional (ej: "Se entrega ataúd modelo estándar por beneficio directo")
         public string? Observations { get; set; }
+    }
+
+    public enum ProductDeliveryStatus
+    {
+        Pendiente = 0,
+        Entregado = 1,
+        Cancelado = 2
     }
 }

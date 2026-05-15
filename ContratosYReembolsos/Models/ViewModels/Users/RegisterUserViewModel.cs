@@ -5,6 +5,11 @@ namespace ContratosYReembolsos.Models.ViewModels.Users
 {
     public class RegisterUserViewModel
     {
+        public string? Id { get; set; }
+
+        [Required(ErrorMessage = "El nombre de usuario es obligatorio")]
+        public string UserName { get; set; }
+
         [Required(ErrorMessage = "El DNI es obligatorio")]
         [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "El DNI debe tener exactamente 8 números")]
         public string DNI { get; set; }

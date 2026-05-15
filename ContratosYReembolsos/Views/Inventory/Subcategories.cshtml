@@ -1,14 +1,23 @@
-﻿@using ContratosYReembolsos.Models.Entities.Inventory
-@model IEnumerable<ProductSubcategory>
+﻿@model ContratosYReembolsos.Models.Entities.Inventory.ProductCategory
+@{
+    ViewData["Title"] = "Subcategorías - " + Model.Name;
+}
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 animate__animated animate__fadeIn">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb bg-white p-2 rounded-pill shadow-sm border px-4">
+            <li class="breadcrumb-item"><a href="@Url.Action("Categories")" class="text-decoration-none">Categorías</a></li>
+            <li class="breadcrumb-item active fw-bold text-primary">@Model.Name</li>
+        </ol>
+    </nav>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold m-0">Subcategorías</h3>
-            <p class="text-muted small">Gestión granular de familias de productos por línea de negocio.</p>
+            <h4 class="fw-bold m-0">Familias en <span class="text-primary">@Model.Name</span></h4>
+            <p class="text-muted small mb-0">Detalle de subcategorías habilitadas para esta línea.</p>
         </div>
-        <button class="btn btn-primary shadow-sm rounded-pill px-4" onclick="openSubcategoryModal(0)">
-            <i class="fa-solid fa-plus me-2"></i>Nueva Subcategoría
+        <button class="btn btn-dark rounded-pill px-4 shadow-sm" onclick="openSubcategoryModal(0)">
+            <i class="fa-solid fa-plus me-1"></i> Nueva Subcategoría
         </button>
     </div>
 
@@ -17,43 +26,30 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th class="ps-4">Subcategoría</th>
-                        <th>Categoría Padre</th>
-                        <th class="text-center">Estado Contratos</th>
+                        <th class="ps-4">Nombre de Subcategoría</th>
+                        <th class="text-center">Estado</th>
                         <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @foreach (var sub in Model.SubCategories.OrderBy(x => x.Name))
                     {
                         <tr>
-                            <td class="ps-4">
-                                <span class="fw-bold text-dark">@item.Name</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border fw-normal px-3 py-2">
-                                    <i class="fa-solid fa-layer-group me-1 text-primary"></i>
-                                    @item.Category?.Name
-                                </span>
-                            </td>
+                            <td class="ps-4 fw-bold text-dark">@sub.Name</td>
                             <td class="text-center">
-                                @if (item.ShowInContracts)
+                                @if (sub.ShowInContracts)
                                 {
-                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
-                                        <i class="fa-solid fa-check me-1"></i>Habilitado
-                                    </span>
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">Activo</span>
                                 }
                                 else
                                 {
-                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-3">
-                                        <i class="fa-solid fa-ban me-1"></i>Deshabilitado
-                                    </span>
+                                    <span class="badge rounded-pill bg-light text-muted border px-3">Inactivo</span>
                                 }
                             </td>
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                        onclick="openSubcategoryModal(@item.Id)">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i>Editar
+                                <button class="btn btn-sm btn-outline-primary rounded-circle"
+                                        onclick="openSubcategoryModal(@sub.Id)">
+                                    <i class="fa-solid fa-pen"></i>
                                 </button>
                             </td>
                         </tr>
@@ -69,9 +65,15 @@
 @section Scripts {
     <script>
         async function openSubcategoryModal(id) {
-            const response = await fetch(`@Url.Action("GetCreateSubcategory")?id=${id}`);
-            document.getElementById('modalContainer').innerHTML = await response.text();
-            new bootstrap.Modal(document.getElementById('modalSubcategoryContainer')).show();
+            Swal.fire({ title: 'Cargando...', didOpen: () => { Swal.showLoading() } });
+            try {
+                // Enviamos el categoryId actual para que el formulario sepa a quién pertenece
+                const response = await fetch(`@Url.Action("GetSubcategoryForm")?categoryId=@Model.Id&id=${id}`);
+                const html = await response.text();
+                document.getElementById('modalContainer').innerHTML = html;
+                Swal.close();
+                new bootstrap.Modal(document.getElementById('modalSubcategoryContainer')).show();
+            } catch (e) { Swal.fire('Error', 'No se pudo cargar el formulario', 'error'); }
         }
 
         $(document).on('submit', '#formSubcategorySave', async function(e) {
@@ -79,21 +81,16 @@
             const $btn = $(this).find('button[type="submit"]');
             $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
 
-            try {
-                const response = await fetch('@Url.Action("SaveSubcategory")', {
-                    method: 'POST',
-                    body: new FormData(this)
-                });
-                const res = await response.json();
-                if(res.success) {
-                    location.reload();
-                } else {
-                    Swal.fire('Error', res.message, 'error');
-                    $btn.prop('disabled', false).text('Guardar Subcategoría');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Error de conexión.', 'error');
-                $btn.prop('disabled', false).text('Guardar Subcategoría');
+            const resp = await fetch('@Url.Action("SaveSubcategory")', {
+                method: 'POST',
+                body: new FormData(this)
+            });
+            const res = await resp.json();
+            if(res.success) {
+                Swal.fire('Guardado', res.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Error', res.message, 'error');
+                $btn.prop('disabled', false).text('Guardar');
             }
         });
     </script>

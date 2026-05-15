@@ -17,7 +17,23 @@ namespace ContratosYReembolsos.Services.Implementations.Cemeteries
             _intermentLogic = intermentLogic;
         }
 
+        public async Task<IEnumerable<IGrouping<string, Branch>>> GetBranchesGroupedByRegionAsync()
+        {
+            var branches = await _context.Filiales
+                .Include(b => b.Cemeteries)
+                .Include(b => b.Ubigeo)
+                .OrderBy(b => b.Name)
+                .ToListAsync();
+
+            return branches
+                .GroupBy(b => b.Ubigeo?.Region ?? "SIN REGIÓN")
+                .OrderBy(g => g.Key);
+        }
         public async Task<List<Branch>> GetBranchesWithCemeteries() => await _context.Filiales.Include(b => b.Cemeteries).ToListAsync();
+        public async Task<Branch> GetBranchByIdAsync(int branchId)
+        {
+            return await _context.Filiales.FindAsync(branchId);
+        }
         public async Task<List<Cemetery>> GetCemeteriesByBranch(int branchId) => await _context.Cementerios.Include(c => c.Structures).Where(c => c.BranchId == branchId).ToListAsync();
         public async Task<Cemetery?> GetById(int id) => await _context.Cementerios.Include(c => c.Branch).FirstOrDefaultAsync(c => c.Id == id);
         public async Task<IntermentStructure?> GetStructureDetails(int id) => await _context.SepulturasEstructura.Include(s => s.Template).Include(s => s.Spaces).FirstOrDefaultAsync(s => s.Id == id);
@@ -61,11 +77,37 @@ namespace ContratosYReembolsos.Services.Implementations.Cemeteries
         {
             try
             {
-                _context.TemplatesSepulturas.Add(model);
+                if (model.Id == 0)
+                    _context.TemplatesSepulturas.Add(model);
+                else
+                    _context.TemplatesSepulturas.Update(model);
+
                 await _context.SaveChangesAsync();
-                return (true, "Modelo guardado con éxito.");
+                return (true, "Plantilla guardada correctamente.");
             }
-            catch (Exception ex) { return (false, ex.Message); }
+            catch (Exception ex) { return (false, "Error: " + ex.Message); }
+        }
+
+        public async Task<(bool success, string message)> DeleteTemplate(int id)
+        {
+            try
+            {
+                var template = await _context.TemplatesSepulturas.FindAsync(id);
+                if (template == null) return (false, "La plantilla no existe.");
+
+                // Verificación de seguridad: ¿Está en uso?
+                bool inUse = await _context.SepulturasEstructura.AnyAsync(s => s.TemplateId == id);
+                if (inUse) return (false, "No se puede eliminar: Esta plantilla ya está vinculada a estructuras existentes.");
+
+                _context.TemplatesSepulturas.Remove(template);
+                await _context.SaveChangesAsync();
+
+                return (true, "Plantilla eliminada correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error al eliminar: " + ex.Message);
+            }
         }
 
         public async Task<(bool success, string message)> BuildStructure(IntermentStructure model, int? templateId)
