@@ -13,6 +13,8 @@ namespace ContratosYReembolsos.Models.Entities.Contracts
 
         public string? Description { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActiveInternal { get; set; } = true;
+
+        public bool IsActiveExternal { get; set; } = true;
     }
 }

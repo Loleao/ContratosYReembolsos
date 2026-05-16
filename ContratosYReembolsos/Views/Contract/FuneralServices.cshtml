@@ -37,7 +37,8 @@
                             <th class="ps-3">Nombre del Servicio</th>
                             <th>Descripción</th>
                             <th class="text-center">Precio Sugerido</th>
-                            <th class="text-center">Estado</th>
+                            <th class="text-center">Sede Interna</th>
+                            <th class="text-center">Agencia Convenio</th>
                             <th class="text-end pe-3">Acciones</th>
                         </tr>
                     </thead>
@@ -48,15 +49,25 @@
                                 <td class="ps-3 fw-bold text-dark">@item.Name</td>
                                 <td class="text-muted small">@item.Description</td>
                                 <td class="text-center fw-bold text-success">S/ @item.Price.ToString("N2")</td>
+
                                 <td class="text-center">
-                                    <span class="badge rounded-pill @(item.IsActive ? "bg-success-subtle text-success border-success" : "bg-danger-subtle text-danger border-danger") border px-3">
-                                        @(item.IsActive ? "Activo" : "Inactivo")
+                                    <span class="badge rounded-pill border px-3 @(item.IsActiveInternal ? "bg-info-subtle text-info border-info" : "bg-danger-subtle text-danger border-danger")">
+                                        <i class="fa-solid @(item.IsActiveInternal ? "fa-circle-check" : "fa-circle-xmark") me-1"></i>
+                                        @(item.IsActiveInternal ? "Activo" : "Inactivo")
                                     </span>
                                 </td>
+
+                                <td class="text-center">
+                                    <span class="badge rounded-pill border px-3 @(item.IsActiveExternal ? "bg-success-subtle text-success border-success" : "bg-danger-subtle text-danger border-danger")">
+                                        <i class="fa-solid @(item.IsActiveExternal ? "fa-circle-check" : "fa-circle-xmark") me-1"></i>
+                                        @(item.IsActiveExternal ? "Activo" : "Inactivo")
+                                    </span>
+                                </td>
+
                                 <td class="text-end pe-3">
                                     @if ((await AuthorizationService.AuthorizeAsync(User, "Permissions.CatalogoServicios.Editar")).Succeeded)
                                     {
-                                        <button class="btn btn-sm btn-white border shadow-sm" onclick="openEditModal(@item.Id)">
+                                        <button class="btn btn-sm btn-white border shadow-sm rounded-circle" style="width:32px; height:32px; p-0" onclick="openEditModal(@item.Id)" title="Editar Parámetros">
                                             <i class="fa-solid fa-pen-to-square text-primary"></i>
                                         </button>
                                     }
@@ -78,7 +89,9 @@
         $(document).ready(function () {
             $('#tblServices').DataTable({
                 language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
-                pageLength: 10
+                pageLength: 10,
+                // Configuramos orden predeterminado por el nombre del servicio
+                order: [[0, "asc"]]
             });
         });
 
@@ -96,22 +109,20 @@
             try {
                 const response = await fetch(`@Url.Action("GetFuneralServiceForm", "Contract")?id=${id}`);
 
-                // VALIDACIÓN CLAVE: Si el servidor responde que no hay permiso (401 o 403)
                 if (response.status === 403 || response.status === 401) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Acceso Denegado',
                         text: 'No tienes los permisos necesarios para realizar esta acción.',
-                        confirmButtonColor: '#3085d6'
+                        confirmButtonColor: '#004a99'
                     });
-                    return; // Salimos de la función sin intentar cargar nada
+                    return;
                 }
 
                 if (!response.ok) throw new Error("Error en la respuesta del servidor");
 
                 const html = await response.text();
 
-                // Si por alguna razón recibimos el HTML de la página de login o error (contiene layouts)
                 if (html.includes("navbar") || html.includes("sidebar")) {
                      Swal.fire('Sesión Expirada', 'Por favor, vuelve a iniciar sesión.', 'info').then(() => location.reload());
                      return;
@@ -153,7 +164,7 @@
                     $btn.prop('disabled', false).text('GUARDAR');
                 }
             } catch (e) {
-                Swal.fire('Error', 'Error de red', 'error');
+                Swal.fire('Error', 'Error de red al intentar guardar.', 'error');
                 $btn.prop('disabled', false).text('GUARDAR');
             }
         });

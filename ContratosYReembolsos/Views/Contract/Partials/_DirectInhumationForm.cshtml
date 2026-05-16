@@ -1,0 +1,103 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Contracts.InhumationWithoutContractInput
+
+<div class="modal fade" id="modalDirectInhumation" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-user-plus me-2"></i>Inhumación Directa (Sin Contrato)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formDirectInhumation">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="CemeteryId" />
+                <input type="hidden" asp-for="StructureId" />
+                <input type="hidden" asp-for="IntermentSpaceId" />
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-success border-0 rounded-3 mb-4 small py-2 d-flex align-items-center">
+                        <i class="fa-solid fa-circle-info fs-5 me-2"></i>
+                        <span>Ubicación: <b class="font-monospace text-uppercase">@ViewBag.SpaceCode</b> en Sede @ViewBag.CemeteryName</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Nombres y Apellidos del Fallecido</label>
+                        <input asp-for="DeceasedName" class="form-control border-2 shadow-sm text-uppercase fw-bold text-dark" required autocomplete="off" />
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">DNI / CE</label>
+                            <input asp-for="DeceasedDni" class="form-control border-2 shadow-sm font-monospace fw-bold" maxlength="12" required autocomplete="off" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Inhumación</label>
+                            <input asp-for="BurialDate" type="date" class="form-control border-2 shadow-sm" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Defunción (Opcional)</label>
+                        <input asp-for="DeathDate" type="date" class="form-control border-2 shadow-sm" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Observaciones de Regularización</label>
+                        <textarea asp-for="Observations" class="form-control border-2 shadow-sm" rows="3" placeholder="Detalle los documentos que autorizan el traslado de los restos..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow">
+                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> REGISTRAR INGRESO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#formDirectInhumation').on('submit', async function (e) {
+        e.preventDefault();
+        const $btn = $(this).find('button[type="submit"]');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
+
+        const payload = {
+            CemeteryId: parseInt($('#CemeteryId').val()),
+            StructureId: parseInt($('#StructureId').val()) || null,
+            IntermentSpaceId: parseInt($('#IntermentSpaceId').val()) || null,
+            DeceasedName: $('#DeceasedName').val(),
+            DeceasedDni: $('#DeceasedDni').val(),
+            BurialDate: $('#BurialDate').val(),
+            DeathDate: $('#DeathDate').val() || $('#BurialDate').val(),
+            Observations: $('#Observations').val()
+        };
+
+        try {
+            const res = await fetch('@Url.Action("SaveDirectInhumation", "Contract")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('modalDirectInhumation')).hide();
+                Swal.fire({ title: '¡Éxito!', text: result.message, icon: 'success', confirmButtonColor: '#198754' }).then(() => location.reload());
+            } else {
+                Swal.fire('Atención', result.message, 'warning');
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-cloud-arrow-up me-1"></i> REGISTRAR INGRESO');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'Fallo de comunicación de red con el servidor.', 'error');
+            $btn.prop('disabled', false).html('<i class="fa-solid fa-cloud-arrow-up me-1"></i> REGISTRAR INGRESO');
+        }
+    });
+</script>

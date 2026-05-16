@@ -174,11 +174,23 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 .ContinueWith(t => t.Result.Cast<object>().ToList());
         }
 
-        public async Task<List<object>> GetFuneralServices()
+        public async Task<List<object>> GetFuneralServices(int? agencyId)
         {
-            // Asumiendo que tienes una tabla FuneralServices en tu ApplicationDbContext
-            return await _context.ServiciosFunerarios
-                .Where(s => s.IsActive)
+            var query = _context.ServiciosFunerarios.AsQueryable();
+
+            // FILTRADO DISCRIMINADO:
+            // Si viene 'agencyId' válido (mayor a 0), es el catálogo de Convenio Externo
+            if (agencyId.HasValue && agencyId.Value > 0)
+            {
+                query = query.Where(s => s.IsActiveExternal);
+            }
+            else
+            {
+                // Si no viene o es 0, es el catálogo de Servicios Propios de la Filial
+                query = query.Where(s => s.IsActiveInternal);
+            }
+
+            return await query
                 .Select(s => new {
                     id = s.Id,
                     name = s.Name,
@@ -215,6 +227,24 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                 // 1. Generar Cabecera y Número de Contrato
                 string contractNumber = await GenerateContractNumber(model.BranchId);
 
+                var deceased = new Deceased
+                {
+                    FullName = model.Deceased.Name.ToUpper().Trim(),
+                    Dni = model.Deceased.Dni.Trim(),
+                    DeathDate = model.Deceased.DeathDate,
+                    BurialDate = model.Deceased.BurialDate,
+                    BurialTime = string.IsNullOrEmpty(model.Deceased.BurialTime)
+                        ? TimeSpan.Zero
+                        : TimeSpan.Parse(model.Deceased.BurialTime),
+                    EntryType = "CONTRATO",
+                    TrackingCode = contractNumber,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Fallecidos.Add(deceased);
+
+                await _context.SaveChangesAsync();
+
                 var contract = new Contract
                 {
                     ContractNumber = contractNumber,
@@ -230,8 +260,8 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                     SolicitorName = model.Solicitor.Name,
                     SolicitorType = model.Solicitor.Type,
 
-                    DeceasedDni = model.Deceased.Dni,
-                    DeceasedName = model.Deceased.Name,
+                    DeceasedDni = deceased.Dni,
+                    DeceasedName = deceased.FullName,
                     DeathDate = model.Deceased.DeathDate ,
                     BurialDate = model.Deceased.BurialDate,
 
@@ -333,6 +363,18 @@ namespace ContratosYReembolsos.Services.Implementations.Contracts
                         _context.SepulturasNichos.Update(space);
                     }
                 }
+
+                // 9. ALIMENTAR EL HISTORIAL DEL ESPACIO VINCULANDO AL FALLECIDO RELACIONALMENTE
+                _context.SepulturasHistorial.Add(new SpaceIntermentHistory
+                {
+                    IntermentSpaceId = contract.IntermentSpaceId.Value,
+                    ContractNumber = contractNumber,
+                    DeceasedId = deceased.Id, // <-- LLAVE FORÁNEA FUERTE VINCULADA
+                    StartDate = DateTime.Now,
+                    EndDate = null,
+                    OperationType = "INHUMACIÓN ORIGINAL",
+                    Observations = "Asignación automática desde registro de contrato nuevo."
+                });
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

@@ -255,5 +255,26 @@ namespace ContratosYReembolsos.Controllers
         [Authorize(Policy = "Permissions.Modelos.Crear")]
         public IActionResult GetCreateTemplate() => PartialView("Partials/_CreateTemplate", new IntermentStructureTemplate());
 
+        [HttpGet]
+        public async Task<IActionResult> GetSpaceHistory(int spaceId)
+        {
+            if (spaceId <= 0) return BadRequest("ID de espacio inválido.");
+
+            var history = await _cemeteryService.GetSpaceHistoryAsync(spaceId);
+            return Json(history);
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "Permissions.Cementerios.Ver")]
+        public async Task<IActionResult> SpaceHistoryReport(int id)
+        {
+            if (id <= 0) return NotFound();
+
+            var reportDto = await _cemeteryService.GetSpaceReportDetailAsync(id);
+            if (reportDto == null) return NotFound("No se encontró información técnica para el espacio solicitado.");
+
+            return View(reportDto);
+        }
+
     }
 }

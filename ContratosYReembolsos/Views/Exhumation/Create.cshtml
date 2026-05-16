@@ -194,7 +194,8 @@
     <script>
         let currentStep = 1;
         let exhumationData = {
-            contractId: 0,
+            deceasedId: 0,
+            contractId: null,
             originBranchId: 0,
             deceasedName: '',
             currentLocation: '',
@@ -227,6 +228,7 @@
 
         $(document).ready(() => loadStep(1));
 
+        // --- MOTOR CENTRAL DEL STEPPER ---
         async function loadStep(step) {
             $('#dynamic-content').css('opacity', '0');
             updateStepperHeader(step);
@@ -240,7 +242,7 @@
         }
 
         function setupStepUI(step) {
-            if (step === 1 && exhumationData.contractId > 0) showOriginCard();
+            if (step === 1 && exhumationData.deceasedId > 0) showOriginCard();
             if (step === 2) {
                 if(exhumationData.cemeteryName) {
                     $('#CemeteryName').val(exhumationData.cemeteryName);
@@ -269,7 +271,7 @@
         }
 
         function validateCurrentStep() {
-            if (currentStep === 1 && exhumationData.contractId === 0) {
+            if (currentStep === 1 && exhumationData.deceasedId === 0) {
                 Swal.fire('Atención', 'Debe buscar y seleccionar un fallecido.', 'warning');
                 return false;
             }
@@ -303,9 +305,7 @@
             }
         }
 
-        function getIcon(step) { return step === 1 ? 'fa-magnifying-glass' : step === 2 ? 'fa-truck-moving' : 'fa-file-signature'; }
-
-        // --- PASO 1 ---
+        // --- GESTIÓN DE CONTROLADORES DEL PASO 1 (ORIGEN Y BÚSQUEDA) ---
         function openSearchContractModal() {
             $.get(exhUrls.searchModal, html => {
                 $('#modalSearchExhumation').remove();
@@ -314,39 +314,74 @@
             });
         }
 
+        // FUNCIÓN UBICADA EN EL PADRE: Ejecuta la búsqueda relacional unificada hacia la base de datos
         async function executeSearch() {
-            const dni = $('#filterDni').val();
-            const name = $('#filterName').val();
+            const dni = $('#filterDni').val().trim();
+            const name = $('#filterName').val().trim();
             const $tbody = $('#tblResults');
-            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</td></tr>');
+
+            $tbody.html('<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando en los registros...</td></tr>');
+
             try {
                 const resp = await fetch(`${exhUrls.searchContracts}?dni=${dni}&name=${encodeURIComponent(name)}`);
+                if (!resp.ok) throw new Error("Error en servidor");
                 const data = await resp.json();
                 $tbody.empty();
+
                 if(data.length === 0) {
-                    $tbody.append('<tr><td colspan="4" class="text-center py-4 text-danger small">No se encontraron contratos.</td></tr>');
+                    $tbody.append('<tr><td colspan="4" class="text-center py-4 text-danger small fw-semibold"><i class="fa-solid fa-triangle-exclamation me-1"></i> No se encontraron registros activos ocupando sepulturas.</td></tr>');
                     return;
                 }
+
                 data.forEach(item => {
-                    const tr = $(`<tr style="cursor:pointer"><td class="ps-3 fw-bold text-primary small">${item.contractNumber}</td><td><div class="fw-bold small text-uppercase">${item.deceasedName}</div><small class="text-muted">DNI: ${item.deceasedDni}</small></td><td><small class="d-block text-dark">${item.structureName}</small><span class="badge bg-light text-dark border">${item.spaceDetail}</span></td><td class="text-end pe-3"><button class="btn btn-sm btn-success rounded-pill px-3">Elegir</button></td></tr>`);
+                    const contractNumber = item.contractNumber || "SIN CONTRATO (REG)";
+                    const deceasedName = item.deceasedName || "N/A";
+                    const deceasedDni = item.deceasedDni || "N/A";
+                    const structureName = item.structureName || "N/A";
+                    const spaceDetail = item.spaceDetail || "N/A";
+
+                    const tr = $(`
+                        <tr style="cursor:pointer" class="animate__animated animate__fadeIn animate__faster">
+                            <td class="ps-3 fw-bold text-primary small font-monospace">${contractNumber}</td>
+                            <td>
+                                <div class="fw-bold small text-uppercase text-dark">${deceasedName}</div>
+                                <small class="text-muted font-monospace">DNI: ${deceasedDni}</small>
+                            </td>
+                            <td>
+                                <small class="d-block text-muted fw-semibold">${structureName}</small>
+                                <span class="badge bg-light text-dark border font-monospace mt-1" style="font-size: 0.7rem;">${spaceDetail}</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" style="font-size:0.7rem;">
+                                    <i class="fa-solid fa-check-to-slot me-1"></i> Seleccionar
+                                </button>
+                            </td>
+                        </tr>
+                    `);
                     tr.click(() => selectContract(item));
                     $tbody.append(tr);
                 });
-            } catch (e) { $tbody.html('<tr><td colspan="4">Error de conexión</td></tr>'); }
+            } catch (e) {
+                console.error(e);
+                $tbody.html('<tr><td colspan="4" class="text-center py-4 text-danger small"><i class="fa-solid fa-circle-xmark"></i> Error de conexión.</td></tr>');
+            }
         }
 
         function selectContract(item) {
+            exhumationData.deceasedId = item.deceasedId;
             exhumationData.contractId = item.contractId;
             exhumationData.originBranchId = item.branchId;
             exhumationData.deceasedName = item.deceasedName;
             exhumationData.currentLocation = item.currentLocation;
-            $('#infoContractNum').text(item.contractNumber);
+
+            $('#infoContractNum').text(item.contractNumber || "SIN CONTRATO (REG)");
             $('#infoDeceasedName').text(item.deceasedName);
             $('#infoDeceasedDni').text(item.deceasedDni);
             $('#infoBurialDate').text(item.burialDate);
             $('#infoBranch').text(item.branchName);
             $('#infoStructure').text(item.structureName);
             $('#infoSpace').text(item.spaceDetail);
+
             $('#pnlEmpty').addClass('d-none');
             $('#pnlDeceasedInfo').removeClass('d-none');
             bootstrap.Modal.getInstance(document.getElementById('modalSearchExhumation')).hide();
@@ -354,7 +389,7 @@
 
         function showOriginCard() { $('#pnlEmpty').addClass('d-none'); $('#pnlDeceasedInfo').removeClass('d-none'); }
 
-        // --- PASO 2 ---
+        // --- GESTIÓN DE CONTROLADORES DEL PASO 2 (LOGÍSTICA Y DESTINO) ---
         function openSearchCemetery() {
             $.get(exhUrls.getSearchCemeteryModal, html => {
                 $('#ajaxTargetSearch').html(html);
@@ -417,21 +452,15 @@
         }
 
         function selectCemetery(c) {
-            // 1. Persistencia de datos
             exhumationData.cemeteryId = c.id;
             exhumationData.cemeteryName = c.name;
             exhumationData.isInternal = c.isInternal;
 
-            // 2. CORRECCIÓN VISUAL: Llenar campo y resaltar
             const $inputCem = $('#CemeteryName');
             $inputCem.val(c.name);
-
-            // Aplicamos realce visual
-            $inputCem.removeClass('bg-light')
-                     .addClass('bg-white border-primary text-primary fw-bold animate__animated animate__fadeIn');
+            $inputCem.removeClass('bg-light').addClass('bg-white border-primary text-primary fw-bold animate__animated animate__fadeIn');
 
             const $specificSection = $('#sectionSpecificLocation');
-
             if (c.isInternal) {
                 $specificSection.removeClass('d-none').addClass('animate__animated animate__fadeIn');
                 resetExhumationNiche();
@@ -440,7 +469,6 @@
                 exhumationData.newIntermentSpaceId = null;
                 exhumationData.newLocationName = "Traslado a Cementerio Externo";
             }
-
             closeSearchModal();
         }
 
@@ -480,26 +508,18 @@
         function renderGridExh(containerId, rows, cols, allSpaces) {
             const $container = $('#' + containerId).empty();
             const $mapBody = $('<div class="d-flex flex-column gap-2" style="min-width: max-content; padding: 10px;"></div>');
-
-            // Header
             const $hRow = $('<div class="d-flex align-items-center mb-1"><div style="width: 53px;"></div></div>');
             cols.forEach(c => $hRow.append(`<div class="text-center fw-bold text-muted x-small" style="width: 34px;">${c}</div>`));
             $mapBody.append($hRow);
 
-            // Filas
             rows.forEach(r => {
-                const $rowDiv = $('<div class="d-flex align-items-center"></div>')
-                    .append(`<div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px;">${r}</div>`);
+                const $rowDiv = $('<div class="d-flex align-items-center"></div>').append(`<div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px;">${r}</div>`);
                 const $spcCont = $('<div class="d-flex flex-nowrap gap-1"></div>');
-
                 cols.forEach(c => {
                     const space = allSpaces.find(s => s.rowLetter.toUpperCase() === r && parseInt(s.columnNumber) === c);
-
                     if (space) {
                         const currentStatus = (space.status || "").toLowerCase();
                         const isAvail = currentStatus === "disponible";
-
-                        // Mapeo de clases CSS según el nuevo Enum
                         let statusClass = "st-otro";
                         if (isAvail) statusClass = "st-disponible";
                         else if (currentStatus === "ocupado") statusClass = "st-ocupado";
@@ -522,44 +542,32 @@
 
         function confirmNicheSelection(id, dummy, row, col) {
             const pavName = $('#cboPavilion option:selected').text();
-            const cemeteryName = exhumationData.cemeteryName; // Ya lo tenemos guardado
-
+            const cemeteryName = exhumationData.cemeteryName;
             exhumationData.newIntermentSpaceId = parseInt(id);
-            // Agregamos el nombre del cementerio al snapshot de destino
             exhumationData.newLocationName = `${cemeteryName} - ${pavName} - Fila ${row} - Col ${col}`;
-
             $('#txtNicheSelected').text(exhumationData.newLocationName);
             $('#selectedNicheDisplay').removeClass('d-none');
             closeSearchModal();
         }
 
         function resetExhumationNiche() { exhumationData.newIntermentSpaceId = null; exhumationData.newLocationName = ''; $('#selectedNicheDisplay').addClass('d-none'); }
+        // Se cambió a fadeOut nativo para limpiar transiciones entre vistas parciales
         function closeSearchModal() { $('#modalOverlaySearch').fadeOut(300); }
         function handleOverlayClick(e) { if (e.target.id === 'modalOverlaySearch') closeSearchModal(); }
 
-        // --- LOGICA DEL PASO 3: RESUMEN ---
-
+        // --- GESTIÓN DE CONTROLADORES DEL PASO 3 (RESUMEN DE LIQUIDACIÓN) ---
         async function renderSummary() {
-            // 1. Datos del Fallecido y Origen
             $('#resDeceasedNameSummary').text(exhumationData.deceasedName);
             $('#resOriginLoc').text(exhumationData.currentLocation);
-
-            // 2. Destino
             $('#resCemeteryNameSummary').text(exhumationData.cemeteryName);
-            const destDisplay = exhumationData.isInternal ? exhumationData.newLocationName : "TRASLADO EXTERNO";
-            $('#resDestLoc').text(destDisplay);
-
-            // 3. Observaciones
+            $('#resDestLoc').text(exhumationData.isInternal ? exhumationData.newLocationName : "TRASLADO EXTERNO");
             $('#resObservations').text(exhumationData.observations || "Sin observaciones adicionales.");
 
-            // 4. Lógica de Precios
-            const baseExhumationCost = 150.00; // Costo por el servicio de exhumación
+            const baseExhumationCost = 150.00;
             let additionalCost = 0;
 
             if (exhumationData.isInternal && exhumationData.newIntermentSpaceId) {
-                // Si es interno, asumimos un costo de re-asignación (esto puede venir de la DB)
                 additionalCost = 850.00;
-
                 $('#rowNicheCost').removeClass('d-none').show();
                 $('#resNicheTypeDetail').text(exhumationData.newLocationName);
                 $('#resNichePrice').text(`S/ ${additionalCost.toFixed(2)}`);
@@ -567,16 +575,13 @@
                 $('#rowNicheCost').addClass('d-none').hide();
             }
 
-            // 5. Cálculo Final y Persistencia
             exhumationData.totalCost = baseExhumationCost + additionalCost;
             $('#resTotalPrice').text(`S/ ${exhumationData.totalCost.toFixed(2)}`);
-
-            // Pequeño efecto visual para confirmar que los datos cargaron
             $('.card').addClass('animate__animated animate__fadeInUp');
         }
 
+        // --- PROCESAMIENTO FINAL AJAX POST ---
         async function saveExhumation() {
-            // 1. Sincronización final de datos manuales (Observaciones)
             exhumationData.observations = $('#ExhObservations').val() || "";
 
             const result = await Swal.fire({
@@ -591,7 +596,6 @@
             });
 
             if (result.isConfirmed) {
-                // 2. Bloqueo de UI con Loader
                 Swal.fire({
                     title: 'Procesando exhumación...',
                     text: 'Por favor, no cierre la ventana.',
@@ -600,22 +604,29 @@
                 });
 
                 try {
-                    // 3. Envío al Servidor
+                    const payloadDto = {
+                        DeceasedId: parseInt(exhumationData.deceasedId),
+                        ContractId: exhumationData.contractId ? parseInt(exhumationData.contractId) : null,
+                        IsInternal: exhumationData.isInternal,
+                        CemeteryName: exhumationData.cemeteryName,
+                        CemeteryId: exhumationData.cemeteryId ? parseInt(exhumationData.cemeteryId) : null,
+                        NewStructureId: exhumationData.newIntermentStructureId ? parseInt(exhumationData.newIntermentStructureId) : null,
+                        NewIntermentSpaceId: exhumationData.newIntermentSpaceId ? parseInt(exhumationData.newIntermentSpaceId) : null,
+                        NewLocationName: exhumationData.newLocationName,
+                        TotalCost: parseFloat(exhumationData.totalCost),
+                        DestinationType: exhumationData.destinationType
+                    };
+
                     const resp = await fetch(exhUrls.saveExhumation, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                         },
-                        // El objeto exhumationData ya contiene contractId, cemeteryId, isInternal, etc.
-                        body: JSON.stringify(exhumationData)
+                        body: JSON.stringify(payloadDto)
                     });
 
-                    // 4. Manejo de respuesta
-                    if (!resp.ok) {
-                        throw new Error(`Error del servidor: ${resp.statusText}`);
-                    }
-
+                    if (!resp.ok) throw new Error(`Error del servidor: ${resp.statusText}`);
                     const data = await resp.json();
 
                     if (data.success) {
@@ -628,7 +639,6 @@
                             window.location.href = '@Url.Action("Index", "Contract")';
                         });
                     } else {
-                        // El servidor respondió pero con un error de lógica de negocio
                         Swal.fire({
                             title: 'Operación fallida',
                             text: data.message || 'El servidor rechazó la solicitud.',
@@ -638,12 +648,7 @@
                     }
                 } catch (error) {
                     console.error("Error crítico en saveExhumation:", error);
-                    Swal.fire({
-                        title: 'Error de conexión',
-                        text: 'No se pudo establecer comunicación con el servidor. Verifique su conexión.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33'
-                    });
+                    Swal.fire({ title: 'Error de conexión', text: 'No se pudo establecer comunicación con el servidor.', icon: 'error', confirmButtonColor: '#d33' });
                 }
             }
         }

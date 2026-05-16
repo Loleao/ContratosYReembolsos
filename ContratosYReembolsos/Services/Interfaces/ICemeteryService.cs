@@ -1,6 +1,7 @@
 ﻿using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Branches;
 using Microsoft.EntityFrameworkCore;
+using ContratosYReembolsos.Services.DTOs.Cemeteries;
 
 namespace ContratosYReembolsos.Services.Interfaces
 {
@@ -31,5 +32,8 @@ namespace ContratosYReembolsos.Services.Interfaces
 
         // Procesos Operativos (Exhumación/Traslado)
         Task<(bool success, string message)> ProcessTransfer(int originSpaceId, int destinationSpaceId, string reason);
+
+        Task<List<SpaceHistoryDto>> GetSpaceHistoryAsync(int spaceId);
+        Task<SpaceHistoryDetailDto?> GetSpaceReportDetailAsync(int spaceId);
     }
 }

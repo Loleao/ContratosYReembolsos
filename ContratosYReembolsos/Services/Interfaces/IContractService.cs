@@ -32,7 +32,7 @@ namespace ContratosYReembolsos.Services.Interfaces
         
         Task<List<object>> GetStockItemsByBranch(int branchId);
         Task<List<object>> GetAvailableVehicleTypesByBranch(int branchId);
-        Task<List<object>> GetFuneralServices();
+        Task<List<object>> GetFuneralServices(int? agencyId);
 
         Task<(bool success, string message, int contractId, string contractNumber)> CreateContract(ContractViewModel model);
         Task<List<ContractListDto>> GetContractListAsync();

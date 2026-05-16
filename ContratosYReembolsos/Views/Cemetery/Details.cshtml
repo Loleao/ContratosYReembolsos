@@ -283,11 +283,88 @@
             }
         }
 
-        function verDetalleNicho(id, code, structureName, status) {
+        async function verDetalleNicho(id, code, structureName, status) {
             if (isSelectingDestiny) {
-                // Lógica de traslado...
-            } else {
-                console.log("Detalle de espacio:", id, status);
+                // Tu lógica de traslado existente se mantiene intacta...
+                return;
+            }
+
+            // Mostrar loading de auditoría
+            Swal.fire({
+                title: 'Cargando Historial...',
+                text: 'Consultando auditoría de registros mecánicos del espacio.',
+                didOpen: () => { Swal.showLoading(); },
+                allowOutsideClick: false
+            });
+
+            try {
+                const response = await fetch(`@Url.Action("GetSpaceHistory", "Cemetery")?spaceId=${id}`);
+                if (!response.ok) throw new Error("Error en servidor");
+
+                const history = await response.json();
+                Swal.close();
+
+                // 1. Caso: El espacio es completamente nuevo y no tiene registros previos
+                if (history.length === 0) {
+                    Swal.fire({
+                        title: `<span class="fs-5 fw-bold text-success text-uppercase">Espacio: ${code}</span>`,
+                        html: `
+                            <div class="text-center p-3">
+                                <i class="fa-solid fa-folder-open text-muted opacity-25 fa-3x mb-3"></i>
+                                <p class="small text-muted mb-0">Esta ubicación no cuenta con registros históricos previos.</p>
+                                <span class="badge bg-success-subtle text-success border border-success mt-2 rounded-pill px-3">Estado: ${status}</span>
+                            </div>
+                        `,
+                        confirmButtonColor: '#004a99',
+                        confirmButtonText: 'Cerrar'
+                    });
+                    return;
+                }
+
+                // 2. Caso: Construir línea de tiempo HTML dinámica
+                let timelineHtml = `<div class="text-start mt-2 overflow-auto custom-scroll" style="max-height: 400px; padding-right: 5px;">`;
+
+                history.forEach((item, index) => {
+                    const borderClass = item.isCurrent ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary bg-light';
+                    const badgeClass = item.isCurrent ? 'bg-primary' : 'bg-secondary';
+                    const iconType = item.operationType.includes("EXHUM") || item.operationType.includes("TRAS") ? 'fa-angles-right text-danger' : 'fa-dove text-primary';
+
+                    timelineHtml += `
+                        <div class="card border-0 border-start border-4 ${borderClass} rounded-3 p-3 mb-3 shadow-sm animate__animated animate__fadeInUp" style="animation-delay: ${index * 0.05}s">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge ${badgeClass} text-white font-monospace small px-2 py-1">${item.contractNumber}</span>
+                                <small class="text-muted fw-bold font-monospace" style="font-size:0.7rem;"><i class="fa-regular fa-clock me-1"></i>${item.period}</small>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size:0.85rem;"><i class="fa-solid fa-user small me-2 opacity-50"></i>${item.deceasedName}</h6>
+                            <small class="text-muted d-block mb-2" style="font-size:0.75rem;">DNI: ${item.deceasedDni} • <i class="fa-solid ${iconType} ms-1"></i> <b>${item.operationType}</b></small>
+                            <div class="p-2 bg-white rounded-2 border text-muted x-small italic" style="font-size:0.7rem; border-style: dashed !important;">
+                                "${item.observations}"
+                            </div>
+                        </div>
+                    `;
+                });
+
+                timelineHtml += `</div>`;
+
+                Swal.fire({
+                    title: `<span class="fs-5 fw-bold text-dark text-uppercase"><i class="fa-solid fa-timeline text-primary me-2"></i>Historial de Ocupación: ${code}</span>`,
+                    html: timelineHtml,
+                    showCancelButton: true,
+                    confirmButtonColor: '#004a99',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fa-solid fa-file-invoice me-1"></i> Ver Reporte Completo',
+                    cancelButtonText: 'Cerrar',
+                    customClass: { popup: 'rounded-4' }
+                }).then((result) => {
+                    // Si el operador hace clic en "Ver Reporte Completo", lo mandamos a la nueva pestaña formal
+                    if (result.isConfirmed) {
+                        window.open(`@Url.Action("SpaceHistoryReport", "Cemetery")?id=${id}`, '_blank');
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error historial:", error);
+                Swal.fire('Error', 'No se pudo recuperar la auditoría técnica del nicho.', 'error');
             }
         }
     </script>

@@ -1,11 +1,17 @@
-﻿namespace ContratosYReembolsos.Models.Entities.Contracts
+﻿using ContratosYReembolsos.Models.Entities.Cemeteries;
+
+namespace ContratosYReembolsos.Models.Entities.Contracts
 {
     public class Exhumation
     {
         public int Id { get; set; }
         public string ExhumationNumber { get; set; }
         public DateTime RequestDate { get; set; }
-        public int OriginalContractId { get; set; }
+
+        public int DeceasedId { get; set; }
+        public virtual Deceased? Deceased { get; set; }
+
+        public int? OriginalContractId { get; set; }
         public virtual Contract? OriginalContract { get; set; }
 
         // ORIGEN (Snapshot)

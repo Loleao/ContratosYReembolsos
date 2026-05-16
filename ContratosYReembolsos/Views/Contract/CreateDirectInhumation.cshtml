@@ -1,0 +1,563 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Contracts.InhumationWithoutContractInput
+@{
+    ViewData["Title"] = "Regularización de Inhumación Directa";
+}
+
+<style>
+    :root {
+        --pnp-blue: #004a99;
+        --pnp-bg: #003366;
+        --pnp-gray: #f1f4f8;
+    }
+
+    body {
+        background-color: var(--pnp-bg);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .stepper-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 95%;
+        margin: 30px auto;
+        min-height: calc(100vh - 100px);
+    }
+
+    .stepper-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        margin-bottom: 50px;
+        padding: 0 100px;
+    }
+
+        .stepper-header::before {
+            content: "";
+            position: absolute;
+            top: 25px;
+            left: 120px;
+            right: 120px;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+    .step-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step-dot {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.2rem;
+        z-index: 5;
+        margin-bottom: 10px;
+    }
+
+    .step-item.active .step-dot {
+        border-color: var(--pnp-blue);
+        background-color: var(--pnp-blue);
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 74, 153, 0.3);
+        border-width: 4px;
+    }
+
+    .step-item.completed .step-dot {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 11px;
+        font-weight: bold;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .step-item.active .step-label {
+        color: var(--pnp-blue);
+    }
+
+    #dynamic-content {
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .space-item-modal {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 800;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        color: white;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .st-disponible {
+        background-color: #198754 !important;
+    }
+
+    .st-ocupado {
+        background-color: #dc3545 !important;
+    }
+
+    .st-reservado {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .map-scroll-container {
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(5px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 3000;
+    }
+
+    #ajaxTargetSearch {
+        width: 95%;
+        max-width: 900px;
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="stepper-card">
+        <div class="stepper-header">
+            <div class="step-item active" id="nav-1">
+                <div class="step-dot"><i class="fa-solid fa-user-shield"></i></div>
+                <div class="step-label">Solicitante</div>
+            </div>
+            <div class="step-item" id="nav-2">
+                <div class="step-dot"><i class="fa-solid fa-user-plus"></i></div>
+                <div class="step-label">Fallecido y Ubicación</div>
+            </div>
+            <div class="step-item" id="nav-3">
+                <div class="step-dot"><i class="fa-solid fa-file-signature"></i></div>
+                <div class="step-label">Resumen</div>
+            </div>
+        </div>
+
+        <div id="dynamic-content" class="mt-4"></div>
+
+        <div class="d-flex justify-content-between mt-5 pt-4 border-top">
+            <button type="button" id="btnPrev" class="btn btn-outline-secondary rounded-pill px-4" onclick="changeStep(-1)" disabled>
+                <i class="fa-solid fa-chevron-left me-2"></i> Anterior
+            </button>
+            <button type="button" id="btnNext" class="btn btn-primary rounded-pill px-5 shadow" onclick="changeStep(1)">
+                Siguiente <i class="fa-solid fa-chevron-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modalOverlaySearch" class="custom-modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="ajaxTargetSearch"></div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentStep = 1;
+
+        // Estado Global del Registro Manual
+        let inhumationData = {
+            // Paso 1: Solicitante
+            solicitorDni: '',
+            solicitorName: '',
+            solicitorType: 'Particular',
+
+            // Paso 2: Fallecido
+            deceasedDni: '',
+            deceasedName: '',
+            deathDate: new Date().toISOString().split('T')[0],
+            burialDate: new Date().toISOString().split('T')[0],
+
+            // Paso 2: Infraestructura Destino
+            burialType: 'Pabellon',
+            cemeteryId: null,
+            cemeteryName: '',
+            isInternal: false,
+            structureId: null,
+            structureName: '',
+            intermentSpaceId: null,
+            spaceDetail: '',
+
+            observations: ''
+        };
+
+        const inhUrls = {
+            getStep: '@Url.Action("GetDirectInhumationStep", "Contract")',
+            getRegions: '@Url.Action("GetRegions", "Contract")',
+            getProvinces: '@Url.Action("GetProvinces", "Contract")',
+            getDistricts: '@Url.Action("GetDistricts", "Contract")',
+            getCemeteries: '@Url.Action("GetCemeteries", "Contract")',
+            getSearchCemeteryModal: '@Url.Action("GetSearchCemetery", "Contract")',
+            getStructures: '@Url.Action("GetStructures", "Contract")',
+            getSpaceMap: '@Url.Action("GetSpaceMap", "Contract")',
+            getNicheSelectorModal: '@Url.Action("GetNicheSelectorModal", "Exhumation")',
+            saveDirectInhumation: '@Url.Action("SaveDirectInhumation", "Contract")'
+        };
+
+        $(document).ready(() => loadStep(1));
+
+        async function loadStep(step) {
+            $('#dynamic-content').css('opacity', '0');
+            updateStepperHeader(step);
+
+            const resp = await fetch(`${inhUrls.getStep}?step=${step}`);
+            const html = await resp.text();
+
+            setTimeout(() => {
+                $('#dynamic-content').html(html).css('opacity', '1');
+                setupStepUI(step);
+                updateButtons(step);
+            }, 200);
+        }
+
+        function setupStepUI(step) {
+            if (step === 1) {
+                $('#txtSolicitorDni').val(inhumationData.solicitorDni);
+                $('#txtSolicitorName').val(inhumationData.solicitorName);
+                $(`input[name="SolicitorType"][value="${inhumationData.solicitorType}"]`).prop('checked', true);
+            }
+            if (step === 2) {
+                $('#txtDeceasedDni').val(inhumationData.deceasedDni);
+                $('#txtDeceasedName').val(inhumationData.deceasedName);
+                $('#txtDeathDate').val(inhumationData.deathDate);
+                $('#txtBurialDate').val(inhumationData.burialDate);
+                $(`input[name="BurialType"][value="${inhumationData.burialType}"]`).prop('checked', true);
+                if (inhumationData.cemeteryName) {
+                    $('#CemeteryName').val(inhumationData.cemeteryName);
+                    $('#sectionSpecificLocation').removeClass('d-none');
+                    if (inhumationData.spaceDetail) {
+                        $('#txtNicheSelected').text(`${inhumationData.structureName} - ${inhumationData.spaceDetail}`);
+                        $('#selectedNicheDisplay').removeClass('d-none');
+                    }
+                }
+                $('#txtObservations').val(inhumationData.observations);
+            }
+            if (step === 3) renderSummary();
+        }
+
+        function updateButtons(step) {
+            $('#btnPrev').prop('disabled', step === 1);
+            $('#btnNext').html(step === 3 ? 'Registrar Ingreso <i class="fa-solid fa-cloud-arrow-up ms-2"></i>' : 'Siguiente <i class="fa-solid fa-chevron-right ms-2"></i>');
+            $('#btnNext').toggleClass('btn-success', step === 3).toggleClass('btn-primary', step !== 3);
+        }
+
+        function changeStep(delta) {
+            if (delta === 1 && !validateCurrentStep()) return;
+            if (currentStep + delta === 4) { saveInhumation(); return; }
+            currentStep += delta;
+            loadStep(currentStep);
+        }
+
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                inhumationData.solicitorDni = $('#txtSolicitorDni').val().trim();
+                inhumationData.solicitorName = $('#txtSolicitorName').val().trim();
+                inhumationData.solicitorType = $('input[name="SolicitorType"]:checked').val();
+
+                if (!inhumationData.solicitorDni || !inhumationData.solicitorName) {
+                    Swal.fire('Atención', 'Complete todos los campos del solicitante.', 'warning');
+                    return false;
+                }
+            }
+            if (currentStep === 2) {
+                inhumationData.deceasedDni = $('#txtDeceasedDni').val().trim();
+                inhumationData.deceasedName = $('#txtDeceasedName').val().trim();
+                inhumationData.deathDate = $('#txtDeathDate').val();
+                inhumationData.burialDate = $('#txtBurialDate').val();
+                inhumationData.observations = $('#txtObservations').val();
+                inhumationData.burialType = $('input[name="BurialType"]:checked').val();
+
+                if (!inhumationData.deceasedDni || !inhumationData.deceasedName) {
+                    Swal.fire('Atención', 'Complete los datos de filiación del fallecido.', 'warning');
+                    return false;
+                }
+                if (!inhumationData.intermentSpaceId) {
+                    Swal.fire('Atención', 'Debe seleccionar obligatoriamente una ubicación en el mapa.', 'warning');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function updateStepperHeader(step) {
+            const icons = ['fa-user-shield', 'fa-user-plus', 'fa-file-signature'];
+            $('.step-item').removeClass('active completed');
+            for (let i = 1; i <= 3; i++) {
+                const $dot = $(`#nav-${i} .step-dot`);
+                if (i < step) {
+                    $(`#nav-${i}`).addClass('completed');
+                    $dot.html('<i class="fa-solid fa-check"></i>');
+                } else {
+                    if (i === step) $(`#nav-${i}`).addClass('active');
+                    $dot.html(`<i class="fa-solid ${icons[i-1]}"></i>`);
+                }
+            }
+        }
+
+        // --- MANEJO DE CEMENTERIOS Y MAPAS ---
+        function openSearchCemetery() {
+            $.get(inhUrls.getSearchCemeteryModal, html => {
+                $('#ajaxTargetSearch').html(html);
+                $('#modalOverlaySearch').css('display', 'flex').hide().fadeIn(300);
+                loadCemRegions();
+                // Forzamos carga inicial de la sede
+                executeCemeterySearchInitial();
+            });
+        }
+
+        async function executeCemeterySearchInitial() {
+            const $tbody = $('#resultsCemeteryTableBody');
+            $tbody.html('<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>');
+            const resp = await fetch(`${inhUrls.getCemeteries}`);
+            const data = await resp.json();
+            renderCemeteryTable(data);
+        }
+
+        async function loadCemRegions() {
+            const resp = await fetch(inhUrls.getRegions);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(r => options += `<option value="${r}">${r}</option>`);
+            $('#CemFilterRegion').html(options);
+        }
+
+        async function loadCemProvinces() {
+            const region = $('#CemFilterRegion').val();
+            const resp = await fetch(`${inhUrls.getProvinces}?region=${encodeURIComponent(region)}`);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(p => options += `<option value="${p}">${p}</option>`);
+            $('#CemFilterProvince').html(options).prop('disabled', false);
+        }
+
+        async function loadCemDistricts() {
+            const region = $('#CemFilterRegion').val();
+            const province = $('#CemFilterProvince').val();
+            const resp = await fetch(`${inhUrls.getDistricts}?region=${encodeURIComponent(region)}&province=${encodeURIComponent(province)}`);
+            const data = await resp.json();
+            let options = '<option value="">Seleccione...</option>';
+            data.forEach(d => options += `<option value="${d.inei}">${d.distrito}</option>`);
+            $('#CemFilterDistrict').html(options).prop('disabled', false);
+        }
+
+        async function executeCemeterySearch() {
+            const inei = $('#CemFilterDistrict').val();
+            const resp = await fetch(`${inhUrls.getCemeteries}?inei=${inei}`);
+            const data = await resp.json();
+            renderCemeteryTable(data);
+        }
+
+        function renderCemeteryTable(data) {
+            const $tbody = $('#resultsCemeteryTableBody');
+            $tbody.empty();
+            data.forEach(c => {
+                const tr = $(`<tr style="cursor:pointer" class="align-middle"><td><span class="badge bg-light text-dark border">${c.ruc}</span></td><td class="fw-bold text-uppercase small">${c.name}</td><td class="text-end"><button class="btn btn-sm btn-primary rounded-pill px-3">Elegir</button></td></tr>`);
+                tr.click(() => selectCemetery(c));
+                $tbody.append(tr);
+            });
+        }
+
+        function selectCemetery(c) {
+            inhumationData.cemeteryId = c.id;
+            inhumationData.cemeteryName = c.name;
+            inhumationData.isInternal = c.isInternal;
+
+            const $inputCem = $('#CemeteryName');
+            $inputCem.val(c.name);
+            $inputCem.removeClass('bg-light').addClass('bg-white border-primary text-primary fw-bold animate__animated animate__fadeIn');
+
+            $('#sectionSpecificLocation').removeClass('d-none').addClass('animate__animated animate__fadeIn');
+            resetDirectNiche();
+            closeSearchModal();
+        }
+
+        async function openNicheSelector() {
+            $.get(inhUrls.getNicheSelectorModal, async html => {
+                $('#ajaxTargetSearch').html(html);
+                $('#modalOverlaySearch').fadeIn(300).css('display', 'flex');
+                const resp = await fetch(`${inhUrls.getStructures}?cemeteryId=${inhumationData.cemeteryId}&type=${inhumationData.burialType}`);
+                const data = await resp.json();
+                let options = `<option value="">-- Seleccione Estructura --</option>`;
+                data.forEach(e => options += `<option value="${e.id}">${e.name}</option>`);
+                $('#cboPavilion').html(options);
+            });
+        }
+
+        async function changePavilion() {
+            const pavId = $('#cboPavilion').val();
+            inhumationData.structureId = parseInt(pavId);
+            inhumationData.structureName = $('#cboPavilion option:selected').text();
+
+            $('#nicheLoader').removeClass('d-none');
+            $('#nicheMapsContainer').addClass('d-none');
+            const resp = await fetch(`${inhUrls.getSpaceMap}?structureId=${pavId}`);
+            const spaces = await resp.json();
+            const dynamicRows = [...new Set(spaces.map(s => s.rowLetter.toUpperCase()))].sort();
+            const dynamicCols = [...new Set(spaces.map(s => parseInt(s.columnNumber)))].sort((a, b) => a - b);
+
+            $('#colCara1').show();
+            $('#colCara2').toggleClass('d-none', inhumationData.burialType === "Tumba");
+
+            if (inhumationData.burialType === "Tumba") {
+                renderGridInh('gridCara1', dynamicRows, dynamicCols, spaces);
+            } else {
+                const middle = Math.ceil(dynamicCols.length / 2);
+                renderGridInh('gridCara1', dynamicRows, dynamicCols.slice(0, middle), spaces);
+                renderGridInh('gridCara2', dynamicRows, dynamicCols.slice(middle), spaces);
+            }
+            $('#nicheLoader').addClass('d-none'); $('#nicheMapsContainer').removeClass('d-none');
+        }
+
+        function renderGridInh(containerId, rows, cols, allSpaces) {
+            const $container = $('#' + containerId).empty();
+            const $mapBody = $('<div class="d-flex flex-column gap-2" style="min-width: max-content; padding: 10px;"></div>');
+            const $hRow = $('<div class="d-flex align-items-center mb-1"><div style="width: 53px;"></div></div>');
+            cols.forEach(c => $hRow.append(`<div class="text-center fw-bold text-muted x-small" style="width: 34px;">${c}</div>`));
+            $mapBody.append($hRow);
+
+            rows.forEach(r => {
+                const $rowDiv = $('<div class="d-flex align-items-center"></div>').append(`<div class="fw-bold text-muted border-end pe-3 me-2 text-center" style="width: 45px;">${r}</div>`);
+                const $spcCont = $('<div class="d-flex flex-nowrap gap-1"></div>');
+                cols.forEach(c => {
+                    const space = allSpaces.find(s => s.rowLetter.toUpperCase() === r && parseInt(s.columnNumber) === c);
+                    if (space) {
+                        const currentStatus = (space.status || "").toLowerCase();
+                        const isAvail = currentStatus === "disponible";
+                        let statusClass = "st-otro";
+                        if (isAvail) statusClass = "st-disponible";
+                        else if (currentStatus === "ocupado") statusClass = "st-ocupado";
+                        else if (currentStatus === "reservado") statusClass = "st-reservado";
+
+                        $spcCont.append(`
+                            <div class="space-item-modal ${statusClass}"
+                                 onclick="${isAvail ? `confirmNicheSelection(${space.id}, '${r}', ${c})` : `Swal.fire('No disponible', 'Espacio ocupado', 'error')`}"
+                                 title="Fila ${r} - Col ${c}">
+                                ${c}
+                            </div>`);
+                    } else {
+                        $spcCont.append('<div style="width: 34px; height: 34px; background: #f1f5f9; opacity: 0.3; border-radius: 6px;"></div>');
+                    }
+                });
+                $mapBody.append($rowDiv.append($spcCont));
+            });
+            $container.append($mapBody);
+        }
+
+        function confirmNicheSelection(id, row, col) {
+            inhumationData.intermentSpaceId = parseInt(id);
+            inhumationData.spaceDetail = `Fila ${row} - Col ${col}`;
+            $('#txtNicheSelected').text(`${inhumationData.structureName} (${inhumationData.spaceDetail})`);
+            $('#selectedNicheDisplay').removeClass('d-none');
+            closeSearchModal();
+        }
+
+        function resetDirectNiche() { inhumationData.intermentSpaceId = null; inhumationData.spaceDetail = ''; $('#selectedNicheDisplay').addClass('d-none'); }
+        function closeSearchModal() { $('#modalOverlaySearch').fadeOut(300); }
+        function handleOverlayClick(e) { if (e.target.id === 'modalOverlaySearch') closeSearchModal(); }
+
+        // --- PASO 3: RESUMEN ---
+        function renderSummary() {
+            $('#resSolicitorName').text(inhumationData.solicitorName);
+            $('#resSolicitorDni').text(inhumationData.solicitorDni);
+            $('#resSolicitorType').text(inhumationData.solicitorType);
+
+            $('#resDeceasedName').text(inhumationData.deceasedName);
+            $('#resDeceasedDni').text(inhumationData.deceasedDni);
+            $('#resBurialDate').text(inhumationData.burialDate);
+
+            $('#resCemetery').text(inhumationData.cemeteryName);
+            $('#resLocation').text(`${inhumationData.structureName} — ${inhumationData.spaceDetail}`);
+            $('#resObservations').text(inhumationData.observations || "Sin observaciones adicionales de regularización.");
+        }
+
+        // --- GUARDADO POST AJAX ---
+        async function saveInhumation() {
+            const result = await Swal.fire({
+                title: '¿Confirmar Regularización?',
+                text: "El fallecido será ingresado directamente y la sepultura cambiará a estado OCUPADO.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, Registrar',
+                cancelButtonText: 'Revisar',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6c757d'
+            });
+
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Procesando registro...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                try {
+                    const payload = {
+                        DeceasedName: inhumationData.deceasedName,
+                        DeceasedDni: inhumationData.deceasedDni,
+                        DeathDate: inhumationData.deathDate,
+                        BurialDate: inhumationData.burialDate,
+                        CemeteryId: parseInt(inhumationData.cemeteryId),
+                        StructureId: parseInt(inhumationData.structureId),
+                        IntermentSpaceId: parseInt(inhumationData.intermentSpaceId),
+                        Observations: `Solicitante: ${inhumationData.solicitorName} (${inhumationData.solicitorType}) | Notas: ${inhumationData.observations}`
+                    };
+
+                    const resp = await fetch(inhUrls.saveDirectInhumation, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await resp.json();
+                    if (data.success) {
+                        Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                            window.location.href = '@Url.Action("Index", "Contract")';
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Error de red con el servidor.', 'error');
+                }
+            }
+        }
+    </script>
+}

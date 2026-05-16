@@ -59,6 +59,7 @@ builder.Services.AddScoped<IExhumationService, ExhumationService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IInhumationService, InhumationService>();
 
 builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 

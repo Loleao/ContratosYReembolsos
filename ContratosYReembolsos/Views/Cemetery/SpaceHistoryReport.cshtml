@@ -1,0 +1,147 @@
+﻿@model ContratosYReembolsos.Services.DTOs.Cemeteries.SpaceHistoryDetailDto
+
+@{
+    ViewData["Title"] = "Expediente de Ubicación: " + Model.Code;
+}
+
+<div class="container py-4 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <button onclick="window.close()" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">
+            <i class="fa-solid fa-xmark me-2"></i> Cerrar Pestaña
+        </button>
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+            <i class="fa-solid fa-print me-2"></i> Imprimir Reporte Oficial
+        </button>
+    </div>
+
+    <div class="border p-4 rounded-4 bg-white shadow-sm mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center border-end py-2">
+                <i class="fa-solid fa-shield-halved fa-4x text-primary opacity-75"></i>
+                <span class="d-block x-small fw-bold text-muted mt-2">FONAFUN</span>
+            </div>
+            <div class="col-md-7 ps-4">
+                <span class="badge bg-primary-subtle text-primary text-uppercase font-monospace x-small mb-1 border border-primary border-opacity-25 px-3 rounded-pill">Auditoría Patrimonial de Sepulturas</span>
+                <h3 class="fw-bold text-dark mb-1">Expediente de Trazabilidad de Ubicación</h3>
+                <p class="text-muted small mb-0"><i class="fa-solid fa-fingerprint me-1"></i> Código único del espacio: <b class="text-primary font-monospace">@Model.Code</b></p>
+            </div>
+            <div class="col-md-3 text-end">
+                <div class="p-3 bg-light rounded-3 text-center border">
+                    <small class="text-muted d-block text-uppercase fw-bold font-monospace tracking-wider" style="font-size:0.6rem;">Estado Actual</small>
+                    <span class="fw-bold fs-5 text-uppercase @(Model.CurrentStatus == "Disponible" ? "text-success" : "text-danger")">@Model.CurrentStatus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom">
+            <h6 class="fw-bold mb-0 text-dark small text-uppercase tracking-wider"><i class="fa-solid fa-circle-info text-primary me-2"></i>Ficha Técnica de Infraestructura</h6>
+        </div>
+        <div class="card-body p-4 bg-light bg-opacity-25">
+            <div class="row g-3 text-center">
+                <div class="col-md-3">
+                    <div class="p-2 border rounded-3 bg-white shadow-sm">
+                        <small class="text-muted d-block x-small text-uppercase">Sede Administrativa</small>
+                        <span class="fw-bold text-dark text-truncate d-block">@Model.BranchName</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 border rounded-3 bg-white shadow-sm">
+                        <small class="text-muted d-block x-small text-uppercase">Camposanto / Sede</small>
+                        <span class="fw-bold text-dark text-truncate d-block">@Model.CemeteryName</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 border rounded-3 bg-white shadow-sm">
+                        <small class="text-muted d-block x-small text-uppercase">Estructura / Pabellón</small>
+                        <span class="fw-bold text-dark text-truncate d-block">@Model.StructureName (@Model.StructureType)</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 border rounded-3 bg-white shadow-sm">
+                        <small class="text-muted d-block x-small text-uppercase">Coordenadas</small>
+                        <span class="fw-bold text-primary font-monospace d-block">Fila: @Model.RowLetter — Nro: @Model.ColumnNumber</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-header bg-dark text-white py-3 px-4">
+            <h6 class="fw-bold mb-0 text-uppercase small"><i class="fa-solid fa-list-numbered text-success me-2"></i>Folios de Ocupación Registrados</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 table-striped-columns table-bordered border">
+                    <thead class="bg-light text-uppercase fw-bold text-secondary text-center" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                        <tr>
+                            <th style="width: 140px;">Periodo de Estancia</th>
+                            <th style="width: 130px;">Nro. Contrato</th>
+                            <th>Identidad del Difunto</th>
+                            <th style="width: 180px;">Tipo de Operación</th>
+                            <th>Observaciones y Firmas Técnicas de Almacén</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 0.8rem;">
+                        @foreach (var movement in Model.Timeline)
+                        {
+                            <tr>
+                                <td class="text-center fw-bold font-monospace text-muted small">@movement.Period</td>
+                                <td class="text-center">
+                                    <span class="badge @(movement.IsCurrent ? "bg-primary" : "bg-secondary") font-monospace px-2 py-1">@movement.ContractNumber</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold d-block text-dark">@movement.DeceasedName</span>
+                                    <small class="text-muted">DNI: @movement.DeceasedDni</small>
+                                </td>
+                                <td class="text-center fw-bold">
+                                    <span class="text-uppercase" style="font-size:0.75rem;"><i class="fa-solid fa-circle-arrow-right text-opacity-50 me-1"></i>@movement.OperationType</span>
+                                </td>
+                                <td class="text-muted italic px-3" style="font-size:0.75rem; border-left-style: dashed !important;">
+                                    "@movement.Observations"
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-3 bg-light rounded-4 text-center border border-dashed border-2">
+        <p class="mb-0 x-small text-muted italic">
+            <i class="fa-solid fa-lock me-2"></i>Este documento constituye un reporte técnico inalterable extraído de las transacciones mecánicas de auditoría física de cementerios de FONAFUN el @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss").
+        </p>
+    </div>
+</div>
+
+<style>
+    .x-small {
+        font-size: 0.65rem;
+    }
+
+    .tracking-wider {
+        letter-spacing: 1px;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    @@media print {
+        body {
+            background-color: white !important;
+        }
+
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #dee2e6 !important;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+    }
+</style>

@@ -19,6 +19,8 @@ namespace ContratosYReembolsos.Data.Contexts
 
         public DbSet<Agency> Agencias { get; set; }
         public DbSet<Cemetery> Cementerios { get; set; }
+        public DbSet<Deceased> Fallecidos{ get; set; }
+
         public DbSet<Contract> Contratos { get; set; }
         public DbSet<Wake> Velatorios { get; set; }
         public DbSet<FuneralService> ServiciosFunerarios { get; set; }
@@ -35,6 +37,7 @@ namespace ContratosYReembolsos.Data.Contexts
         public DbSet<IntermentStructureTemplate> TemplatesSepulturas { get; set; }
         public DbSet<IntermentStructure> SepulturasEstructura { get; set; }
         public DbSet<IntermentSpace> SepulturasNichos { get; set; }
+        public DbSet<SpaceIntermentHistory> SepulturasHistorial { get; set; }
         public DbSet<Branch> Filiales { get; set; }
         public DbSet<Ubigeo> Ubigeos { get; set; }
 

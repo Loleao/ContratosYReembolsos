@@ -4,6 +4,7 @@
     {
         public int ContractId { get; set; }
         public string ContractNumber { get; set; }
+        public int DeceasedId { get; set; }
         public string DeceasedName { get; set; }
         public string DeceasedDni { get; set; }
         public string BurialDate { get; set; }

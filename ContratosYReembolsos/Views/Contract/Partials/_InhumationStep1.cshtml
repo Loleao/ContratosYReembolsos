@@ -1,0 +1,34 @@
+﻿<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold text-primary mb-4"><i class="fa-solid fa-user-shield me-2"></i>Paso 1: Datos del Solicitante / Trámite</h5>
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Nombres y Apellidos Completos</label>
+                    <input type="text" id="txtSolicitorName" class="form-control border-2 text-uppercase fw-bold" placeholder="Ej: JUAN PEREZ LOPEZ" />
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Documento de Identidad (DNI)</label>
+                        <input type="text" id="txtSolicitorDni" class="form-control border-2 font-monospace fw-bold" maxlength="8" placeholder="8 dígitos" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Tipo de Relación</label>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check"><input class="form-check-input" type="radio" name="SolicitorType" id="typeTit" value="Titular" checked><label class="form-check-label" for="typeTit">Titular</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="SolicitorType" id="typeFam" value="Familiar"><label class="form-check-label" for="typeFam">Familiar / Deudo</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="SolicitorType" id="typePart" value="Particular"><label class="form-check-label" for="typePart">Otro Particular</label></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light border-0 rounded-4 p-4 h-100 d-flex align-items-center justify-content-center text-center">
+                <i class="fa-solid fa-scale-balanced fa-3x text-primary opacity-50 mb-3"></i>
+                <h6 class="fw-bold text-dark mb-1">Declaración Jurada</h6>
+                <p class="text-muted small mb-0">La persona registrada actuará como la firma responsable de la veracidad de los restos regularizados en esta Sede.</p>
+            </div>
+        </div>
+    </div>
+</div>

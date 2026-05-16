@@ -1,0 +1,59 @@
+﻿<div class="animate__animated animate__fadeIn">
+    <h5 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-user-plus me-2"></i>Paso 2: Filiación y Coordenadas del Fallecido</h5>
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Filiación Básica</h6>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted text-uppercase">Nombres y Apellidos Completos</label>
+                    <input type="text" id="txtDeceasedName" class="form-control border-2 text-uppercase fw-bold text-primary" placeholder="NOMBRE DEL DIFUNTO" />
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">DNI del Difunto</label>
+                        <input type="text" id="txtDeceasedDni" class="form-control border-2 font-monospace fw-bold" maxlength="8" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Tipo de Sepultura</label>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check"><input class="form-check-input" type="radio" name="BurialType" id="radPab" value="Pabellon" checked onchange="resetDirectNiche()"><label class="form-check-label" for="radPab">Pabellón</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="BurialType" id="radTumb" value="Tumba" onchange="resetDirectNiche()"><label class="form-check-label" for="radTumb">Tierra</label></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Defunción</label>
+                        <input type="date" id="txtDeathDate" class="form-control border-2" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Sepelio Local</label>
+                        <input type="date" id="txtBurialDate" class="form-control border-2" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Camposanto Destino</h6>
+                <div class="input-group shadow-sm rounded-pill overflow-hidden mb-3">
+                    <span class="input-group-text bg-white border-0 text-primary"><i class="fa-solid fa-monument"></i></span>
+                    <input type="text" id="CemeteryName" class="form-control border-0 bg-light" readonly placeholder="Haga clic en la lupa...">
+                    <button class="btn btn-primary px-4 border-0" type="button" onclick="openSearchCemetery()"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+                <div id="sectionSpecificLocation" class="d-none">
+                    <div class="p-3 rounded-4 border border-dashed border-2 text-center bg-light">
+                        <div id="selectedNicheDisplay" class="mb-2 d-none"><span class="badge bg-success fs-6 rounded-pill px-3 py-1"><i class="fa-solid fa-location-dot me-1"></i><span id="txtNicheSelected">Ninguno</span></span></div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="openNicheSelector()"><i class="fa-solid fa-th me-1"></i> Abrir Cuadrícula de Estructuras</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <label class="form-label small fw-bold text-muted text-uppercase">Observaciones de Regularización</label>
+                <textarea id="txtObservations" class="form-control border-2 rounded-4" rows="12" placeholder="Describa los antecedentes (Ej: Proviene de traslado externo de la Sede Norte, Resolución Nro...)"></textarea>
+            </div>
+        </div>
+    </div>
+</div>

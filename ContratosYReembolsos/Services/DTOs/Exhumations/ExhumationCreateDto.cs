@@ -3,6 +3,7 @@
     public class ExhumationCreateDto
     {
         public int ContractId { get; set; }
+        public int DeceasedId { get; set; }
         public DateTime ExhumationDate { get; set; }
         public string DestinationType { get; set; }
         public int? CemeteryId { get; set; }

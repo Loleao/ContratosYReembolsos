@@ -3,6 +3,7 @@ using ContratosYReembolsos.Models.Entities.Cemeteries;
 using ContratosYReembolsos.Models.Entities.Branches;
 using ContratosYReembolsos.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using ContratosYReembolsos.Services.DTOs.Cemeteries;
 
 namespace ContratosYReembolsos.Services.Implementations.Cemeteries
 {
@@ -190,6 +191,58 @@ namespace ContratosYReembolsos.Services.Implementations.Cemeteries
                 return (true, "Traslado completado.");
             }
             catch (Exception ex) { await transaction.RollbackAsync(); return (false, ex.Message); }
+        }
+
+        public async Task<List<SpaceHistoryDto>> GetSpaceHistoryAsync(int spaceId)
+        {
+            return await _context.SepulturasHistorial
+                .Include(h => h.Deceased) // Cargamos la relación del fallecido en memoria
+                .Where(h => h.IntermentSpaceId == spaceId)
+                .OrderByDescending(h => h.StartDate)
+                .Select(h => new SpaceHistoryDto
+                {
+                    ContractNumber = h.ContractNumber,
+
+                    // --- CORRECCIÓN RELACIONAL AQUÍ ---
+                    DeceasedName = h.Deceased != null ? h.Deceased.FullName : "No registrado",
+                    DeceasedDni = h.Deceased != null ? h.Deceased.Dni : "N/A",
+
+                    Period = h.EndDate.HasValue
+                        ? $"{h.StartDate:dd/MM/yyyy} al {h.EndDate.Value:dd/MM/yyyy}"
+                        : $"{h.StartDate:dd/MM/yyyy} (Actual)",
+                    OperationType = h.OperationType,
+                    Observations = h.Observations ?? "Sin observaciones adicionales.",
+                    IsCurrent = !h.EndDate.HasValue
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<SpaceHistoryDetailDto?> GetSpaceReportDetailAsync(int spaceId)
+        {
+            var space = await _context.SepulturasNichos
+                .Include(s => s.Structure).ThenInclude(st => st.Cemetery).ThenInclude(c => c.Branch)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == spaceId);
+
+            if (space == null) return null;
+
+            // Reutilizamos la lógica cronológica que ya tienes armada
+            var timeline = await GetSpaceHistoryAsync(spaceId);
+
+            return new SpaceHistoryDetailDto
+            {
+                SpaceId = space.Id,
+                Code = space.Code,
+                RowLetter = space.RowLetter,
+                ColumnNumber = space.ColumnNumber,
+                CurrentStatus = space.Status.ToString(),
+                StructureName = space.Structure?.Name ?? "N/A",
+                StructureType = space.Structure?.Type ?? "N/A",
+                CemeteryName = space.Structure?.Cemetery?.Name ?? "N/A",
+                BranchName = space.Structure?.Cemetery?.Branch?.Name ?? "No Asignada",
+                Timeline = timeline
+            };
         }
     }
 }

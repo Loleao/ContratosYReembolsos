@@ -43,7 +43,8 @@ namespace ContratosYReembolsos.Services.Implementations
                         // Convertimos el precio asegurando que no falle por nulos o formatos
                         Price = Convert.ToDecimal(row["Price"] ?? 0),
                         Description = row["Description"]?.ToString(),
-                        IsActive = true
+                        IsActiveInternal = true,
+                        IsActiveExternal = true,
                     });
                 }
 

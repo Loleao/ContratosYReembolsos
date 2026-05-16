@@ -7,6 +7,8 @@ using ContratosYReembolsos.Models.ViewModels.Contracts;
 using ContratosYReembolsos.Models.Entities.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using ContratosYReembolsos.Services.DTOs.Contracts;
+using Microsoft.EntityFrameworkCore;
+using ContratosYReembolsos.Services.Implementations.Cemeteries;
 
 namespace ContratosYReembolsos.Controllers
 {
@@ -15,12 +17,14 @@ namespace ContratosYReembolsos.Controllers
     {
         private readonly IContractService _contractService;
         private readonly ICurrentUserService _currentUser;
+        private readonly IInhumationService _inhumationService; // 👈 NUEVO SERVICIO INYECTADO
         private readonly IAuthorizationService _authorizationService;
 
-        public ContractController(IContractService contractService, ICurrentUserService currentUser, IAuthorizationService authorizationService)
+        public ContractController(IContractService contractService, ICurrentUserService currentUser, IInhumationService inhumationService, IAuthorizationService authorizationService)
         {
             _contractService = contractService;
             _currentUser = currentUser;
+            _inhumationService = inhumationService;
             _authorizationService = authorizationService;
         }
 
@@ -157,9 +161,15 @@ namespace ContratosYReembolsos.Controllers
         public async Task<IActionResult> GetInventoryStock(int branchId)
             => Json(await _contractService.GetStockItemsByBranch(branchId));
         [HttpGet] public async Task<IActionResult> GetAvailableVehicleTypesByBranch(int branchId) => Json(await _contractService.GetAvailableVehicleTypesByBranch(branchId));
+
         [HttpGet]
-        public async Task<IActionResult> GetFuneralServices() => Json(await _contractService.GetFuneralServices());
-        
+        public async Task<IActionResult> GetFuneralServices(int? agencyId)
+        {
+            // Pasamos el agencyId directamente al método actualizado de tu capa de negocio
+            var services = await _contractService.GetFuneralServices(agencyId);
+            return Json(services);
+        }
+
         [HttpPost]
         [Authorize(Policy = "Permissions.Contratos.Crear")]
         public async Task<IActionResult> Create([FromBody] ContractViewModel model)
@@ -261,6 +271,67 @@ namespace ContratosYReembolsos.Controllers
 
             var result = await _contractService.UpsertServiceAsync(model);
             return Json(new { success = result.success, message = result.message });
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "Permissions.Espacios.Crear")]
+        public async Task<IActionResult> GetDirectInhumationForm(int cemeteryId, int? structureId, int? spaceId)
+        {
+            // 1. Consumimos los nombres técnicos mediante el servicio especialista
+            var displayData = await _inhumationService.GetInhumationDisplayNamesAsync(cemeteryId, spaceId);
+
+            // 2. Cargamos los ViewBags con la data segura devuelta
+            ViewBag.CemeteryName = displayData.cemeteryName;
+            ViewBag.SpaceCode = displayData.spaceCode;
+
+            // 3. Instanciamos el InputModel limpio
+            var model = new InhumationWithoutContractInput
+            {
+                CemeteryId = cemeteryId,
+                StructureId = structureId,
+                IntermentSpaceId = spaceId,
+                BurialDate = DateTime.Now,
+                DeathDate = DateTime.Now
+            };
+
+            return PartialView("Partials/_DirectInhumationForm", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "Permissions.Espacios.Crear")]
+        public async Task<IActionResult> SaveDirectInhumation([FromBody] InhumationWithoutContractInput model)
+        {
+            if (model == null) return Json(new { success = false, message = "Petición vacía." });
+
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return Json(new { success = false, message = "Verifique campos: " + errors });
+            }
+
+            // Consumimos el servicio especializado
+            var result = await _inhumationService.RegisterDirectInhumationAsync(model);
+            return Json(new { success = result.success, message = result.message });
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "Permissions.Espacios.Crear")]
+        public IActionResult CreateDirectInhumation()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult GetDirectInhumationStep(int step)
+        {
+            return step switch
+            {
+                1 => PartialView("Partials/_InhumationStep1"),
+                2 => PartialView("Partials/_InhumationStep2"),
+                3 => PartialView("Partials/_InhumationStep3"),
+                _ => BadRequest()
+            };
         }
     }
 }
